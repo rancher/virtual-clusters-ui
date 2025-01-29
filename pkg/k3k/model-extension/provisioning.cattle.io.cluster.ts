@@ -38,15 +38,24 @@ export class VClusterModelExtension implements IClusterModelExtension {
   async postDelete(cluster: ICluster): Promise<any> {
     const parentClusterId = cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
     const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];
+    const name =  cluster.metadata.name
 
     // Should probably show a growl
     if (parentClusterId && namespace) {
       try {
         await cluster.$dispatch('request', {
-          url:    `/k8s/clusters/${ parentClusterId }/api/v1/namespaces/${ namespace }`,
+          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
+          method: 'DELETE',
+        });
+        await cluster.$dispatch('request', {
+          url:    `/k8s/clusters/${ parentClusterId }/v1/namespaces/${ namespace }`,
           method: 'DELETE',
         });
       } catch (e) {
+        cluster.$dispatch('growl/error', {
+          title: 'Error deleting cluster',
+          message: e
+        }, {root: true})
         console.error(e); // eslint-disable-line no-console
       }
     }

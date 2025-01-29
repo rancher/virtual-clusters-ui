@@ -1,0 +1,45 @@
+{
+  "name": "virtual-cluster-extension",
+  "version": "0.1.0",
+  "private": false,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@rancher/components": "^0.3.0-alpha.1",
+    "@rancher/shell": "^3.0.0",
+    "@types/lodash": "4.14.184",
+    "css-loader": "6.7.3",
+    "raw-loader": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.12",
+    "@types/lodash": "4.14.184",
+    "@types/node": "20.10.8",
+    "eslint": "7.32.0",
+    "eslint-config-standard": "16.0.3",
+    "eslint-import-resolver-node": "0.3.4",
+    "eslint-module-utils": "2.6.1",
+    "eslint-plugin-cypress": "2.12.1",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-jest": "24.4.0",
+    "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-vue": "9.10.0"
+  },
+  "resolutions": {
+    "@types/node": "~20.10.0",
+    "glob": "7.2.3",
+    "@types/lodash": "4.17.5"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",
+    "build": "./node_modules/.bin/vue-cli-service build",
+    "clean": "./node_modules/@rancher/shell/scripts/clean",
+    "build-pkg": "./node_modules/@rancher/shell/scripts/build-pkg.sh",
+    "serve-pkgs": "./node_modules/@rancher/shell/scripts/serve-pkgs",
+    "publish-pkgs": "./node_modules/@rancher/shell/scripts/extension/publish",
+    "parse-tag-name": "./node_modules/@rancher/shell/scripts/extension/parse-tag-name"
+  }
+}

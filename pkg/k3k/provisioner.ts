@@ -21,7 +21,7 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get group(): string {
-    return 'virtual';
+    return 'Virtual';
   }
 
   get label(): string {
@@ -42,5 +42,9 @@ export class k3kProvisioner implements IClusterProvisioner {
       events:       false,
       conditions:   false,
     };
+  }
+
+  get showImport(){
+    return true
   }
 }

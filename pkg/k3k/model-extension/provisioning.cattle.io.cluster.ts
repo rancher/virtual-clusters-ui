@@ -23,9 +23,20 @@ export class VClusterModelExtension implements IClusterModelExtension {
     };
   }
 
+  availableActions(cluster: any, actions: any[]): any[] | undefined {
+    const cloneAction = actions.find(a=>a.action === 'goToClone')
+    cloneAction.enabled = true
+
+    return actions
+  }
+
   machineProviderDisplay(): string {
     return 'Virtual';
   }
+
+  // provisioner(cluster: ICluster): string {
+  //   return cluster?.metadata?.annotations['ui.rancher/provider']
+  // }
 
   provisionerDisplay(): string {
     return 'K3K';
@@ -33,6 +44,10 @@ export class VClusterModelExtension implements IClusterModelExtension {
 
   parentCluster(cluster: ICluster): string {
     return cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
+  }
+
+  parentClusterDisplay(cluster: ICluster): string {
+    return (cluster.metadata?.annotations?.['ui.rancher/parent-cluster-display']||'').split('/')[1];
   }
 
   async postDelete(cluster: ICluster): Promise<any> {

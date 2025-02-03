@@ -3,10 +3,12 @@ k3k:
   hostCluster:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster
+    tooltip: The host must have the k3k helm chart installed
   mode:
     label: Virtual cluster mode
     shared: Shared
     virtual: Virtual
+    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
   agents:
     label: Number of agent pods
   servers:
@@ -22,7 +24,7 @@ k3k:
   serviceCIDR:
     label: Service CIDR
     placeholder: 10.42.0.0/16
-    tooltip: In "shared" mode the service CIDR needs to be the same as the host cluster.
+    tooltip: In shared mode the service CIDR needs to be the same as the host cluster.
   clusterDNS:
     label: Cluster DNS
     placeholder: "10.43.0.10"

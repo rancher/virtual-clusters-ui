@@ -43,7 +43,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
   }
 
   parentCluster(cluster: ICluster): string {
-    return cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
+    return cluster.metadata?.annotations?.['ui.rancher/parent-cluster-prov'];
   }
 
   parentClusterDisplay(cluster: ICluster): string {

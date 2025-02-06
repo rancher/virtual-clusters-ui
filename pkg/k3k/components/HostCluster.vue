@@ -160,7 +160,7 @@ export default {
         cb(false);
       }
 
-      //TODO nb get latest version instead of harcoding
+      // TODO nb get latest version instead of harcoding
       // install k3k chart
       const installRequest = {
         charts: [

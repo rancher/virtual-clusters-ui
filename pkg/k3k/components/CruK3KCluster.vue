@@ -116,7 +116,7 @@ export default {
         console.error(e);
       }
 
-      //TODO nb properly clean for clone
+      // TODO nb properly clean for clone
       if (this.mode === _CLONE) {
         this.k3kCluster.name = '';
         this.value.metadata.name = '';
@@ -253,8 +253,9 @@ export default {
 
     async saveOverride(btnCb) {
       if (this.mode === _CREATE) {
-        // create the prov cluster crd
+        // create the k3k cluster crd and return the norman cluster id of host cluster
         const clusterId = await this.createCluster();
+        const parentProvCluster = this.provClusters.find((c) => c.id === this.parentCluster);
 
         // Add annotations
         this.value.metadata = this.value.metadata || {};
@@ -262,6 +263,8 @@ export default {
 
         this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
         this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
+        this.value.metadata.annotations['ui.rancher/parent-cluster-prov'] = parentProvCluster.id;
+
         this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = this.parentCluster;
 
         this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
@@ -426,7 +429,10 @@ export default {
             />
           </div>
           <div class="col span-6 centered">
-            <t k="k3k.serviceCIDR.tooltip" class="text-label" />
+            <t
+              k="k3k.serviceCIDR.tooltip"
+              class="text-label"
+            />
           </div>
         </div>
         <div class="row mb-20">

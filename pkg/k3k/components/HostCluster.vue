@@ -3,7 +3,7 @@ import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
-import { addParams } from '@shell/utils/url';
+import { sortBy } from '@shell/utils/sort';
 
 const MAX_RETRIES = 10;
 const RETRY_WAIT = 500;
@@ -16,11 +16,13 @@ export default {
   components: { LabeledSelect, AsyncButton },
 
   props: {
+    // parent cluster's prov cluster id
     parentCluster: {
       type:    String,
       default: ''
     },
 
+    // parent cluster's norman cluster object
     normanCluster: {
       type:    Object,
       default: () => {}
@@ -31,6 +33,7 @@ export default {
       default: _CREATE
     },
 
+    // Array of all provisioning clusters
     clusters: {
       type:    Array,
       default: () => []
@@ -39,31 +42,27 @@ export default {
   },
 
   watch: {
-    watch: {
-      parentClusterOptions(neu) {
+    parentClusterOptions: {
+      handler(neu = []) {
         if (!this.parentCluster && neu.length) {
           this.$emit('update:parentCluster', neu[0].value);
         }
       },
-
-      // parentCluster(neu, old) {
-      //   console.log('** parent cluster changed');
-      //   if (neu && neu !== old) {
-      //     this.checkForK3kInstall();
-      //   }
-      // }
+      immediate: true
     },
   },
 
   computed: {
     parentClusterOptions() {
-      return this.clusters.reduce((opts, cluster) => {
+      const out = this.clusters.reduce((opts, cluster) => {
         if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster']) {
-          opts.push({ label: cluster.name, value: cluster.id });
+          opts.push({ label: cluster.displayName || cluster.name, value: cluster.id });
         }
 
         return opts;
       }, []);
+
+      return sortBy(out, 'label');
     },
   },
 
@@ -72,35 +71,6 @@ export default {
   },
 
   methods: {
-
-    // parentClusterChanged(e) {
-    //   this.$emit('update:parentCluster', e);
-    //   this.checkForK3kInstall(e);
-    // },
-
-    // // TODO nb implement
-    // async checkForK3kInstall(clusterid) {
-    //   console.log('** check for existing k3k...');
-    //   debugger;
-    //   // TODO nb stop duplicating
-    //   const cluster = this.clusters.find((c) => c.id === this.parentCluster);
-
-    //   await cluster.waitForMgmt();
-    //   const mgmtCluster = cluster.mgmt;
-
-    //   try {
-    //     const res = await this.$store.dispatch('management/request', {
-    //       url:    `/k8s/clusters/${ mgmtCluster.id }/v1/namespaces/k3k-system`,
-    //       method: 'GET',
-    //     });
-
-    //     this.k3kInstalled = true;
-    //   } catch (e) {
-    //     console.error(e);
-
-    //     this.k3kInstalled = false;
-    //   }
-    // },
 
     async installK3k(cb) {
       const repo = {

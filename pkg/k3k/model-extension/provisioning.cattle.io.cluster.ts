@@ -42,12 +42,9 @@ export class VClusterModelExtension implements IClusterModelExtension {
   }
 
   parentCluster(cluster: ICluster): string {
-    return cluster.metadata?.annotations?.['ui.rancher/parent-cluster-prov'];
+    return cluster.metadata?.annotations?.['ui.rancher/parent-cluster-display'];
   }
 
-  parentClusterDisplay(cluster: ICluster): string {
-    return (cluster.metadata?.annotations?.['ui.rancher/parent-cluster-display']||'').split('/')[1];
-  }
 
   async postDelete(cluster: ICluster): Promise<any> {
     const parentClusterId = cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];

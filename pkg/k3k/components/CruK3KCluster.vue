@@ -263,10 +263,7 @@ export default {
 
         this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
         this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
-        this.value.metadata.annotations['ui.rancher/parent-cluster-prov'] = parentProvCluster.id;
-
-        this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = this.parentCluster;
-
+        this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;
         this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 
         // get import cluster command

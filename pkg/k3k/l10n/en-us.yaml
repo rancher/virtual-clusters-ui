@@ -4,6 +4,7 @@ k3k:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster
     tooltip: The host must have the k3k helm chart installed
+    notInstalled: The k3k controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the k3k github repository' href='https://github.com/rancher/k3k/tree/main?tab=readme-ov-file#install-the-k3k-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the k3k chart with default values.
   mode:
     label: Virtual cluster mode
     shared: Shared

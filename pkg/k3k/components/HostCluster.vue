@@ -119,6 +119,7 @@ export default {
       await cluster.waitForMgmt();
       const mgmtCluster = cluster.mgmt;
       const k3kRepoUrl = `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.ClusterRepo/k3k`;
+      let k3kRepo;
 
       try {
         // create k3k repo crd
@@ -131,15 +132,13 @@ export default {
         let tries = 0;
 
         while (!fetched) {
-          console.log('*** checking k3k repo...');
-          const k3kRepo = await this.$store.dispatch('management/request', {
+          k3kRepo = await this.$store.dispatch('management/request', {
             url:    k3kRepoUrl,
             method: 'GET',
           });
           const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'Downloaded');
 
           fetched = downloadedCondition?.status === 'True';
-          console.log('*** repo fetched: ', fetched, k3kRepo);
           if (!fetched) {
             console.log('*** k3krepo not yet downloaded, retrying...', k3kRepo);
             tries++;
@@ -153,36 +152,36 @@ export default {
           fetched = true;
         }
 
-        // cb(true);
-      } catch (e) {
-        this.$store.dispatch('growl/error', { title: 'Error installing k3k', message: e });
+        // get the latest version of the chart
+        const indexUrl = k3kRepo?.links?.index;
+        const repoReq = await this.$store.dispatch('management/request', {
+          url:    `${ indexUrl }`,
+          method: 'GET',
+        });
 
-        cb(false);
-      }
+        const latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
 
-      // TODO nb get latest version instead of harcoding
-      // install k3k chart
-      const installRequest = {
-        charts: [
-          {
-            annotations: {
-              'catalog.cattle.io/ui-source-repo':      'k3k',
-              'catalog.cattle.io/ui-source-repo-type': 'cluster'
-            },
-            chartName:   'k3k',
-            releaseName: 'k3k',
-            version:     '0.1.5-r1'
-          }
-        ],
-        disableOpenAPIValidation: false,
-        namespace:                'k3k-system',
-        noHooks:                  false,
-        skipCRDs:                 false,
-        timeout:                  '600s',
-        wait:                     true
-      };
+        // install k3k chart
+        const installRequest = {
+          charts: [
+            {
+              annotations: {
+                'catalog.cattle.io/ui-source-repo':      'k3k',
+                'catalog.cattle.io/ui-source-repo-type': 'cluster'
+              },
+              chartName:   'k3k',
+              releaseName: 'k3k',
+              version:     latestK3kChartVersion || '0.1.5-r1'
+            }
+          ],
+          disableOpenAPIValidation: false,
+          namespace:                'k3k-system',
+          noHooks:                  false,
+          skipCRDs:                 false,
+          timeout:                  '600s',
+          wait:                     true
+        };
 
-      try {
         const res = await this.$store.dispatch('management/request', {
           url:    `${ k3kRepoUrl }?action=install`,
           method: 'POST',
@@ -193,11 +192,12 @@ export default {
           this.k3kInstalled = true;
           cb(true);
         } else {
-          console.log(res);
           cb(false);
         }
+        // cb(true);
       } catch (e) {
         this.$store.dispatch('growl/error', { title: 'Error installing k3k', message: e });
+
         cb(false);
       }
     },
@@ -218,11 +218,15 @@ export default {
     </div>
     <div
       v-if="parentCluster && !k3kInstalled"
-      class="col span-6 centered"
+      class="col span-6 centered text-muted"
     >
+      <t
+        raw
+        k="k3k.hostCluster.notInstalled"
+      />
       <AsyncButton
         type="button"
-        class="btn-sm role-tertiary"
+        class="btn-sm role-tertiary mt-5"
         mode="install"
         action-label="Install K3K"
         @click="installK3k"
@@ -232,7 +236,7 @@ export default {
       v-else-if="parentCluster"
       class="col span-6 centered"
     >
-      <span> <i class="icon icon-checkmark" /> k3k installed</span>
+      <span> <i class="icon icon-checkmark text-success mr-5" /> k3k installed</span>
     </div>
   </div>
 </template>
@@ -240,6 +244,8 @@ export default {
 <style lang="scss" scoped>
   .centered {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
   }
 </style>

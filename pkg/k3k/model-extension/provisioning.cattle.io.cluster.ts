@@ -2,7 +2,6 @@ import { ModelExtensionContext, IClusterModelExtension } from '@shell/core/types
 
 type ICluster = any;
 
-const ID = 'vcluster';
 
 export class VClusterModelExtension implements IClusterModelExtension {
   constructor(private context: ModelExtensionContext) {}

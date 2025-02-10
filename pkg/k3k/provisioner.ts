@@ -1,9 +1,7 @@
 import { IClusterProvisioner, ClusterProvisionerContext } from '@shell/core/types';
 import { mapDriver } from '@shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster.vue';
-import { Component } from 'vue/types/umd';
 
-type ICluster = any;
 
 export class k3kProvisioner implements IClusterProvisioner {
   static ID = 'k3k'
@@ -25,10 +23,11 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get label(): string {
-    return this.context.t('k3k.label');
+    // return this.context.t('k3k.label');
+    return 'K3K'
   }
 
-  get component(): Component {
+  get component(): any {
     return CruK3KCluster;
   }
 
@@ -45,6 +44,6 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get showImport(){
-    return true
+    return false
   }
 }

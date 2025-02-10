@@ -7,20 +7,14 @@ export function init($plugin:any, store:any) {
     } = $plugin.DSL(store, 'manager');
   
     configureType('provisioning.cattle.io.cluster', {
-      listGroups: [
-        {
-          tooltipKey: 'resourceTable.groupBy.none',
-          icon:       'icon-list-flat',
-          value:      'none',
-        },      
+      listGroups: [  
         {
           icon:          'icon-folder',
           field:         'groupByParent',
           value:         'groupByParent',
-          groupLabelKey: 'groupByLabel',
+          groupLabelKey: 'groupByParent',
           tooltipKey:    'k3k.hostCluster.label'
         }
       ],
-      listGroupsWillOverride: true,
     });
   }

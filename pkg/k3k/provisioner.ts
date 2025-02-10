@@ -1,5 +1,5 @@
 import { IClusterProvisioner, ClusterProvisionerContext } from '@shell/core/types';
-import { mapDriver } from '@shell/store/plugins';
+// import { mapDriver } from '@rancher/shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster.vue';
 
 
@@ -10,9 +10,9 @@ export class k3kProvisioner implements IClusterProvisioner {
   //   return false;
   // }
 
-  constructor(private context: ClusterProvisionerContext) {
-    mapDriver(this.id, 'k3k' );
-  }
+  // constructor(private context: ClusterProvisionerContext) {
+  //   mapDriver(this.id, 'k3k' );
+  // }
 
   get id(): string {
     return k3kProvisioner.ID;

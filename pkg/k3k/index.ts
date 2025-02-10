@@ -1,5 +1,5 @@
 import { importTypes } from '@rancher/auto-import';
-import { IPlugin } from '@shell/core/types';
+import { IPlugin, ModelExtensionConstructor } from '@shell/core/types';
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
 
@@ -14,7 +14,7 @@ export default function(plugin: IPlugin): void {
   plugin.metadata = require('./package.json');
 
   // Register a model extension for the provisioning model
-  plugin.addModelExtension('provisioning.cattle.io.cluster', VClusterModelExtension);
+  plugin.addModelExtension('provisioning.cattle.io.cluster', VClusterModelExtension as unknown as ModelExtensionConstructor);
 
   plugin.addProduct(require('./product'));
 

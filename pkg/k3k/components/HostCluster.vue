@@ -50,6 +50,15 @@ export default {
       },
       immediate: true
     },
+
+    parentCluster: {
+      handler(neu) {
+        if (neu && this.mode === _CREATE) {
+          this.verifyK3kIsInstalled();
+        }
+      },
+      immediate: true
+    },
   },
 
   computed: {
@@ -67,10 +76,30 @@ export default {
   },
 
   data() {
-    return { k3kInstalled: false };
+    // track if k3k chart is present in the currently selected host cluster AND 
+    // track if the user installed k3k while viewing this page
+    return { k3kInstalled: true, didInstallK3k: false };
   },
 
   methods: {
+    // check if the currently-selected cluster has the k3k chart's namespace and assume k3k is running if it does
+    async verifyK3kIsInstalled() {
+      try {
+        const cluster = this.clusters.find((c) => c.id === this.parentCluster);
+
+        await cluster.waitForMgmt();
+        const mgmtCluster = cluster.mgmt;
+        const namespaceRes = await this.$store.dispatch('management/request', {
+          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/namespaces/k3k-system`,
+          method: 'GET',
+        });
+
+
+        this.k3kInstalled = true;
+      } catch (err) {
+        this.k3kInstalled = false;
+      }
+    },
 
     async installK3k(cb) {
       const repo = {
@@ -160,6 +189,7 @@ export default {
 
         if (res._status === 201) {
           this.k3kInstalled = true;
+          this.didInstallK3k = true;
           cb(true);
         } else {
           cb(false);
@@ -203,7 +233,7 @@ export default {
       />
     </div>
     <div
-      v-else-if="parentCluster"
+      v-else-if="parentCluster && didInstallK3k"
       class="col span-6 centered"
     >
       <span> <i class="icon icon-checkmark text-success mr-5" /> k3k installed</span>

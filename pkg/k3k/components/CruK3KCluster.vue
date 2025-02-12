@@ -34,7 +34,7 @@ const defaultCluster = {
   spec:       {
     mode:        'virtual',
     agents:      0,
-    expose:      { nodePort: { enabled: true } },
+    // expose:      { nodePort: { enabled: true } },
     persistence: {
       storageRequestSize: '1G', type: 'dynamic', storageClassName: 'local-path'
     },
@@ -252,7 +252,8 @@ export default {
     },
 
     async saveOverride(btnCb) {
-      if (this.mode === _CREATE) {
+      try {
+        if (this.mode === _CREATE) {
         // create the k3k cluster crd and return the norman cluster id of host cluster
         const clusterId = await this.createCluster();
         const parentProvCluster = this.provClusters.find((c) => c.id === this.parentCluster);
@@ -272,14 +273,17 @@ export default {
         // save existing k3kCluster
         const cluster = await this.findNormanCluster();
 
-        // TODO nb edit
         await cluster.$dispatch('request', {
           url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
           method: 'PUT',
           data:   this.k3kCluster
         });
       }
-
+      } catch(err) {
+        this.errors.push(err)
+        btnCb(false)
+        return
+      }
       // save prov cluster
       await this.save(btnCb);
     },

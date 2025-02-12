@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@rancher/components": "^0.3.0-alpha.1",
-    "@rancher/shell": "^3.0.2-rc.3",
+    "@rancher/shell": "^3.0.2-rc.4",
     "@types/lodash": "4.14.184",
     "css-loader": "6.7.3",
     "focus-trap": "7.6.4"

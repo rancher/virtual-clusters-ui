@@ -23,7 +23,7 @@ import { CAPI } from '@shell/config/types';
 import { K3K } from '../types';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import HostCluster from './HostCluster.vue';
-import { _CREATE, _CLONE } from '@shell/config/query-params';
+import { _CREATE } from '@shell/config/query-params';
 import cloneDeep from 'lodash/cloneDeep';
 
 const defaultCluster = {
@@ -34,14 +34,10 @@ const defaultCluster = {
   spec:       {
     mode:        'virtual',
     agents:      0,
-    // expose:      { nodePort: { enabled: true } },
     persistence: {
       storageRequestSize: '1G', type: 'dynamic', storageClassName: 'local-path'
     },
-    servers:    1,
-    // tlsSANs:    ['127.0.0.1'],
-    version:    'v1.31.4-k3s1',
-    serverArgs: ['--write-kubeconfig-mode=0644']
+    servers: 1,
   }
 };
 
@@ -104,22 +100,21 @@ export default {
       const id = ns.split('k3k-')[0];
       const clusterId = this.value.metadata.annotations['ui.rancher/parent-cluster'] || '';
 
+      const parentCluster = this.provClusters.find((c) => c.id === clusterId);
+
+      await parentCluster.waitForMgmt();
+      const mgmt = parentCluster.mgmt;
+
       try {
         const res = await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ clusterId }/v1/k3k.io.clusters/${ ns }/${ id }`,
+          url:    `/k8s/clusters/${ mgmt.id }/v1/k3k.io.clusters/${ ns }/${ id }`,
           method: 'GET',
         });
 
         this.k3kCluster = res.data[0] || {};
-        this.parentCluster = this.value.metadata.annotations['ui.rancher/parent-cluster-display'];
+        this.parentCluster = this.value.metadata.annotations['ui.rancher/parent-cluster'];
       } catch (e) {
         console.error(e);
-      }
-
-      // TODO nb properly clean for clone
-      if (this.mode === _CLONE) {
-        this.k3kCluster.name = '';
-        this.value.metadata.name = '';
       }
     }
 
@@ -128,6 +123,14 @@ export default {
 
   created() {
     this.registerAfterHook(this.saveRoleBindings, 'save-role-bindings');
+  },
+
+  watch: {
+    k3sVersionOptions(neu = []) {
+      if (this.mode === _CREATE && neu.length && !this.k3kCluster.spec.version) {
+        this.k3kCluster.spec.version = neu[0];
+      }
+    }
   },
 
   data() {
@@ -254,35 +257,38 @@ export default {
     async saveOverride(btnCb) {
       try {
         if (this.mode === _CREATE) {
-        // create the k3k cluster crd and return the norman cluster id of host cluster
-        const clusterId = await this.createCluster();
-        const parentProvCluster = this.provClusters.find((c) => c.id === this.parentCluster);
+          // create the k3k cluster crd and return the id of the host cluster's mgmt cluster
+          // mgmt cluster is needed to make requests against its steve api
+          // prov cluster is needed to generate a human-readable host cluster name
+          const clusterId = await this.createCluster();
+          const parentProvCluster = this.provClusters.find((c) => c.id === this.parentCluster);
 
-        // Add annotations
-        this.value.metadata = this.value.metadata || {};
-        this.value.metadata.annotations = this.value.metadata.annotations || {};
+          // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
+          this.value.metadata = this.value.metadata || {};
+          this.value.metadata.annotations = this.value.metadata.annotations || {};
 
-        this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
-        this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
-        this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;
-        this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
+          this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
+          this.value.metadata.annotations['ui.rancher/parent-cluster'] = this.parentCluster;
+          this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;
+          this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 
-        // get import cluster command
-        this.importCluster(clusterId);
-      } else {
-        // save existing k3kCluster
-        const cluster = await this.findNormanCluster();
+          // get import cluster command
+          this.importCluster(clusterId);
+        } else {
+          // save existing k3kCluster
+          const cluster = await this.findNormanCluster();
 
-        await cluster.$dispatch('request', {
-          url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
-          method: 'PUT',
-          data:   this.k3kCluster
-        });
-      }
-      } catch(err) {
-        this.errors.push(err)
-        btnCb(false)
-        return
+          await cluster.$dispatch('request', {
+            url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
+            method: 'PUT',
+            data:   this.k3kCluster
+          });
+        }
+      } catch (err) {
+        this.errors.push(err);
+        btnCb(false);
+
+        return;
       }
       // save prov cluster
       await this.save(btnCb);

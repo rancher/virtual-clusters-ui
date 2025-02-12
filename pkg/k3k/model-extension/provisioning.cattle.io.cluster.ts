@@ -22,20 +22,10 @@ export class VClusterModelExtension implements IClusterModelExtension {
     };
   }
 
-  availableActions(cluster: any, actions: any[]): any[] | undefined {
-    const cloneAction = actions.find(a=>a.action === 'goToClone')
-    cloneAction.enabled = true
-
-    return actions
-  }
 
   machineProviderDisplay(): string {
     return 'Virtual';
   }
-
-  // provisioner(cluster: ICluster): string {
-  //   return cluster?.metadata?.annotations['ui.rancher/provider']
-  // }
 
   provisionerDisplay(): string {
     return 'K3K';
@@ -51,7 +41,6 @@ export class VClusterModelExtension implements IClusterModelExtension {
     const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];
     const name =  cluster.metadata.name
 
-    // Should probably show a growl
     if (parentClusterId && namespace) {
       try {
         await cluster.$dispatch('request', {

@@ -76,7 +76,7 @@ export default {
   },
 
   data() {
-    // track if k3k chart is present in the currently selected host cluster AND 
+    // track if k3k chart is present in the currently selected host cluster AND
     // track if the user installed k3k while viewing this page
     return { k3kInstalled: true, didInstallK3k: false };
   },
@@ -89,11 +89,11 @@ export default {
 
         await cluster.waitForMgmt();
         const mgmtCluster = cluster.mgmt;
-        const namespaceRes = await this.$store.dispatch('management/request', {
+
+        await this.$store.dispatch('management/request', {
           url:    `/k8s/clusters/${ mgmtCluster.id }/v1/namespaces/k3k-system`,
           method: 'GET',
         });
-
 
         this.k3kInstalled = true;
       } catch (err) {

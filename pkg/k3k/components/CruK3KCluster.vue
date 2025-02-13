@@ -102,7 +102,7 @@ export default {
 
       const parentCluster = this.provClusters.find((c) => c.id === clusterId);
 
-      await parentCluster.waitForMgmt();
+      await this.value.waitForMgmt();
       const mgmt = parentCluster.mgmt;
 
       try {
@@ -293,6 +293,17 @@ export default {
       // save prov cluster
       await this.save(btnCb);
     },
+
+    cancel() {
+      this.$router.push({
+        name:   'c-cluster-product-resource',
+        params: {
+          cluster:  this.$route.params.cluster,
+          product:  this.$store.getters['productId'],
+          resource: CAPI.RANCHER_CLUSTER,
+        },
+      });
+    },
   }
 };
 </script>
@@ -305,8 +316,10 @@ export default {
     :resource="value"
     :errors="errors"
     component-testid="cluster-manager-virtual-cluster"
+    :cancel-event="true"
     @finish="saveOverride"
     @error="e => errors = e"
+    @cancel="cancel"
   >
     <NameNsDescription
       v-if="!isView"

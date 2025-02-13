@@ -27,8 +27,8 @@ export class VClusterModelExtension implements IClusterModelExtension {
     return 'Virtual';
   }
 
-  provisionerDisplay(): string {
-    return 'K3K';
+  provisionerDisplay(cluster: ICluster): string {
+    return cluster?.metadata?.annotations['ui.rancher/provider'];
   }
 
   parentCluster(cluster: ICluster): string {
@@ -41,6 +41,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
     const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];
     const name =  cluster.metadata.name
 
+    // Should probably show a growl
     if (parentClusterId && namespace) {
       try {
         await cluster.$dispatch('request', {

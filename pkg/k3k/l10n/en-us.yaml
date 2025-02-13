@@ -1,0 +1,42 @@
+k3k: 
+  label: K3K
+  hostCluster:
+    label: Host cluster
+    placeholder: The cluster that will host this virtual cluster
+    tooltip: The host must have the k3k helm chart installed
+    notInstalled: The k3k controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the k3k github repository' href='https://github.com/rancher/k3k/tree/main?tab=readme-ov-file#install-the-k3k-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the k3k chart with default values.
+  mode:
+    label: Virtual cluster mode
+    shared: Shared
+    virtual: Virtual
+    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
+  agents:
+    label: Number of agent pods
+  servers:
+    title: Servers and Agents
+    label: Number of server pods
+  nodeSelector:
+    label: Node Selector
+    tooltip: Add a node selector to all server and agent pods. In "shared" mode, the node selector will also be applied to workloads.
+    addLabel: Add Label
+  clusterCIDR:
+    label: Cluster CIDR
+    placeholder: 10.42.0.0/16
+  serviceCIDR:
+    label: Service CIDR
+    placeholder: 10.42.0.0/16
+    tooltip: In shared mode the service CIDR needs to be the same as the host cluster.
+  clusterDNS:
+    label: Cluster DNS
+    placeholder: "10.43.0.10"
+  tlsSANs:
+    label: TLS Alternate Names
+  k3sVersion:
+    label: K3s Version
+  tabs:
+    basics: Basics
+    networking: Networking
+resourceTable:
+  groupBy:
+    hostCluster: Host Cluster
+    displayName: Display Name

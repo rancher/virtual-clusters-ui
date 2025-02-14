@@ -19,12 +19,13 @@ import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
-import { CAPI } from '@shell/config/types';
+import { CAPI, MANAGEMENT } from '@shell/config/types';
 import { K3K } from '../types';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import HostCluster from './HostCluster.vue';
 import { _CREATE } from '@shell/config/query-params';
 import cloneDeep from 'lodash/cloneDeep';
+import { allHash } from '@shell/utils/promise';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -89,30 +90,37 @@ export default {
   name: 'CruK3KCluster',
 
   async fetch() {
+    const hash = {};
+
     if (this.$store.getters['management/schemaFor'](CAPI.RANCHER_CLUSTER)) {
-      this.provClusters = await this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
+      // this.provClusters = await this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
+      hash.provClusters = this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
     }
+    if (this.$store.getters['management/schemaFor'](MANAGEMENT.CLUSTER)) {
+      hash.mgmtClusters = this.$store.dispatch('management/findAll', { type: MANAGEMENT.CLUSTER });
+    }
+
+    const res = await allHash(hash);
+
+    this.provClusters = res.provClusters;
 
     if (this.mode === _CREATE) {
       this.k3kCluster = await this.$store.dispatch('management/create', cloneDeep(defaultCluster));
     } else {
       const ns = this.value.metadata.annotations['ui.rancher/k3k-namespace'] || '';
       const id = ns.split('k3k-')[0];
-      const clusterId = this.value.metadata.annotations['ui.rancher/parent-cluster'] || '';
+      const parentClusterId = this.value.metadata.annotations['ui.rancher/parent-cluster'] || '';
 
-      const parentCluster = this.provClusters.find((c) => c.id === clusterId);
-
-      await this.value.waitForMgmt();
-      const mgmt = parentCluster.mgmt;
+      const parentProvCluster = this.provClusters.find((c) => c?.mgmt?.id === parentClusterId);
 
       try {
         const res = await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ mgmt.id }/v1/k3k.io.clusters/${ ns }/${ id }`,
+          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ ns }/${ id }`,
           method: 'GET',
         });
 
         this.k3kCluster = res.data[0] || {};
-        this.parentCluster = this.value.metadata.annotations['ui.rancher/parent-cluster'];
+        this.parentCluster = parentProvCluster.id;
       } catch (e) {
         console.error(e);
       }
@@ -268,7 +276,8 @@ export default {
           this.value.metadata.annotations = this.value.metadata.annotations || {};
 
           this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
-          this.value.metadata.annotations['ui.rancher/parent-cluster'] = this.parentCluster;
+          this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
+
           this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 

@@ -22,7 +22,7 @@ data:
     done
     echo "Importing Virtual Cluster ..."
     curl --insecure -sfL ${RANCHER_IMPORT_URL} | kubectl apply -f -
-    kubectl get pods -n cattle-system --watch
+    kubectl get pods -n cattle-system
     echo "All Done"
 ---
 apiVersion: batch/v1

@@ -1,5 +1,5 @@
 {
-  "name": "k3k",
+  "name": "virtual-clusters",
   "description": "Virtual cluster provisioning using K3K",
   "version": "0.1.0",
   "private": false,

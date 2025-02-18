@@ -35,7 +35,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
     return cluster.metadata?.annotations?.['ui.rancher/parent-cluster-display'];
   }
 
-
+  
   async postDelete(cluster: ICluster): Promise<any> {
     const parentClusterId = cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
     const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];

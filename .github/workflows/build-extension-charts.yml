@@ -3,7 +3,7 @@ name: Build and Release Extension Charts
 on:
   workflow_dispatch:
   release:  
-    types: [released]
+    types: [prereleased, released]
 
 defaults:
   run:

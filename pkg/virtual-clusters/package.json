@@ -1,7 +1,7 @@
 {
   "name": "virtual-clusters",
   "description": "Virtual cluster provisioning using K3K",
-  "version": "0.1.0-rc1",
+  "version": "0.1.0-rc2",
   "private": false,
   "rancher": {
     "annotations": {

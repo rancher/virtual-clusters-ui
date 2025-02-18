@@ -26,6 +26,8 @@ import HostCluster from './HostCluster.vue';
 import { _CREATE } from '@shell/config/query-params';
 import cloneDeep from 'lodash/cloneDeep';
 import { allHash } from '@shell/utils/promise';
+import importConfigMapTemplate from '../resources/import-configmap.json';
+import importJobTemplate from '../resources/import-job.json';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -234,31 +236,36 @@ export default {
       const command = clusterToken.command.split(' ');
       const registrationUrl = command[command.length - 1];
 
-      const importJobYaml = require('../resources/import-job.yaml.md').body;
+      let importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAMESPACE/g, this.value.metadata.name);
 
-      if (!importJobYaml) {
-        console.error('Could not load import template');
+      importJob = importJob.replaceAll(/__url/g, registrationUrl);
 
-        const a = require('../resources/import-job.yaml.md');
+      const importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAMESPACE/g, this.value.metadata.name);
 
-        console.log(a);
+      const importJobYaml = saferDump(JSON.parse(importJob));
 
-        return;
-      }
+      const configMapYaml = saferDump(JSON.parse(importConfigMap));
 
-      let templateYaml = importJobYaml.replaceAll(/K3K_NAMESPACE/g, this.value.metadata.name);
-
-      templateYaml = templateYaml.replaceAll(/__url/g, registrationUrl);
-
-      const apply = {
+      const applyCm = {
         defaultNamespace: this.value.metadata.name,
-        yaml:             templateYaml
+        yaml:             configMapYaml
+      };
+
+      const applyJob = {
+        defaultNamespace: this.value.metadata.name,
+        yaml:             importJobYaml
       };
 
       await this.$store.dispatch('management/request', {
         url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
         method: 'POST',
-        data:   apply
+        data:   applyCm
+      });
+
+      await this.$store.dispatch('management/request', {
+        url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
+        method: 'POST',
+        data:   applyJob
       });
     },
 

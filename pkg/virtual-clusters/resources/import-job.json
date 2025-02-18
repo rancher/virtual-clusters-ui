@@ -1,0 +1,73 @@
+{
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "namespace": "k3k-K3K_NAMESPACE",
+      "name": "import-virtual-cluster"
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "import",
+              "image": "rancher/shell:head",
+              "command": [
+                "sh",
+                "/scripts/import.sh"
+              ],
+              "env": [
+                {
+                  "name": "RANCHER_IMPORT_URL",
+                  "value": "__url"
+                }
+              ],
+              "volumeMounts": [
+                {
+                  "mountPath": "/scripts",
+                  "name": "scripts",
+                  "readOnly": true
+                },
+                {
+                  "mountPath": "/bootstrap",
+                  "name": "bootstrap",
+                  "readOnly": true
+                },
+                {
+                  "mountPath": "/varlibrancher",
+                  "name": "varlibrancher",
+                  "readOnly": true
+                }
+              ]
+            }
+          ],
+          "restartPolicy": "Never",
+          "securityContext": {
+            "runAsUser": 0,
+            "allowPrivilegeEscalation": false
+          },
+          "volumes": [
+            {
+              "name": "scripts",
+              "configMap": {
+                "name": "cluster-import-script"
+              }
+            },
+            {
+              "name": "bootstrap",
+              "secret": {
+                "secretName": "k3k-K3K_NAMESPACE-bootstrap"
+              }
+            },
+            {
+              "name": "varlibrancher",
+              "persistentVolumeClaim": {
+                "claimName": "varlibrancherk3s-k3k-K3K_NAMESPACE-server-0"
+              }
+            }
+          ]
+        }
+      },
+      "backoffLimit": 4
+    }
+  }

@@ -130,6 +130,8 @@ export default {
         let fetched = false;
         let tries = 0;
 
+        let latestK3kChartVersion = '';
+
         while (!fetched) {
           k3kRepo = await this.$store.dispatch('management/request', {
             url:    k3kRepoUrl,
@@ -137,7 +139,25 @@ export default {
           });
           const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'Downloaded');
 
-          fetched = downloadedCondition?.status === 'True';
+          const downloaded = downloadedCondition?.status === 'True';
+
+          if (downloaded) {
+            // get the latest version of the chart
+            const indexUrl = k3kRepo?.links?.index;
+            const repoReq = await this.$store.dispatch('management/request', {
+              url:    `${ indexUrl }`,
+              method: 'GET',
+            });
+
+            if (repoReq?.entries?.k3k) {
+              latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
+              console.log('Installing k3k version...', latestK3kChartVersion);
+              fetched = true;
+            } else {
+              fetched = false;
+            }
+          }
+
           if (!fetched) {
             console.log('*** k3krepo not yet downloaded, retrying...', k3kRepo);
             tries++;
@@ -150,15 +170,6 @@ export default {
 
           fetched = true;
         }
-
-        // get the latest version of the chart
-        const indexUrl = k3kRepo?.links?.index;
-        const repoReq = await this.$store.dispatch('management/request', {
-          url:    `${ indexUrl }`,
-          method: 'GET',
-        });
-
-        const latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
 
         // install k3k chart
         const installRequest = {

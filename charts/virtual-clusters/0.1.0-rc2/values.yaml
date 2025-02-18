@@ -1,0 +1,10 @@
+nameOverride: ""
+fullnameOverride: ""
+plugin:
+  enabled: true
+  versionOverride: ""
+  noCache: false
+  noAuth: false
+  metadata:
+    catalog.cattle.io/display-name: Virtual Clusters
+    catalog.cattle.io/ui-extensions-version: ">= 3.0.2-rc.5"

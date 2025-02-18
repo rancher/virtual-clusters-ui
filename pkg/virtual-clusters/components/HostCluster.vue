@@ -139,9 +139,9 @@ export default {
           });
           const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'Downloaded');
 
-          fetched = downloadedCondition?.status === 'True';
+          const downloaded = downloadedCondition?.status === 'True';
 
-          if (fetched) {
+          if (downloaded) {
             // get the latest version of the chart
             const indexUrl = k3kRepo?.links?.index;
             const repoReq = await this.$store.dispatch('management/request', {
@@ -151,6 +151,8 @@ export default {
 
             if (repoReq?.entries?.k3k) {
               latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
+              console.log('Installing k3k version...', latestK3kChartVersion);
+              fetched = true;
             } else {
               fetched = false;
             }

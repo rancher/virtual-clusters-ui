@@ -408,7 +408,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-3">
             <LabeledInput
-              v-model:value="k3kCluster.spec.servers"
+              v-model:value.number="k3kCluster.spec.servers"
               label-key="k3k.servers.label"
               :mode="mode"
             />

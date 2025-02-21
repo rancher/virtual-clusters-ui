@@ -1,6 +1,8 @@
 # Virtual Cluster UI Extension
 Rancher extension used to provision clusters with [k3k](https://github.com/rancher/k3k/)
 
+Requires Rancher 2.11.x
+
 ## Installing released versions
 1. Open the Rancher Manager UI and navigate to the 'Extensions' page
 2. Use the three-dot menu in the upper right and select 'Manage Repositories'

@@ -35,7 +35,7 @@ const defaultCluster = {
   kind:       'Cluster',
   metadata:   { name: '' },
   spec:       {
-    mode:        'virtual',
+    mode:        'shared',
     agents:      0,
     persistence: {
       storageRequestSize: '1G', type: 'dynamic', storageClassName: 'local-path'

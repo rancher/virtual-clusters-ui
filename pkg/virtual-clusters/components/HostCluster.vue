@@ -97,6 +97,7 @@ export default {
 
         this.k3kInstalled = true;
       } catch (err) {
+        this.didInstallK3k = false;
         this.k3kInstalled = false;
       }
     },

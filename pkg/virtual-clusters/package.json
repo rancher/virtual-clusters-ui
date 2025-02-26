@@ -1,12 +1,13 @@
 {
   "name": "virtual-clusters",
   "description": "Virtual cluster provisioning using K3K",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "rancher": {
     "annotations": {
       "catalog.cattle.io/display-name": "Virtual Clusters",
-      "catalog.cattle.io/ui-extensions-version": ">= 3.0.2-rc.5"
+      "catalog.cattle.io/ui-extensions-version": ">= 3.0.2-rc.5",
+      "catalog.cattle.io/experimental": "true"
     }
   },
   "scripts": {},

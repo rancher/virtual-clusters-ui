@@ -5,8 +5,8 @@ import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 
-const MAX_RETRIES = 10;
-const RETRY_WAIT = 500;
+const DOWNLOAD_MAX_RETRIES = 10;
+const RETRY_WAIT = 1000;
 
 export default {
   name: 'K3kHostCluster',
@@ -149,7 +149,7 @@ export default {
               method: 'GET',
             });
 
-            if (repoReq?.entries?.k3k) {
+            if (repoReq?.entries?.k3k && repoReq?.entries?.k3k.length) {
               latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
               console.log('Installing k3k version...', latestK3kChartVersion);
               fetched = true;
@@ -162,13 +162,11 @@ export default {
             console.log('*** k3krepo not yet downloaded, retrying...', k3kRepo);
             tries++;
 
-            if (tries > MAX_RETRIES) {
+            if (tries > DOWNLOAD_MAX_RETRIES) {
               throw new Error('Failed to add Helm Chart Repository');
             }
             await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT));
           }
-
-          fetched = true;
         }
 
         // install k3k chart
@@ -192,20 +190,35 @@ export default {
           wait:                     true
         };
 
-        const res = await this.$store.dispatch('management/request', {
-          url:    `${ k3kRepoUrl }?action=install`,
-          method: 'POST',
-          data:   installRequest
-        });
+        let installTries = 0;
+        const INSTALL_MAX_TRIES = 3;
 
-        if (res._status === 201) {
-          this.k3kInstalled = true;
-          this.didInstallK3k = true;
+        while (!this.k3kInstalled || installTries <= INSTALL_MAX_TRIES) {
+          installTries++;
+          try {
+            const res = await this.$store.dispatch('management/request', {
+              url:    `${ k3kRepoUrl }?action=install`,
+              method: 'POST',
+              data:   installRequest
+            });
+
+            if (res._status === 201) {
+              this.k3kInstalled = true;
+              this.didInstallK3k = true;
+            }
+          } catch (err) {
+            if (installTries >= INSTALL_MAX_TRIES) {
+              throw (err);
+            }
+            await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT));
+          }
+        }
+
+        if (this.k3kInstalled) {
           cb(true);
         } else {
           cb(false);
         }
-        // cb(true);
       } catch (e) {
         this.$store.dispatch('growl/error', { title: 'Error installing k3k', message: e });
 

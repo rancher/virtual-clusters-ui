@@ -14,6 +14,10 @@ export class k3kProvisioner implements IClusterProvisioner {
   //   mapDriver(this.id, 'k3k' );
   // }
 
+  get icon(): any {
+    return require('./assets/icon-virtual-clusters.svg');
+  }
+
   get id(): string {
     return k3kProvisioner.ID;
   }

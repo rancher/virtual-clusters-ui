@@ -19,6 +19,9 @@ export default function(plugin: IPlugin): void {
   plugin.addProduct(require('./product'));
 
 
-    // Register custom provisioner object
-    plugin.register('provisioner', k3kProvisioner.ID, k3kProvisioner);
+  // Register custom provisioner object
+  plugin.register('provisioner', k3kProvisioner.ID, k3kProvisioner);
+
+  // Built-in icon
+  plugin.metadata.icon = require('./assets/icon-virtual-clusters.svg');
 }

@@ -44,6 +44,21 @@ const defaultCluster = {
   }
 };
 
+/**
+ * provisioning.cattle.io.cluster default annotations
+ *
+ * also set before creation:
+ * 'ui.rancher/parent-cluster' - host cluster's norman cluster id
+ * 'ui.rancher/parent-cluster-display' - host cluster provisioning cluster displayName model property
+ * 'ui.rancher/k3k-namespace'  - namespace/id of the k3k cluster in the host cluster
+ */
+const defaultAnnotations = {
+  // prevent k3s-upgrade-controller from running: this will be managed by k3k
+  'rancher.io/imported-cluster-version-management': 'false',
+  // display machine provider in cluster mgmt list
+  'ui.rancher/provider':                            'k3k'
+};
+
 export default {
   emites: ['update:value'],
 
@@ -280,9 +295,8 @@ export default {
 
           // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
           this.value.metadata = this.value.metadata || {};
-          this.value.metadata.annotations = this.value.metadata.annotations || {};
+          this.value.metadata.annotations = { ...defaultAnnotations };
 
-          this.value.metadata.annotations['ui.rancher/provider'] = 'k3k';
           this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
 
           this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;

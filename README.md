@@ -18,6 +18,8 @@ Requires Rancher 2.11.x
 9. Select a version (or use the latest by default) and click 'Install'
 10. Once the extension has finished installing, click the 'Reload' button that will appear at the top of the page.
 
+To get started, navigate to the Cluster Management page, click 'Create' and select k3k.
+
 
 ## Running for Development
 This is what you probably want to get started.

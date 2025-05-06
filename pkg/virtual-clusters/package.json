@@ -10,6 +10,7 @@
       "catalog.cattle.io/experimental": "true"
     }
   },
+  "icon": "https://raw.githubusercontent.com/rancher/virtual-clusters-ui/refs/heads/main/pkg/virtual-clusters/assets/icon-virtual-clusters.svg",
   "scripts": {},
   "engines": {
     "node": ">=16"

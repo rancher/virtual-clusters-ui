@@ -7,6 +7,7 @@ import { sortBy } from '@shell/utils/sort';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
+const INCLUDE_LOCAL = process.env.dev;
 
 export default {
   name: 'K3kHostCluster',
@@ -20,12 +21,6 @@ export default {
     parentCluster: {
       type:    String,
       default: ''
-    },
-
-    // parent cluster's norman cluster object
-    normanCluster: {
-      type:    Object,
-      default: () => {}
     },
 
     mode: {
@@ -64,7 +59,7 @@ export default {
   computed: {
     parentClusterOptions() {
       const out = this.clusters.reduce((opts, cluster) => {
-        if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster']) {
+        if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster'] && !(!INCLUDE_LOCAL && cluster.name === 'local')) {
           opts.push({ label: cluster.displayName || cluster.name, value: cluster.id });
         }
 

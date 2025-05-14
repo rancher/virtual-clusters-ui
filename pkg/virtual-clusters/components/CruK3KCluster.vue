@@ -60,7 +60,7 @@ const defaultAnnotations = {
 };
 
 export default {
-  emites: ['update:value'],
+  emits: ['update:value'],
 
   components: {
     LabeledSelect,
@@ -88,11 +88,6 @@ export default {
       required: true,
     },
 
-    realMode: {
-      type:     String,
-      required: true,
-    },
-
     value: {
       type:     Object,
       required: true,
@@ -110,7 +105,6 @@ export default {
     const hash = {};
 
     if (this.$store.getters['management/schemaFor'](CAPI.RANCHER_CLUSTER)) {
-      // this.provClusters = await this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
       hash.provClusters = this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
     }
     if (this.$store.getters['management/schemaFor'](MANAGEMENT.CLUSTER)) {
@@ -139,7 +133,7 @@ export default {
         this.k3kCluster = res.data[0] || {};
         this.parentCluster = parentProvCluster.id;
       } catch (e) {
-        console.error(e);
+        this.errors.push(e);
       }
     }
 
@@ -314,14 +308,12 @@ export default {
             data:   this.k3kCluster
           });
         }
+        // save prov cluster
+        await this.save(btnCb);
       } catch (err) {
         this.errors.push(err);
         btnCb(false);
-
-        return;
       }
-      // save prov cluster
-      await this.save(btnCb);
     },
 
     cancel() {
@@ -383,7 +375,6 @@ export default {
       >
         <HostCluster
           v-model:parent-cluster="parentCluster"
-          :norman-cluster="normanCluster"
           :mode="mode"
           :clusters="provClusters"
         />
@@ -403,6 +394,7 @@ export default {
           <div class="col span-6">
             <RadioGroup
               v-model:value="k3kCluster.spec.mode"
+              name="k3k-cluster-mode"
               :row="true"
               :mode="mode"
               label-key="k3k.mode.label"

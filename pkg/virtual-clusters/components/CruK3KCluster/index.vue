@@ -162,9 +162,7 @@ export default {
 
     return {
       provClusters:        [],
-      parentCluster:     {},
-
-      // parentClusterId:     '',
+      parentCluster:       {},
       k3kCluster:          {},
       modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
       k3sVersions:         []
@@ -230,9 +228,6 @@ export default {
     },
 
     async findNormanCluster() {
-      // const cluster = this.provClusters.find((c) => c.id === this.parentClusterId);
-
-      // return await cluster.findNormanCluster();
       if (this.parentCluster) {
         return await this.parentCluster.findNormanCluster();
       }

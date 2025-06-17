@@ -128,6 +128,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledSelect
+          :disabled="storageClassOptions.length === 1"
           :value="storageClassName || t('k3k.storage.noneOption')"
           :loading="loadingStorageClasses"
           :mode="mode"

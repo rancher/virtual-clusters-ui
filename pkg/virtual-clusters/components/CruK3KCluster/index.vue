@@ -233,8 +233,8 @@ export default {
       // const cluster = this.provClusters.find((c) => c.id === this.parentClusterId);
 
       // return await cluster.findNormanCluster();
-      if (this.parentProvCluster) {
-        return await this.parentProvCluster.findNormanCluster();
+      if (this.parentCluster) {
+        return await this.parentCluster.findNormanCluster();
       }
     },
 
@@ -370,7 +370,6 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
-    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"

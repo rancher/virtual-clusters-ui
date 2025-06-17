@@ -1,33 +1,36 @@
 <script>
 import { mapGetters } from 'vuex';
+import cloneDeep from 'lodash/cloneDeep';
 
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import NameNsDescription from '@shell/components/form/NameNsDescription';
-import Tabbed from '@shell/components/Tabbed';
-import Tab from '@shell/components/Tabbed/Tab';
+
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/edit/provisioning.cattle.io.cluster/Labels';
-import KeyValue from '@shell/components/form/KeyValue.vue';
-import ArrayList from '@shell/components/form/ArrayList';
+import Labels from '@shell/components/form/Labels.vue';
 
+import KeyValue from '@shell/components/form/KeyValue.vue';
 import { Banner } from '@components/Banner';
-import { saferDump } from '@shell/utils/create-yaml';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
-
-import CreateEditView from '@shell/mixins/create-edit-view';
+import ClusterAppearance from '@shell/components/form/ClusterAppearance';
+import Accordion from '@components/Accordion/Accordion.vue';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
-import { K3K } from '../types';
-import ClusterAppearance from '@shell/components/form/ClusterAppearance';
-import HostCluster from './HostCluster.vue';
+import CreateEditView from '@shell/mixins/create-edit-view';
 import { _CREATE } from '@shell/config/query-params';
-import cloneDeep from 'lodash/cloneDeep';
 import { allHash } from '@shell/utils/promise';
-import importConfigMapTemplate from '../resources/import-configmap.json';
-import importJobTemplate from '../resources/import-job.json';
+import { saferDump } from '@shell/utils/create-yaml';
+
+import { K3K } from '../../types';
+import HostCluster from './HostCluster.vue';
+import Networking from './Networking.vue';
+import Storage from './Storage.vue';
+
+import importConfigMapTemplate from '../../resources/import-configmap.json';
+import importJobTemplate from '../../resources/import-job.json';
+import { formatEnvVars, parseEnvVars } from '../../util/string';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -38,7 +41,8 @@ const defaultCluster = {
     mode:        'shared',
     agents:      0,
     persistence: {
-      storageRequestSize: '1G', type: 'dynamic', storageClassName: 'local-path'
+      storageRequestSize: '1G',
+      type:               'dynamic',
     },
     servers: 1,
   }
@@ -65,8 +69,6 @@ export default {
   components: {
     LabeledSelect,
     NameNsDescription,
-    Tabbed,
-    Tab,
     CruResource,
     Loading,
     Labels,
@@ -75,9 +77,11 @@ export default {
     LabeledInput,
     RadioGroup,
     KeyValue,
-    ArrayList,
     ClusterAppearance,
-    HostCluster
+    HostCluster,
+    Accordion,
+    Networking,
+    Storage
   },
 
   mixins: [CreateEditView],
@@ -131,7 +135,8 @@ export default {
         });
 
         this.k3kCluster = res.data[0] || {};
-        this.parentCluster = parentProvCluster.id;
+        this.parentClusterId = parentProvCluster.id;
+        this.parentCluster = parentProvCluster;
       } catch (e) {
         this.errors.push(e);
       }
@@ -156,11 +161,13 @@ export default {
     const t = this.$store.getters['i18n/t'];
 
     return {
-      provClusters:  [],
-      parentCluster: '',
-      k3kCluster:    {},
-      modeOptions:   [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
-      k3sVersions:   []
+      provClusters:        [],
+      parentCluster:     {},
+
+      // parentClusterId:     '',
+      k3kCluster:          {},
+      modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
+      k3sVersions:         []
     };
   },
 
@@ -182,7 +189,25 @@ export default {
       set(newValue) {
         this.$emit('update:value', newValue);
       }
-    }
+    },
+
+    serverEnvs: {
+      get() {
+        return parseEnvVars(this.k3kCluster?.spec?.serverEnvs || []);
+      },
+      set(neu = {}) {
+        this.k3kCluster.spec.serverEnvs = formatEnvVars(neu);
+      },
+    },
+
+    agentEnvs: {
+      get() {
+        return parseEnvVars(this.k3kCluster?.spec?.agentEnvs || []);
+      },
+      set(neu = {}) {
+        this.k3kCluster.spec.agentEnvs = formatEnvVars(neu);
+      },
+    },
 
   },
 
@@ -205,9 +230,12 @@ export default {
     },
 
     async findNormanCluster() {
-      const cluster = this.provClusters.find((c) => c.id === this.parentCluster);
+      // const cluster = this.provClusters.find((c) => c.id === this.parentClusterId);
 
-      return await cluster.findNormanCluster();
+      // return await cluster.findNormanCluster();
+      if (this.parentProvCluster) {
+        return await this.parentProvCluster.findNormanCluster();
+      }
     },
 
     // create the k3k cluster crd
@@ -285,7 +313,6 @@ export default {
           // mgmt cluster is needed to make requests against its steve api
           // prov cluster is needed to generate a human-readable host cluster name
           const clusterId = await this.createCluster();
-          const parentProvCluster = this.provClusters.find((c) => c.id === this.parentCluster);
 
           // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
           this.value.metadata = this.value.metadata || {};
@@ -293,7 +320,7 @@ export default {
 
           this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
 
-          this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = parentProvCluster.displayName || parentProvCluster.name;
+          this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = this.parentCluster.displayName || this.parentCluster.name;
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 
           // get import cluster command
@@ -343,6 +370,7 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
+    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -357,6 +385,7 @@ export default {
     >
       <template #customize>
         <ClusterAppearance
+          class="cluster-appearance col span-3"
           :name="k3kCluster.metadata.name"
           :current-cluster="value"
           :mode="mode"
@@ -364,169 +393,186 @@ export default {
       </template>
     </NameNsDescription>
 
-    <Tabbed
-      :side-tabs="true"
-      default-tab="virtual-cluster"
+    <Accordion
+      name="virtual-cluster"
+      title-key="k3k.sections.basics"
+      class="accordion"
+      open-initially
     >
-      <Tab
-        name="virtual-cluster"
-        label-key="k3k.tabs.basics"
-        :weight="5"
+      <HostCluster
+        v-model:parent-cluster="parentCluster"
+        :mode="mode"
+        :clusters="provClusters"
+      />
+
+      <div class="row mb-20">
+        <div class="col span-6">
+          <LabeledSelect
+            v-model:value="k3kCluster.spec.version"
+            label-key="k3k.k3sVersion.label"
+            :options="k3sVersionOptions"
+            :mode="mode"
+          />
+        </div>
+      </div>
+
+      <div class="row mb-20">
+        <div class="col span-6">
+          <RadioGroup
+            v-model:value="k3kCluster.spec.mode"
+            name="k3k-cluster-mode"
+            :row="true"
+            :mode="mode"
+            label-key="k3k.mode.label"
+            :options="[{label: t('k3k.mode.shared'), value: 'shared'},{label: t('k3k.mode.virtual'), value: 'virtual'} ]"
+          >
+            <template #label>
+              <h4>{{ t('k3k.mode.label') }}</h4>
+            </template>
+          </RadioGroup>
+        </div>
+        <div class="col span-6">
+          <span class="text-label">{{ t('k3k.mode.tooltip') }}</span>
+        </div>
+      </div>
+      <Storage
+        v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
+        :parent-cluster="parentCluster"
+        :prov-clusters="provClusters"
+        :mode="mode"
+      />
+    </Accordion>
+    <Accordion
+      title-key="k3k.sections.serverAndAgents"
+      class="accordion"
+      open-initially
+    >
+      <div class="row mb-20">
+        <div class="col span-3">
+          <LabeledInput
+            v-model:value.number="k3kCluster.spec.servers"
+            label-key="k3k.servers.number.label"
+            :mode="mode"
+          />
+        </div>
+      </div>
+      <div class="row mb-20">
+        <div class="col span-12">
+          <KeyValue
+            v-model:value="serverEnvs"
+            :mode="mode"
+            :initial-empty-row="true"
+            :read-allowed="false"
+            :title="t('k3k.servers.envVars.title')"
+          >
+            <template #title>
+              <h4>{{ t('k3k.servers.envVars.title') }}</h4>
+            </template>
+          </KeyValue>
+        </div>
+      </div>
+
+      <div class="row mb-20">
+        <div class="col span-3">
+          <LabeledInput
+            v-model:value.number="k3kCluster.spec.agents"
+            label-key="k3k.agents.number.label"
+            :mode="mode"
+          />
+        </div>
+      </div>
+
+      <div class="row mb-20">
+        <div class="col span-12">
+          <KeyValue
+            v-model:value="k3kCluster.spec.agentEnvs"
+            :mode="mode"
+            :read-allowed="false"
+            :initial-empty-row="true"
+            :title="t('k3k.agents.envVars.title')"
+          >
+            <template #title>
+              <h4>{{ t('k3k.agents.envVars.title') }}</h4>
+            </template>
+          </KeyValue>
+        </div>
+      </div>
+      <div class="row mb-20">
+        <div class="col span-12">
+          <KeyValue
+            v-model:value="k3kCluster.spec.nodeSelector"
+            :initial-empty-row="true"
+            :mode="mode"
+            :read-allowed="false"
+            :title="t('k3k.nodeSelector.label')"
+            :add-label="t('k3k.nodeSelector.addLabel')"
+          >
+            <template #title>
+              <h4>{{ t('k3k.nodeSelector.label') }}</h4>
+              <span class="text-label">{{ t('k3k.nodeSelector.tooltip') }}</span>
+            </template>
+          </KeyValue>
+        </div>
+      </div>
+    </Accordion>
+    <Accordion
+      title-key="k3k.sections.networking"
+      class="accordion"
+      open-initially
+    >
+      <Networking
+        v-model:cluster-c-i-d-r="k3kCluster.spec.clusterCIDR"
+        v-model:service-c-i-d-r="k3kCluster.spec.serviceCIDR"
+        v-model:cluster-d-n-s="k3kCluster.spec.clusterDNS"
+        v-model:tls-s-a-ns="k3kCluster.spec.tlsSANs"
+        v-model:expose="k3kCluster.spec.expose"
+        :mode="mode"
+      />
+    </Accordion>
+    <Accordion
+      v-if="canManageMembers"
+      name="memberRoles"
+      title-key="cluster.tabs.memberRoles"
+      class="accordion"
+    >
+      <Banner
+        v-if="isEdit"
+        color="info"
       >
-        <HostCluster
-          v-model:parent-cluster="parentCluster"
-          :mode="mode"
-          :clusters="provClusters"
-        />
-
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="k3kCluster.spec.version"
-              label-key="k3k.k3sVersion.label"
-              :options="k3sVersionOptions"
-              :mode="mode"
-            />
-          </div>
-        </div>
-
-        <div class="row mb-20">
-          <div class="col span-6">
-            <RadioGroup
-              v-model:value="k3kCluster.spec.mode"
-              name="k3k-cluster-mode"
-              :row="true"
-              :mode="mode"
-              label-key="k3k.mode.label"
-              :options="[{label: t('k3k.mode.shared'), value: 'shared'},{label: t('k3k.mode.virtual'), value: 'virtual'} ]"
-            >
-              <template #label>
-                <h4>{{ t('k3k.mode.label') }}</h4>
-              </template>
-            </RadioGroup>
-          </div>
-          <div class="col span-6">
-            <span class="text-muted">{{ t('k3k.mode.tooltip') }}</span>
-          </div>
-        </div>
-
-        <h4>{{ t('k3k.servers.title') }}</h4>
-        <div class="row mb-20">
-          <div class="col span-3">
-            <LabeledInput
-              v-model:value.number="k3kCluster.spec.servers"
-              label-key="k3k.servers.label"
-              :mode="mode"
-            />
-          </div>
-          <div class="col span-3">
-            <LabeledInput
-              v-model:value.number="k3kCluster.spec.agents"
-              label-key="k3k.agents.label"
-              :mode="mode"
-            />
-          </div>
-        </div>
-
-        <div class="row mb-20">
-          <div class="col span-12">
-            <KeyValue
-              v-model:value="k3kCluster.spec.nodeSelector"
-              :initial-empty-row="true"
-              :mode="mode"
-              :read-allowed="false"
-              :title="t('k3k.nodeSelector.label')"
-              :add-label="t('k3k.nodeSelector.addLabel')"
-            >
-              <template #title>
-                <h4>{{ t('k3k.nodeSelector.label') }}</h4>
-                <span class="text-muted">{{ t('k3k.nodeSelector.tooltip') }}</span>
-              </template>
-            </KeyValue>
-          </div>
-        </div>
-      </Tab>
-      <Tab
-        name="networking"
-        label-key="k3k.tabs.networking"
-        :weight="4"
-      >
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="k3kCluster.spec.clusterCIDR"
-              label-key="k3k.clusterCIDR.label"
-              placeholder-key="k3k.clusterCIDR.placeholder"
-              :mode="mode"
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="k3kCluster.spec.serviceCIDR"
-              label-key="k3k.serviceCIDR.label"
-              placeholder-key="k3k.serviceCIDR.placeholder"
-              :mode="mode"
-            />
-          </div>
-          <div class="col span-6 centered">
-            <t
-              k="k3k.serviceCIDR.tooltip"
-              class="text-label"
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="k3kCluster.spec.clusterDNS"
-              label-key="k3k.clusterDNS.label"
-              placeholder-key="k3k.clusterDNS.placeholder"
-              :mode="mode"
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <ArrayList
-              v-model:value="k3kCluster.spec.tlsSANs"
-              :protip="false"
-              :mode="mode"
-              :title="t('k3k.tlsSANs.label')"
-            />
-          </div>
-        </div>
-      </Tab>
-      <Tab
-        v-if="canManageMembers"
-        name="memberRoles"
-        label-key="cluster.tabs.memberRoles"
-        :weight="3"
-      >
-        <Banner
-          v-if="isEdit"
-          color="info"
-        >
-          {{ t('cluster.memberRoles.removeMessage') }}
-        </Banner>
-        <ClusterMembershipEditor
-          :mode="mode"
-          :parent-id="value.mgmt ? value.mgmt.id : null"
-          @membership-update="onMembershipUpdate"
-        />
-      </Tab>
+        {{ t('cluster.memberRoles.removeMessage') }}
+      </Banner>
+      <ClusterMembershipEditor
+        :mode="mode"
+        :parent-id="value.mgmt ? value.mgmt.id : null"
+        @membership-update="onMembershipUpdate"
+      />
+    </Accordion>
+    <Accordion
+      class="accordion"
+      title-key="generic.labelsAndAnnotations"
+    >
       <Labels
         v-model:value="localValue"
         :mode="mode"
       />
-    </Tabbed>
+    </Accordion>
   </CruResource>
 </template>
 
 <style lang="scss" scoped>
-  .centered {
+  :deep(.centered) {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .accordion {
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .cluster-appearance {
+    margin-right: 1.75%
   }
 </style>

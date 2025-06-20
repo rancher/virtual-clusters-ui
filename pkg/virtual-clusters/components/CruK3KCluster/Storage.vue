@@ -5,13 +5,23 @@ import { STORAGE_CLASS } from '@shell/config/types';
 import { Banner } from '@components/Banner';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { STORAGE } from '@shell/config/labels-annotations';
+import UnitInput from '@shell/components/form/UnitInput';
+
+const PERSISTENCE_TYPES = {
+  EPHEMERAL: 'ephemeral',
+  DYNAMIC:   'dynamic'
+};
 
 export default {
   name: 'K3KStorage',
 
-  emits: ['update:storageClassName'],
+  emits: ['update:storageClassName', 'update:persistenceType', 'update:storageRequestSize'],
 
-  components: { Banner, LabeledSelect },
+  components: {
+    Banner,
+    LabeledSelect,
+    UnitInput
+  },
 
   props: {
     mode: {
@@ -22,6 +32,16 @@ export default {
     storageClassName: {
       type:    String,
       default: null
+    },
+
+    persistenceType: {
+      type:    String,
+      default: PERSISTENCE_TYPES.DYNAMIC
+    },
+
+    storageRequestSize: {
+      type:    String,
+      default: ''
     },
 
     // provisioning cluster
@@ -43,6 +63,17 @@ export default {
       if (neu && !this.storageClassName) {
         this.$emit('update:storageClassName', neu.metadata.name);
       }
+    },
+
+    storageClassName: {
+      handler(neu, old) {
+        if (!neu) {
+          this.$emit('update:persistenceType', PERSISTENCE_TYPES.EPHEMERAL );
+        } else {
+          this.$emit('update:persistenceType', PERSISTENCE_TYPES.DYNAMIC );
+        }
+      },
+      immediate: true
     }
   },
 
@@ -142,6 +173,22 @@ export default {
           class="text-label centered"
           raw
           k="k3k.storage.storageClass.description"
+        />
+      </div>
+    </div>
+    <div
+      v-if="storageClassName"
+      class="row mb-20"
+    >
+      <div class="col span-3">
+        <UnitInput
+          :increment="1024"
+          :input-exponent="3"
+          output-modifier
+          :value="storageRequestSize || ''"
+          :mode="mode"
+          label-key="k3k.storage.storageRequestSize.label"
+          @update:value="$emit('update:storageRequestSize', $event)"
         />
       </div>
     </div>

@@ -15,16 +15,20 @@ k3k:
     tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
   agents:
     number:
-      label: Number of agent pods
+      label: Number of Agent Pods
     envVars:
-      title: Agent pod environment variables
+      title: Agent Pod Environment Variables
+      addLabel: Add Env Var
   servers:
     title: Server and Agents
     number:
-      label: Number of server pods
+      label: Number of Server Pods
     envVars:
-      title: Server pod environment variables
-      keyLabel: Env variable
+      title: Server Pod Environment Variables
+      keyLabel: Env Variable
+    serverArgs:
+      label:  Additional Server Arguments
+      addLabel: Add Arg
   nodeSelector:
     label: Node Selector
     tooltip: Add a node selector to all server and agent pods. In "shared" mode, the node selector will also be applied to workloads.
@@ -73,6 +77,8 @@ k3k:
   storage:
     noneOption: Ephemeral
     title: Storage
+    storageRequestSize:
+      label: Storage Request Size
     storageClass:
       label: Storage Class
       description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>

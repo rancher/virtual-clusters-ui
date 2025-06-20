@@ -8,6 +8,7 @@ import NameNsDescription from '@shell/components/form/NameNsDescription';
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
 import Labels from '@shell/components/form/Labels.vue';
+import ArrayList from '@shell/components/form/ArrayList';
 
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import { Banner } from '@components/Banner';
@@ -30,7 +31,6 @@ import Storage from './Storage.vue';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
-import { formatEnvVars, parseEnvVars } from '../../util/string';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -41,7 +41,7 @@ const defaultCluster = {
     mode:        'shared',
     agents:      0,
     persistence: {
-      storageRequestSize: '1G',
+      storageRequestSize: '5Gi',
       type:               'dynamic',
     },
     servers: 1,
@@ -81,7 +81,8 @@ export default {
     HostCluster,
     Accordion,
     Networking,
-    Storage
+    Storage,
+    ArrayList
   },
 
   mixins: [CreateEditView],
@@ -188,25 +189,6 @@ export default {
         this.$emit('update:value', newValue);
       }
     },
-
-    serverEnvs: {
-      get() {
-        return parseEnvVars(this.k3kCluster?.spec?.serverEnvs || []);
-      },
-      set(neu = {}) {
-        this.k3kCluster.spec.serverEnvs = formatEnvVars(neu);
-      },
-    },
-
-    agentEnvs: {
-      get() {
-        return parseEnvVars(this.k3kCluster?.spec?.agentEnvs || []);
-      },
-      set(neu = {}) {
-        this.k3kCluster.spec.agentEnvs = formatEnvVars(neu);
-      },
-    },
-
   },
 
   methods: {
@@ -365,6 +347,7 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
+    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -431,6 +414,8 @@ export default {
       </div>
       <Storage
         v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
+        v-model:persistence-type="k3kCluster.spec.persistence.type"
+        v-model:storage-request-size="k3kCluster.spec.persistence.storageRequestSize"
         :parent-cluster="parentCluster"
         :prov-clusters="provClusters"
         :mode="mode"
@@ -453,20 +438,40 @@ export default {
       <div class="row mb-20">
         <div class="col span-12">
           <KeyValue
-            v-model:value="serverEnvs"
+            v-model:value="k3kCluster.spec.serverEnvs"
+            :as-map="false"
             :mode="mode"
             :initial-empty-row="true"
             :read-allowed="false"
             :title="t('k3k.servers.envVars.title')"
+            :add-label="t('k3k.agents.envVars.addLabel')"
           >
             <template #title>
-              <h4>{{ t('k3k.servers.envVars.title') }}</h4>
+              <h4 class="mb-0">
+                {{ t('k3k.servers.envVars.title') }}
+              </h4>
             </template>
           </KeyValue>
         </div>
       </div>
-
       <div class="row mb-20">
+        <div class="col span-6">
+          <ArrayList
+            v-model:value="k3kCluster.spec.serverArgs"
+            :mode="mode"
+            :read-allowed="false"
+            :title="t('k3k.servers.serverArgs.label')"
+            :initial-empty-row="true"
+            :add-label="t('k3k.servers.serverArgs.addLabel')"
+          >
+            <template #title>
+              <h4>{{ t('k3k.servers.serverArgs.label') }}</h4>
+            </template>
+          </ArrayList>
+        </div>
+      </div>
+
+      <div class="row mt-40 mb-20">
         <div class="col span-3">
           <LabeledInput
             v-model:value.number="k3kCluster.spec.agents"
@@ -480,18 +485,22 @@ export default {
         <div class="col span-12">
           <KeyValue
             v-model:value="k3kCluster.spec.agentEnvs"
+            :as-map="false"
             :mode="mode"
             :read-allowed="false"
             :initial-empty-row="true"
             :title="t('k3k.agents.envVars.title')"
+            :add-label="t('k3k.agents.envVars.addLabel')"
           >
             <template #title>
-              <h4>{{ t('k3k.agents.envVars.title') }}</h4>
+              <h4 class="mb-0">
+                {{ t('k3k.agents.envVars.title') }}
+              </h4>
             </template>
           </KeyValue>
         </div>
       </div>
-      <div class="row mb-20">
+      <div class="row mt-40 mb-20">
         <div class="col span-12">
           <KeyValue
             v-model:value="k3kCluster.spec.nodeSelector"

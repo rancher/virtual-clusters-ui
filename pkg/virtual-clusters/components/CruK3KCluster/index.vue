@@ -461,6 +461,7 @@ export default {
         <div class="col span-12">
           <KeyValue
             v-model:value="k3kCluster.spec.serverEnvs"
+            key-name="name"
             :as-map="false"
             :mode="mode"
             :initial-empty-row="true"
@@ -507,6 +508,7 @@ export default {
         <div class="col span-12">
           <KeyValue
             v-model:value="k3kCluster.spec.agentEnvs"
+            key-name="name"
             :as-map="false"
             :mode="mode"
             :read-allowed="false"

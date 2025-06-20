@@ -266,7 +266,8 @@ export default {
     >
       <div class="col span-6">
         <LabeledInput
-          v-model:value="expose.loadBalancer.servicePort"
+          v-model:value.number="expose.loadBalancer.serverPort"
+          type="number"
           label-key="k3k.expose.loadBalancer.serverPort.label"
           :placeholder="t('k3k.expose.loadBalancer.serverPort.placeholder')"
           :mode="mode"
@@ -274,7 +275,8 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model:value="expose.loadBalancer.etcdPort"
+          v-model:value.number="expose.loadBalancer.etcdPort"
+          type="number"
           label-key="k3k.expose.loadBalancer.etcdPort.label"
           :placeholder="t('k3k.expose.loadBalancer.etcdPort.placeholder')"
           :mode="mode"
@@ -308,7 +310,8 @@ export default {
     >
       <div class="col span-6">
         <LabeledInput
-          v-model:value="expose.nodePort.servicePort"
+          v-model:value.number="expose.nodePort.serverPort"
+          type="number"
           label-key="k3k.expose.loadBalancer.serverPort.label"
           :placeholder="t('k3k.expose.nodePort.serverPort.placeholder')"
           :mode="mode"
@@ -316,7 +319,8 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model:value="expose.nodePort.etcdPort"
+          v-model:value.number="expose.nodePort.etcdPort"
+          type="number"
           label-key="k3k.expose.loadBalancer.etcdPort.label"
           :placeholder="t('k3k.expose.nodePort.serverPort.placeholder')"
           :mode="mode"

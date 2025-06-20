@@ -44,7 +44,11 @@ export default {
       default: () => {
         return {};
       }
-    }
+    },
+    rules: {
+      type:    Object,
+      default: () => {}
+    },
   },
 
   data() {
@@ -150,7 +154,10 @@ export default {
           :value="tlsSANs"
           :protip="false"
           :mode="mode"
+          :initial-empty-row="true"
           :title="t('k3k.tlsSANs.label')"
+          :rules="rules.tlsSANs || []"
+          :required="rules.tlsSANs && rules.tlsSANs.length"
           @update:value="e=>$emit('update:tlsSANs', e)"
         />
       </div>

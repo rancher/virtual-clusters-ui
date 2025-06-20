@@ -20,6 +20,7 @@ import Accordion from '@components/Accordion/Accordion.vue';
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
 import CreateEditView from '@shell/mixins/create-edit-view';
+import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
 import { saferDump } from '@shell/utils/create-yaml';
@@ -85,7 +86,7 @@ export default {
     ArrayList
   },
 
-  mixins: [CreateEditView],
+  mixins: [CreateEditView, FormValidation],
 
   props: {
     mode: {
@@ -155,7 +156,19 @@ export default {
       if (this.mode === _CREATE && neu.length && !this.k3kCluster.spec.version) {
         this.k3kCluster.spec.version = neu[0];
       }
-    }
+    },
+
+    'k3kCluster.spec.expose'(neu) {
+      if (neu.ingress) {
+        this.fvFormRuleSets.push({
+          path:       'spec.tlsSANs',
+          rules:      ['required'],
+          rootObject: this.k3kCluster
+        });
+      } else {
+        this.fvFormRuleSets.splice(this.fvFormRuleSets.findIndex((r) => r.path === 'spec.tlsSANs'), 1);
+      }
+    },
   },
 
   data() {
@@ -166,7 +179,14 @@ export default {
       parentCluster:       {},
       k3kCluster:          {},
       modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
-      k3sVersions:         []
+      k3sVersions:         [],
+      fvFormRuleSets: [
+        {
+          path:       'metadata.name',
+          rootObject: this.k3kCluster,
+          rules:      ['required']
+        },
+      ],
     };
   },
 
@@ -340,7 +360,8 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="errors"
+    :errors="[...errors, ...fvUnreportedValidationErrors]"
+    :validation-passed="fvFormIsValid"
     component-testid="cluster-manager-virtual-cluster"
     :cancel-event="true"
     @finish="saveOverride"
@@ -358,6 +379,7 @@ export default {
       description-label="cluster.description.label"
       description-placeholder="cluster.description.placeholder"
       :create-namespace-override="true"
+      :rules="{name: fvGetAndReportPathRules('metadata.name')}"
       @update:value="updateName"
     >
       <template #customize>
@@ -529,6 +551,7 @@ export default {
         v-model:cluster-d-n-s="k3kCluster.spec.clusterDNS"
         v-model:tls-s-a-ns="k3kCluster.spec.tlsSANs"
         v-model:expose="k3kCluster.spec.expose"
+        :rules="k3kCluster.spec.expose?.ingress ? {tlsSANs: fvGetAndReportPathRules('spec.tlsSANs')} : {}"
         :mode="mode"
       />
     </Accordion>

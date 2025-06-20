@@ -1,6 +1,6 @@
 import { IClusterProvisioner, ClusterProvisionerContext } from '@shell/core/types';
 import { mapDriver } from '@shell/store/plugins';
-import CruK3KCluster from './components/CruK3KCluster.vue';
+import CruK3KCluster from './components/CruK3KCluster/index.vue';
 
 
 export class k3kProvisioner implements IClusterProvisioner {

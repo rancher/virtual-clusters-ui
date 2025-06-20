@@ -6,16 +6,29 @@ k3k:
     placeholder: The cluster that will host this virtual cluster
     tooltip: The host must have the k3k helm chart installed
     notInstalled: The k3k controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the k3k github repository' href='https://github.com/rancher/k3k/tree/main?tab=readme-ov-file#install-the-k3k-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the k3k chart with default values.
+    installK3k: Install K3k
+    didInstall: K3k installed
   mode:
     label: Virtual cluster mode
     shared: Shared
     virtual: Virtual
     tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
   agents:
-    label: Number of agent pods
+    number:
+      label: Number of Agent Pods
+    envVars:
+      title: Agent Pod Environment Variables
+      addLabel: Add Env Var
   servers:
-    title: Servers and Agents
-    label: Number of server pods
+    title: Server and Agents
+    number:
+      label: Number of Server Pods
+    envVars:
+      title: Server Pod Environment Variables
+      keyLabel: Environment Variable
+    serverArgs:
+      label:  Additional Server Arguments
+      addLabel: Add Arg
   nodeSelector:
     label: Node Selector
     tooltip: Add a node selector to all server and agent pods. In "shared" mode, the node selector will also be applied to workloads.
@@ -34,9 +47,48 @@ k3k:
     label: TLS Alternate Names
   k3sVersion:
     label: K3s Version
-  tabs:
+  expose:
+    label: Direct API Server Exposure
+    description: Expose the virtual cluster's API server. By default, the API server is only exposed as a ClusterIP, which is relatively secure but difficult to access from outside the cluster.
+    notExposed:
+      label: Not Exposed
+    ingress:
+      label: Ingress
+      annotations: 
+        label: Ingress Annotations
+        add: Add Annotation
+      ingressClassName:
+        label: Ingress Class Name
+        description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
+    loadbalancer:
+      label: Load Balancer
+      description: Set 0 or a negative value if you don't want to expose a port
+      serverPort:
+        label: Server Port
+        placeholder: 'Default: 443'
+      etcdPort:
+        label: etcd Port
+        placeholder: 'Default: 2379'
+    nodePort:
+      label: Node Port
+      description: Set a value out of range if you don't want to expose a port
+      serverPort:
+        placeholder: 'Default: random value between 30000-32767'
+  storage:
+    noneOption: Ephemeral
+    title: Storage
+    storageRequestSize:
+      label: Storage Request Size
+    storageClass:
+      label: Storage Class
+      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+  sections:
     basics: Basics
     networking: Networking
+    serverAndAgents: Server and Agents
+  errors:
+    loadingStorageClasses: 'Error loading storage classes from {cluster}: '
+    storageClassSchema: 'you may not have permission to view them.'
 resourceTable:
   groupBy:
     hostCluster: Host Cluster

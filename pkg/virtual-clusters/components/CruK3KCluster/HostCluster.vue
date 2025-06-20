@@ -17,10 +17,12 @@ export default {
   components: { LabeledSelect, AsyncButton },
 
   props: {
-    // parent cluster's prov cluster id
+    // parent cluster's prov cluster
     parentCluster: {
-      type:    String,
-      default: ''
+      type:    Object,
+      default: () => {
+        return {};
+      }
     },
 
     mode: {
@@ -39,14 +41,14 @@ export default {
   watch: {
     parentClusterOptions: {
       handler(neu = []) {
-        if (!this.parentCluster && neu.length) {
+        if (!this.parentCluster?.id && neu.length) {
           this.$emit('update:parentCluster', neu[0].value);
         }
       },
       immediate: true
     },
 
-    parentCluster: {
+    'parentCluster.id': {
       handler(neu) {
         if (neu && this.mode === _CREATE) {
           this.verifyK3kIsInstalled();
@@ -59,8 +61,8 @@ export default {
   computed: {
     parentClusterOptions() {
       const out = this.clusters.reduce((opts, cluster) => {
-        if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster'] && !(!INCLUDE_LOCAL && cluster.name === 'local')) {
-          opts.push({ label: cluster.displayName || cluster.name, value: cluster.id });
+        if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster'] && !(!INCLUDE_LOCAL && cluster.name === 'local') && cluster.mgmt.isReady) {
+          opts.push({ label: cluster.displayName || cluster.name || cluster.id, value: cluster });
         }
 
         return opts;
@@ -68,6 +70,15 @@ export default {
 
       return sortBy(out, 'label');
     },
+
+    selectedParentOption: {
+      get() {
+        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.parentCluster?.id);
+      },
+      set(neu) {
+        this.$emit('update:parentCluster', neu);
+      }
+    }
   },
 
   data() {
@@ -80,7 +91,7 @@ export default {
     // check if the currently-selected cluster has the k3k chart's namespace and assume k3k is running if it does
     async verifyK3kIsInstalled() {
       try {
-        const cluster = this.clusters.find((c) => c.id === this.parentCluster);
+        const cluster = this.parentCluster;
 
         await cluster.waitForMgmt();
         const mgmtCluster = cluster.mgmt;
@@ -108,7 +119,8 @@ export default {
         }
       };
 
-      const cluster = this.clusters.find((c) => c.id === this.parentCluster);
+      const cluster = this.parentCluster;
+
       const normanCluster = await cluster.findNormanCluster();
 
       await cluster.waitForMgmt();
@@ -229,16 +241,15 @@ export default {
   <div class="row mb-20">
     <div class="col span-6">
       <LabeledSelect
-        label="Host Cluster"
+        v-model:value="selectedParentOption"
+        label-key="k3k.hostCluster.label"
         :mode="mode"
         :options="parentClusterOptions"
-        :value="parentCluster"
-        @selecting="$emit('update:parentCluster', $event)"
       />
     </div>
     <div
       v-if="parentCluster && !k3kInstalled"
-      class="col span-6 centered text-muted"
+      class="col span-6 centered text-label"
     >
       <t
         raw
@@ -248,7 +259,7 @@ export default {
         type="button"
         class="btn-sm role-tertiary mt-5"
         mode="install"
-        action-label="Install K3K"
+        :action-label="t('k3k.hostCluster.installK3k')"
         @click="installK3k"
       />
     </div>
@@ -256,16 +267,7 @@ export default {
       v-else-if="parentCluster && didInstallK3k"
       class="col span-6 centered"
     >
-      <span> <i class="icon icon-checkmark text-success mr-5" /> k3k installed</span>
+      <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-  .centered {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-  }
-</style>

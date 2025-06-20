@@ -55,16 +55,16 @@ export default {
     let exposeMode;
     const exposeModes = {
       INGRESS:       'ingress',
-      LOAD_BALANCER: 'loadBalancer',
+      LOAD_BALANCER: 'loadbalancer',
       NODE_PORT:     'nodePort',
       NONE:          'none'
     };
     // expose can have one of ingress, loadbalancer, or node port defined
-    const { ingress, loadBalancer, nodePort } = this.expose;
+    const { ingress, loadbalancer, nodePort } = this.expose;
 
     if (ingress && ingress.ingressClassName) {
       exposeMode = exposeModes.INGRESS;
-    } else if (loadBalancer && (loadBalancer.serverPort || loadBalancer.etcdPort)) {
+    } else if (loadbalancer && (loadbalancer.serverPort || loadbalancer.etcdPort)) {
       exposeMode = exposeModes.LOAD_BALANCER;
     } else if (nodePort && ((nodePort.serverPort >= 30000 && nodePort.serverPort <= 32767) || (nodePort.etcdPort >= 30000 && nodePort.etcdPort <= 32767)) ) {
       exposeMode = exposeModes.NODE_PORT;
@@ -84,7 +84,7 @@ export default {
       }
       switch (neu) {
       case this.exposeModes.INGRESS:
-        delete out.loadBalancer;
+        delete out.loadbalancer;
         delete out.nodePort;
         break;
       case this.exposeModes.LOAD_BALANCER:
@@ -92,11 +92,11 @@ export default {
         delete out.nodePort;
         break;
       case this.exposeModes.NODE_PORT:
-        delete out.loadBalancer;
+        delete out.loadbalancer;
         delete out.ingress;
         break;
       default:
-        delete out.loadBalancer;
+        delete out.loadbalancer;
         delete out.ingress;
         delete out.nodePort;
       }
@@ -244,41 +244,41 @@ export default {
       <div class="col span-12">
         <RadioButton
           v-model:value="exposeMode"
-          :label="t('k3k.expose.loadBalancer.label')"
+          :label="t('k3k.expose.loadbalancer.label')"
           :val="exposeModes.LOAD_BALANCER"
         >
           <template #label>
             <h4 class="mb-5">
-              {{ t('k3k.expose.loadBalancer.label') }}
+              {{ t('k3k.expose.loadbalancer.label') }}
             </h4>
             <t
               class="text-label"
               raw
-              k="k3k.expose.loadBalancer.description"
+              k="k3k.expose.loadbalancer.description"
             />
           </template>
         </RadioButton>
       </div>
     </div>
     <div
-      v-if="expose.loadBalancer"
+      v-if="expose.loadbalancer"
       class="row mb-20 radio-sub-row"
     >
       <div class="col span-6">
         <LabeledInput
-          v-model:value.number="expose.loadBalancer.serverPort"
+          v-model:value.number="expose.loadbalancer.serverPort"
           type="number"
-          label-key="k3k.expose.loadBalancer.serverPort.label"
-          :placeholder="t('k3k.expose.loadBalancer.serverPort.placeholder')"
+          label-key="k3k.expose.loadbalancer.serverPort.label"
+          :placeholder="t('k3k.expose.loadbalancer.serverPort.placeholder')"
           :mode="mode"
         />
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model:value.number="expose.loadBalancer.etcdPort"
+          v-model:value.number="expose.loadbalancer.etcdPort"
           type="number"
-          label-key="k3k.expose.loadBalancer.etcdPort.label"
-          :placeholder="t('k3k.expose.loadBalancer.etcdPort.placeholder')"
+          label-key="k3k.expose.loadbalancer.etcdPort.label"
+          :placeholder="t('k3k.expose.loadbalancer.etcdPort.placeholder')"
           :mode="mode"
         />
       </div>
@@ -312,7 +312,7 @@ export default {
         <LabeledInput
           v-model:value.number="expose.nodePort.serverPort"
           type="number"
-          label-key="k3k.expose.loadBalancer.serverPort.label"
+          label-key="k3k.expose.loadbalancer.serverPort.label"
           :placeholder="t('k3k.expose.nodePort.serverPort.placeholder')"
           :mode="mode"
         />
@@ -321,7 +321,7 @@ export default {
         <LabeledInput
           v-model:value.number="expose.nodePort.etcdPort"
           type="number"
-          label-key="k3k.expose.loadBalancer.etcdPort.label"
+          label-key="k3k.expose.loadbalancer.etcdPort.label"
           :placeholder="t('k3k.expose.nodePort.serverPort.placeholder')"
           :mode="mode"
         />

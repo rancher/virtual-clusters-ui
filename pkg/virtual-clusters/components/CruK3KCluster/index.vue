@@ -368,7 +368,6 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
-    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"

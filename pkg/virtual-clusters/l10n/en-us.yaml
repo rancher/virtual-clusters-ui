@@ -60,7 +60,7 @@ k3k:
       ingressClassName:
         label: Ingress Class Name
         description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
-    loadBalancer:
+    loadbalancer:
       label: Load Balancer
       description: Set 0 or a negative value if you don't want to expose a port
       serverPort:

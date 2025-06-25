@@ -270,11 +270,11 @@ export default {
       const command = clusterToken.command.split(' ');
       const registrationUrl = command[command.length - 1];
 
-      let importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAMESPACE/g, this.value.metadata.name);
+      let importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
       importJob = importJob.replaceAll(/__url/g, registrationUrl);
 
-      const importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAMESPACE/g, this.value.metadata.name);
+      const importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
       const importJobYaml = saferDump(JSON.parse(importJob));
 

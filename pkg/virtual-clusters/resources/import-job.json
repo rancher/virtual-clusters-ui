@@ -2,7 +2,7 @@
     "apiVersion": "batch/v1",
     "kind": "Job",
     "metadata": {
-      "namespace": "k3k-K3K_NAMESPACE",
+      "namespace": "k3k-K3K_NAME",
       "name": "import-virtual-cluster"
     },
     "spec": {
@@ -29,13 +29,8 @@
                   "readOnly": true
                 },
                 {
-                  "mountPath": "/bootstrap",
-                  "name": "bootstrap",
-                  "readOnly": true
-                },
-                {
-                  "mountPath": "/varlibrancher",
-                  "name": "varlibrancher",
+                  "mountPath": "/kubeconfig",
+                  "name": "kubeconfig",
                   "readOnly": true
                 }
               ]
@@ -54,15 +49,9 @@
               }
             },
             {
-              "name": "bootstrap",
+              "name": "kubeconfig",
               "secret": {
-                "secretName": "k3k-K3K_NAMESPACE-bootstrap"
-              }
-            },
-            {
-              "name": "varlibrancher",
-              "persistentVolumeClaim": {
-                "claimName": "varlibrancherk3s-k3k-K3K_NAMESPACE-server-0"
+                "secretName": "k3k-K3K_NAME-kubeconfig"
               }
             }
           ]

@@ -2,10 +2,10 @@
     "apiVersion": "v1",
     "kind": "ConfigMap",
     "metadata": {
-      "namespace": "k3k-K3K_NAMESPACE",
+      "namespace": "k3k-K3K_NAME",
       "name": "cluster-import-script"
     },
     "data": {
-      "import.sh": "SERVERCA=`cat /varlibrancher/server/tls/server-ca.crt`\nCLIENTCA=`cat /varlibrancher/server/tls/client-admin.crt`\nCLIENTKEY=`cat /varlibrancher/server/tls/client-admin.key`\nkubectl config set-cluster default --server=\"https://k3k-K3K_NAMESPACE-service:6443\" --certificate-authority='/varlibrancher/server/tls/server-ca.crt'\nkubectl config set-credentials default --client-certificate=\"/varlibrancher/server/tls/client-admin.crt\" --client-key=\"/varlibrancher/server/tls/client-admin.key\"\nkubectl config set-context default --cluster default --user default\nkubectl config use-context default\nkubectl config view --raw\necho ${RANCHER_IMPORT_URL}\necho \"Waiting for k8s to be ready\"\nkubectl get po -A\nwhile [ $? -ne 0 ]; do\n  sleep 5\n  kubectl get po -A\ndone\necho \"Importing Virtual Cluster ...\"\ncurl --insecure -sfL ${RANCHER_IMPORT_URL} | kubectl apply -f -\nkubectl get pods -n cattle-system\necho \"All Done\""
+      "import.sh": "export KUBECONFIG=/kubeconfig/kubeconfig.yaml\n kubectl config view --raw\necho ${RANCHER_IMPORT_URL}\necho \"Waiting for k8s to be ready\"\nkubectl get po -A\nwhile [ $? -ne 0 ]; do\n  sleep 5\nkubectl get po -A\ndone\necho \"Importing Virtual Cluster ...\"\ncurl --insecure -sfL ${RANCHER_IMPORT_URL} | kubectl apply -f -\nkubectl get pods -n cattle-system\necho \"All Done\""
     }
   }

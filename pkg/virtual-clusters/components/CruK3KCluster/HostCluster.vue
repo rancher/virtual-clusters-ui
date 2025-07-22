@@ -113,10 +113,7 @@ export default {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
         metadata:   { name: 'k3k' },
-        spec:       {
-          gitBranch: 'main',
-          gitRepo:   'https://github.com/rancher/k3k.git'
-        }
+        spec:       { url: 'https://rancher.github.io/k3k' }
       };
 
       const cluster = this.parentCluster;

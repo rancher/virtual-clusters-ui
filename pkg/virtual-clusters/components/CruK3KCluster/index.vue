@@ -24,6 +24,7 @@ import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
 import { saferDump } from '@shell/utils/create-yaml';
+import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
 import HostCluster from './HostCluster.vue';
@@ -32,6 +33,7 @@ import Storage from './Storage.vue';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
+import merge from 'lodash/merge';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -169,6 +171,28 @@ export default {
         this.fvFormRuleSets.splice(this.fvFormRuleSets.findIndex((r) => r.path === 'spec.tlsSANs'), 1);
       }
     },
+
+    clusterBadgeAbbreviation: {
+      immediate: true,
+      handler(neu) {
+        if (!neu) {
+          return;
+        }
+
+        if (Object.keys(neu.badge).length <= 0) {
+          return;
+        }
+
+        const obj = {
+          [CLUSTER_BADGE.ICON_TEXT]: neu.badge.iconText, [CLUSTER_BADGE.COLOR]: neu.badge.color, [CLUSTER_BADGE.TEXT]: neu.badge.text
+        };
+
+        this.value.metadata.annotations = {
+          ...this.value.metadata.annotations,
+          ...obj
+        };
+      }
+    },
   },
 
   data() {
@@ -191,7 +215,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ t: 'i18n/withFallback' }),
+    ...mapGetters({ t: 'i18n/withFallback', clusterBadgeAbbreviation: 'customisation/getPreviewCluster' }),
 
     canManageMembers() {
       return canViewClusterMembershipEditor(this.$store);
@@ -313,7 +337,7 @@ export default {
 
           // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
           this.value.metadata = this.value.metadata || {};
-          this.value.metadata.annotations = { ...defaultAnnotations };
+          merge(this.value.metadata.annotations, defaultAnnotations);
 
           this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
 

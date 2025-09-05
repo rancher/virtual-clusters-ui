@@ -210,6 +210,7 @@ export default {
             if (res._status === 201) {
               this.k3kInstalled = true;
               this.didInstallK3k = true;
+              break;
             }
           } catch (err) {
             if (installTries >= INSTALL_MAX_TRIES) {

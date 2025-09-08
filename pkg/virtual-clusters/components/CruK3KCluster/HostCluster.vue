@@ -105,7 +105,7 @@ export default {
         const mgmtCluster = cluster.mgmt;
 
         await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/namespaces/k3k-system`,
+          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.app/k3k-system/k3k`,
           method: 'GET',
         });
 

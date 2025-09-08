@@ -23,7 +23,6 @@ import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
-import { saferDump } from '@shell/utils/create-yaml';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
@@ -270,14 +269,18 @@ export default {
           { name: this.k3kCluster.metadata.namespace }
       };
 
-      const nsyaml = saferDump(ns);
+      const baseUrl = `/k8s/clusters/${ normanCluster.id }/v1`;
 
-      await normanCluster.doAction('importYaml', { yaml: nsyaml });
+      const nsUrl = `${ baseUrl }/namespaces`;
+      const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
-      delete this.k3kCluster.type;
-      const apply = saferDump(this.k3kCluster);
+      await this.$store.dispatch('management/request', {
+        url: nsUrl, method: 'POST', data: ns
+      });
 
-      await normanCluster.doAction('importYaml', { yaml: apply });
+      await this.$store.dispatch('management/request', {
+        url: k3kUrl, method: 'POST', data: this.k3kCluster
+      });
 
       return normanCluster.id;
     },
@@ -294,36 +297,32 @@ export default {
       const command = clusterToken.command.split(' ');
       const registrationUrl = command[command.length - 1];
 
-      let importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
+      let _importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
-      importJob = importJob.replaceAll(/__url/g, registrationUrl);
+      _importJob = _importJob.replaceAll(/__url/g, registrationUrl);
 
-      const importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
+      const _importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
-      const importJobYaml = saferDump(JSON.parse(importJob));
+      const importJob = JSON.parse(_importJob);
 
-      const configMapYaml = saferDump(JSON.parse(importConfigMap));
+      const configMap = JSON.parse(_importConfigMap);
 
-      const applyCm = {
-        defaultNamespace: this.value.metadata.name,
-        yaml:             configMapYaml
-      };
+      importJob.metadata.namespace = this.k3kCluster.metadata.namespace;
+      configMap.metadata.namespace = this.k3kCluster.metadata.namespace;
 
-      const applyJob = {
-        defaultNamespace: this.value.metadata.name,
-        yaml:             importJobYaml
-      };
+      const normanCluster = await this.findNormanCluster();
+
+      const baseUrl = `/k8s/clusters/${ normanCluster.id }/v1`;
+
+      const cmUrl = `${ baseUrl }/configmaps`;
+      const jobUrl = `${ baseUrl }/batch.jobs`;
 
       await this.$store.dispatch('management/request', {
-        url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
-        method: 'POST',
-        data:   applyCm
+        url: cmUrl, method: 'POST', data: configMap
       });
 
       await this.$store.dispatch('management/request', {
-        url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
-        method: 'POST',
-        data:   applyJob
+        url: jobUrl, method: 'POST', data: importJob
       });
     },
 
@@ -345,7 +344,7 @@ export default {
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 
           // get import cluster command
-          this.importCluster(clusterId);
+          await this.importCluster(clusterId);
         } else {
           // save existing k3kCluster
           const cluster = await this.findNormanCluster();

@@ -4,6 +4,7 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
+import { mapGetters } from 'vuex';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
@@ -12,7 +13,7 @@ const INCLUDE_LOCAL = process.env.dev;
 export default {
   name: 'K3kHostCluster',
 
-  emits: ['update:parentCluster'],
+  emits: ['update:parentCluster', 'update:k3kInstalled'],
 
   components: { LabeledSelect, AsyncButton },
 
@@ -35,6 +36,11 @@ export default {
       type:    Array,
       default: () => []
     },
+
+    k3kInstalled: {
+      type:    Boolean,
+      default: true
+    }
 
   },
 
@@ -59,6 +65,8 @@ export default {
   },
 
   computed: {
+    ...mapGetters({ t: 'i18n/withFallback' }),
+
     parentClusterOptions() {
       const out = this.clusters.reduce((opts, cluster) => {
         if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster'] && !(!INCLUDE_LOCAL && cluster.name === 'local') && cluster.mgmt.isReady) {
@@ -84,7 +92,7 @@ export default {
   data() {
     // track if k3k chart is present in the currently selected host cluster AND
     // track if the user installed k3k while viewing this page
-    return { k3kInstalled: true, didInstallK3k: false };
+    return { didInstallK3k: false };
   },
 
   methods: {
@@ -101,10 +109,10 @@ export default {
           method: 'GET',
         });
 
-        this.k3kInstalled = true;
+        this.$emit('update:k3kInstalled', true);
       } catch (err) {
         this.didInstallK3k = false;
-        this.k3kInstalled = false;
+        this.$emit('update:k3kInstalled', false);
       }
     },
 
@@ -198,7 +206,7 @@ export default {
         let installTries = 0;
         const INSTALL_MAX_TRIES = 3;
 
-        while (!this.k3kInstalled || installTries <= INSTALL_MAX_TRIES) {
+        while (!this.didInstallK3k || installTries <= INSTALL_MAX_TRIES) {
           installTries++;
           try {
             const res = await this.$store.dispatch('management/request', {
@@ -208,7 +216,8 @@ export default {
             });
 
             if (res._status === 201) {
-              this.k3kInstalled = true;
+              this.$emit('update:k3kInstalled', true);
+
               this.didInstallK3k = true;
               break;
             }
@@ -220,13 +229,13 @@ export default {
           }
         }
 
-        if (this.k3kInstalled) {
+        if (this.didInstallK3k) {
           cb(true);
         } else {
           cb(false);
         }
       } catch (e) {
-        this.$store.dispatch('growl/error', { title: 'Error installing k3k', message: e });
+        this.$store.dispatch('growl/error', { title: this.t('k3k.errors.installingK3k'), message: e });
 
         cb(false);
       }

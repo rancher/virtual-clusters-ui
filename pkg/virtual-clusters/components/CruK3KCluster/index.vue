@@ -198,6 +198,7 @@ export default {
     const t = this.$store.getters['i18n/t'];
 
     return {
+      k3kInstalled:   true,
       provClusters:        [],
       parentCluster:       {},
       k3kCluster:          {},
@@ -278,16 +279,21 @@ export default {
         url: nsUrl, method: 'POST', data: ns
       });
 
-      await this.$store.dispatch('management/request', {
-        url: k3kUrl, method: 'POST', data: this.k3kCluster
-      });
+      try {
+        await this.$store.dispatch('management/request', {
+          url: k3kUrl, method: 'POST', data: this.k3kCluster
+        });
+      } catch (e) {
+        await this.deleteK3kNamespace();
+        throw e;
+      }
 
       return normanCluster.id;
     },
 
     // create import cluster command from new prov cluster
     // run a job to generate kubeconfig and run the import command on the virtual cluster
-    async importCluster(clusterId) {
+    async importCluster() {
       const clusterToken = await this.value.getOrCreateToken();
 
       while (!clusterToken.command) {
@@ -317,16 +323,24 @@ export default {
       const cmUrl = `${ baseUrl }/configmaps`;
       const jobUrl = `${ baseUrl }/batch.jobs`;
 
-      await this.$store.dispatch('management/request', {
-        url: cmUrl, method: 'POST', data: configMap
-      });
+      try {
+        await this.$store.dispatch('management/request', {
+          url: cmUrl, method: 'POST', data: configMap
+        });
 
-      await this.$store.dispatch('management/request', {
-        url: jobUrl, method: 'POST', data: importJob
-      });
+        return await this.$store.dispatch('management/request', {
+          url: jobUrl, method: 'POST', data: importJob
+        });
+      } catch (e) {
+        await this.deleteK3kNamespace();
+        // we use a growl for errors here because they might happen when the user has already been returned to the list view
+        this.$store.dispatch('growl/error', { title: this.t('k3k.errors.importingCluster'), message: e });
+      }
     },
 
     async saveOverride(btnCb) {
+      const cluster = await this.findNormanCluster();
+
       try {
         if (this.mode === _CREATE) {
           // create the k3k cluster crd and return the id of the host cluster's mgmt cluster
@@ -344,22 +358,49 @@ export default {
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
 
           // get import cluster command
-          await this.importCluster(clusterId);
+          this.importCluster(clusterId);
         } else {
           // save existing k3kCluster
-          const cluster = await this.findNormanCluster();
-
           await cluster.$dispatch('request', {
             url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
             method: 'PUT',
             data:   this.k3kCluster
           });
         }
-        // save prov cluster
-        await this.save(btnCb);
+
+        // this.save is a method defined in the create edit view mixin
+        // it handles errors returned when POSTing the new provisioning cluster - we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
+        const cb = (passed) => {
+          if (!passed && this.mode === _CREATE) {
+            this.deleteK3kNamespace();
+          }
+
+          return btnCb(passed);
+        };
+
+        await this.save(cb);
+
+        if (this.mode === _CREATE) {
+          await this.deleteK3kNamespace();
+        }
       } catch (err) {
         this.errors.push(err);
         btnCb(false);
+      }
+    },
+
+    // if some part of the creation process goes wrong, clean up intermediary resources so the user can retry
+    async deleteK3kNamespace() {
+      try {
+        const cluster = await this.findNormanCluster();
+        const url = `/k8s/clusters/${ cluster.id }/v1/namespaces/${ this.k3kCluster.metadata.namespace }`;
+
+        await this.$store.dispatch('management/request', {
+          url,
+          method: 'DELETE'
+        });
+      } catch (e) {
+        this.errors.push(e);
       }
     },
 
@@ -383,8 +424,8 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="[...errors, ...fvUnreportedValidationErrors]"
-    :validation-passed="fvFormIsValid"
+    :errors="fvUnreportedValidationErrors"
+    :validation-passed="fvFormIsValid && k3kInstalled"
     component-testid="cluster-manager-virtual-cluster"
     :cancel-event="true"
     @finish="saveOverride"
@@ -422,6 +463,7 @@ export default {
     >
       <HostCluster
         v-model:parent-cluster="parentCluster"
+        v-model:k3k-installed="k3kInstalled"
         :mode="mode"
         :clusters="provClusters"
       />

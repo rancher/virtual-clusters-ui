@@ -25,10 +25,10 @@
     "eslint-plugin-jest": "24.4.0",
     "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-vue": "9.10.0",
     "file-loader": "6.2.0",
-    "node-polyfill-webpack-plugin": "^3.0.0",
+    "node-polyfill-webpack-plugin": "3.0.0",
     "raw-loader": "4.0.2",
     "url-loader": "4.1.1"
   },
@@ -37,7 +37,7 @@
     "@types/node": "~20.10.0",
     "glob": "7.2.3",
     "@types/lodash": "4.17.5",
-    "html-webpack-plugin": "^5.0.0"
+    "html-webpack-plugin": "5.6.3"
   },
   "scripts": {
     "dev": "NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",

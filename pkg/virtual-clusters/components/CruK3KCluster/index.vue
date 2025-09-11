@@ -267,10 +267,10 @@ export default {
         apiVersion: 'v1',
         kind:       'Namespace',
         metadata:
-          { name: this.k3kCluster.metadata.namespace }
+          { name: this.k3kCluster?.metadata?.namespace }
       };
 
-      const baseUrl = `/k8s/clusters/${ normanCluster.id }/v1`;
+      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
       const nsUrl = `${ baseUrl }/namespaces`;
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
@@ -288,7 +288,7 @@ export default {
         throw e;
       }
 
-      return normanCluster.id;
+      return normanCluster?.id;
     },
 
     // create import cluster command from new prov cluster
@@ -313,12 +313,12 @@ export default {
 
       const configMap = JSON.parse(_importConfigMap);
 
-      importJob.metadata.namespace = this.k3kCluster.metadata.namespace;
-      configMap.metadata.namespace = this.k3kCluster.metadata.namespace;
+      importJob.metadata.namespace = this.k3kCluster?.metadata?.namespace;
+      configMap.metadata.namespace = this.k3kCluster?.metadata?.namespace;
 
       const normanCluster = await this.findNormanCluster();
 
-      const baseUrl = `/k8s/clusters/${ normanCluster.id }/v1`;
+      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
       const cmUrl = `${ baseUrl }/configmaps`;
       const jobUrl = `${ baseUrl }/batch.jobs`;
@@ -393,7 +393,7 @@ export default {
     async deleteK3kNamespace() {
       try {
         const cluster = await this.findNormanCluster();
-        const url = `/k8s/clusters/${ cluster.id }/v1/namespaces/${ this.k3kCluster.metadata.namespace }`;
+        const url = `/k8s/clusters/${ cluster?.id }/v1/namespaces/${ this.k3kCluster?.metadata?.namespace }`;
 
         await this.$store.dispatch('management/request', {
           url,

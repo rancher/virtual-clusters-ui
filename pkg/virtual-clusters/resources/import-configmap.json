@@ -3,7 +3,7 @@
     "kind": "ConfigMap",
     "metadata": {
       "namespace": "k3k-K3K_NAME",
-      "name": "cluster-import-script"
+      "name": "import-K3K_NAME"
     },
     "data": {
       "import.sh": "export KUBECONFIG=/kubeconfig/kubeconfig.yaml\n kubectl config view --raw\necho ${RANCHER_IMPORT_URL}\necho \"Waiting for k8s to be ready\"\nkubectl get po -A\nwhile [ $? -ne 0 ]; do\n  sleep 5\nkubectl get po -A\ndone\necho \"Importing Virtual Cluster ...\"\ncurl --insecure -sfL ${RANCHER_IMPORT_URL} | kubectl apply -f -\nkubectl get pods -n cattle-system\necho \"All Done\""

@@ -355,7 +355,7 @@ export default {
         } else {
           // save existing k3kCluster
           await cluster.$dispatch('request', {
-            url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
+            url:    `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
             method: 'PUT',
             data:   this.k3kCluster
           });

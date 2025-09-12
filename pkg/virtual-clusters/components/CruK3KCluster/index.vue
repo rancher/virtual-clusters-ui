@@ -193,6 +193,7 @@ export default {
         };
       }
     },
+
   },
 
   data() {
@@ -395,6 +396,17 @@ export default {
       }
     },
 
+    handleInstallationError(e) {
+      const msg = this.t('k3k.errors.installingK3k');
+
+      // component will emit "false" to clear errors
+      if (e) {
+        this.errors.push(`${ msg }: ${ e }`);
+      } else {
+        this.errors = this.errors.filter((err) => !err.includes(msg));
+      }
+    },
+
     cancel() {
       this.$router.push({
         name:   'c-cluster-product-resource',
@@ -457,6 +469,7 @@ export default {
         v-model:k3k-installed="k3kInstalled"
         :mode="mode"
         :clusters="provClusters"
+        @error="handleInstallationError"
       />
 
       <div class="row mb-20">

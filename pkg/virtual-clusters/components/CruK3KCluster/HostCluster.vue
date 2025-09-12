@@ -13,7 +13,7 @@ const INCLUDE_LOCAL = process.env.dev;
 export default {
   name: 'K3kHostCluster',
 
-  emits: ['update:parentCluster', 'update:k3kInstalled'],
+  emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
 
   components: { LabeledSelect, AsyncButton },
 
@@ -56,6 +56,8 @@ export default {
 
     'parentCluster.id': {
       handler(neu) {
+        // tell the parent component to remove any installation error messages from the error array
+        this.$emit('error', false);
         if (neu && this.mode === _CREATE) {
           this.verifyK3kIsInstalled();
         }
@@ -117,6 +119,9 @@ export default {
     },
 
     async installK3k(cb) {
+      // tell the parent component to remove any installation error messages from the error array
+      this.$emit('error', false);
+
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
@@ -235,7 +240,7 @@ export default {
           cb(false);
         }
       } catch (e) {
-        this.$store.dispatch('growl/error', { title: this.t('k3k.errors.installingK3k'), message: e });
+        this.$emit('error', e);
 
         cb(false);
       }

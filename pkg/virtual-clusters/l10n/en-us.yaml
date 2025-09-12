@@ -89,7 +89,7 @@ k3k:
   errors:
     loadingStorageClasses: 'Error loading storage classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'
-    installingK3K: Error installing K3K
+    installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster
 resourceTable:
   groupBy:

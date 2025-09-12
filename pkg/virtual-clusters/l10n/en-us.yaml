@@ -4,10 +4,10 @@ k3k:
   hostCluster:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster
-    tooltip: The host must have the k3k helm chart installed
-    notInstalled: The k3k controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the k3k github repository' href='https://github.com/rancher/k3k/tree/main?tab=readme-ov-file#install-the-k3k-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the k3k chart with default values.
-    installK3k: Install K3k
-    didInstall: K3k installed
+    tooltip: The host must have the K3K helm chart installed
+    notInstalled: The K3K controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the K3K github repository' href='https://github.com/rancher/K3K/tree/main?tab=readme-ov-file#install-the-K3K-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the K3K chart with default values.
+    installK3K: Install K3K
+    didInstall: K3K installed
   mode:
     label: Virtual cluster mode
     shared: Shared
@@ -59,7 +59,7 @@ k3k:
         add: Add Annotation
       ingressClassName:
         label: Ingress Class Name
-        description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
+        description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
     loadbalancer:
       label: Load Balancer
       description: Set 0 or a negative value if you don't want to expose a port
@@ -81,7 +81,7 @@ k3k:
       label: Storage Request Size
     storageClass:
       label: Storage Class
-      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/k3k/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
   sections:
     basics: Basics
     networking: Networking
@@ -89,6 +89,8 @@ k3k:
   errors:
     loadingStorageClasses: 'Error loading storage classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'
+    installingK3k: Error installing K3K
+    importingCluster: Error importing virtual cluster
 resourceTable:
   groupBy:
     hostCluster: Host Cluster

@@ -3,7 +3,7 @@
     "kind": "Job",
     "metadata": {
       "namespace": "k3k-K3K_NAME",
-      "name": "import-virtual-cluster"
+      "name": "import-K3K_NAME"
     },
     "spec": {
       "template": {
@@ -45,7 +45,7 @@
             {
               "name": "scripts",
               "configMap": {
-                "name": "cluster-import-script"
+                "name": "import-K3K_NAME"
               }
             },
             {

@@ -177,7 +177,6 @@ export default {
           }
 
           if (!fetched) {
-            console.log('*** k3krepo not yet downloaded, retrying...', k3kRepo);
             tries++;
 
             if (tries > DOWNLOAD_MAX_RETRIES) {

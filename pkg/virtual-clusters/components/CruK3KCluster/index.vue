@@ -403,7 +403,9 @@ export default {
       if (e) {
         this.errors.push(`${ msg }: ${ e }`);
       } else {
-        this.errors = this.errors.filter((err) => !err.includes(msg));
+        this.errors = this.errors.filter((err) => {
+          return typeof err !== 'string' || !err.includes(msg);
+        });
       }
     },
 

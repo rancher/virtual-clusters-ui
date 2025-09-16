@@ -275,8 +275,11 @@ export default {
 
       console.log('***- loading host cluster with id ', id);
       try {
+        // await this.$store.dispatch('loadCluster', {
+        //   id, oldProduct: 'old', product: 'new', /* targetRoute: this.$route */ targetRoute: { ...this.$route, meta: { ...this.$route.meta, cluster: id } }
+        // });
         await this.$store.dispatch('loadCluster', {
-          id, oldProduct: 'old', product: 'new', /* targetRoute: this.$route */ targetRoute: { ...this.$route, meta: { ...this.$route.meta, cluster: id } }
+          id, oldProduct: 'old', product: 'new'
         });
       } catch (e) {
         this.connectingToHost = false;

@@ -210,7 +210,7 @@ export default {
         let installTries = 0;
         const INSTALL_MAX_TRIES = 3;
 
-        while (!this.didInstallK3k || installTries <= INSTALL_MAX_TRIES) {
+        while (!this.didInstallK3k && installTries <= INSTALL_MAX_TRIES) {
           installTries++;
           try {
             const res = await this.$store.dispatch('management/request', {
@@ -223,7 +223,6 @@ export default {
               this.$emit('update:k3kInstalled', true);
 
               this.didInstallK3k = true;
-              break;
             }
           } catch (err) {
             if (installTries >= INSTALL_MAX_TRIES) {

@@ -23,7 +23,6 @@ import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
-import { saferDump } from '@shell/utils/create-yaml';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
@@ -151,6 +150,7 @@ export default {
 
   created() {
     this.registerAfterHook(this.saveRoleBindings, 'save-role-bindings');
+    this.registerAfterHook(this.importCluster, 'import-cluster');
   },
 
   watch: {
@@ -193,18 +193,20 @@ export default {
         };
       }
     },
+
   },
 
   data() {
     const t = this.$store.getters['i18n/t'];
 
     return {
+      k3kInstalled:    true,
       provClusters:        [],
       parentCluster:       {},
       k3kCluster:          {},
       modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
       k3sVersions:         [],
-      fvFormRuleSets: [
+      fvFormRuleSets:  [
         {
           path:       'metadata.name',
           rootObject: this.k3kCluster,
@@ -262,29 +264,35 @@ export default {
     // create the k3k cluster crd
     async createCluster() {
       const normanCluster = await this.findNormanCluster();
-
       const ns = {
         apiVersion: 'v1',
         kind:       'Namespace',
         metadata:
-          { name: this.k3kCluster.metadata.namespace }
+          { name: this.k3kCluster?.metadata?.namespace }
       };
 
-      const nsyaml = saferDump(ns);
+      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
-      await normanCluster.doAction('importYaml', { yaml: nsyaml });
+      const nsUrl = `${ baseUrl }/namespaces`;
+      const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
-      delete this.k3kCluster.type;
-      const apply = saferDump(this.k3kCluster);
+      // check if ns exists and create if not
+      try {
+        await this.$store.dispatch('management/request', { url: `${ nsUrl }/${ this.k3kCluster?.metadata?.namespace }`, method: 'GET' });
+      } catch (e) {
+        await this.$store.dispatch('management/request', {
+          url: nsUrl, method: 'POST', data: ns
+        });
+      }
 
-      await normanCluster.doAction('importYaml', { yaml: apply });
-
-      return normanCluster.id;
+      await this.$store.dispatch('management/request', {
+        url: k3kUrl, method: 'POST', data: this.k3kCluster
+      });
     },
 
     // create import cluster command from new prov cluster
     // run a job to generate kubeconfig and run the import command on the virtual cluster
-    async importCluster(clusterId) {
+    async importCluster() {
       const clusterToken = await this.value.getOrCreateToken();
 
       while (!clusterToken.command) {
@@ -294,73 +302,110 @@ export default {
       const command = clusterToken.command.split(' ');
       const registrationUrl = command[command.length - 1];
 
-      let importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
+      let _importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
-      importJob = importJob.replaceAll(/__url/g, registrationUrl);
+      _importJob = _importJob.replaceAll(/__url/g, registrationUrl);
 
-      const importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
+      const _importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
-      const importJobYaml = saferDump(JSON.parse(importJob));
+      const importJob = JSON.parse(_importJob);
 
-      const configMapYaml = saferDump(JSON.parse(importConfigMap));
+      const configMap = JSON.parse(_importConfigMap);
 
-      const applyCm = {
-        defaultNamespace: this.value.metadata.name,
-        yaml:             configMapYaml
-      };
+      importJob.metadata.namespace = this.k3kCluster?.metadata?.namespace;
+      configMap.metadata.namespace = this.k3kCluster?.metadata?.namespace;
 
-      const applyJob = {
-        defaultNamespace: this.value.metadata.name,
-        yaml:             importJobYaml
-      };
+      const normanCluster = await this.findNormanCluster();
 
-      await this.$store.dispatch('management/request', {
-        url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
-        method: 'POST',
-        data:   applyCm
-      });
+      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
-      await this.$store.dispatch('management/request', {
-        url:    `/v1/management.cattle.io.clusters/${ clusterId }?action=apply`,
-        method: 'POST',
-        data:   applyJob
-      });
+      const cmUrl = `${ baseUrl }/configmaps`;
+      const jobUrl = `${ baseUrl }/batch.jobs`;
+
+      try {
+        await this.$store.dispatch('management/request', {
+          url: cmUrl, method: 'POST', data: configMap
+        });
+
+        await this.$store.dispatch('management/request', {
+          url: jobUrl, method: 'POST', data: importJob
+        });
+      } catch (e) {
+        this.errors.push(e);
+      }
     },
 
     async saveOverride(btnCb) {
+      const cluster = await this.findNormanCluster();
+
       try {
         if (this.mode === _CREATE) {
-          // create the k3k cluster crd and return the id of the host cluster's mgmt cluster
-          // mgmt cluster is needed to make requests against its steve api
-          // prov cluster is needed to generate a human-readable host cluster name
-          const clusterId = await this.createCluster();
+          // create the k3k cluster crd
+          await this.createCluster();
 
           // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
+          // annotate both the mgmt id, used to make requests to the host cluster, and the prov cluster name, which is the human-readable name
           this.value.metadata = this.value.metadata || {};
           merge(this.value.metadata.annotations, defaultAnnotations);
 
-          this.value.metadata.annotations['ui.rancher/parent-cluster'] = clusterId;
+          this.value.metadata.annotations['ui.rancher/parent-cluster'] = cluster.id;
 
           this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = this.parentCluster.displayName || this.parentCluster.name;
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = `k3k-${ this.value.metadata.name }`;
-
-          // get import cluster command
-          this.importCluster(clusterId);
         } else {
           // save existing k3kCluster
-          const cluster = await this.findNormanCluster();
-
           await cluster.$dispatch('request', {
-            url:    `/k8s/clusters/${ cluster.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
+            url:    `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ this.value.metadata.namescape }/${ this.value.metadata.name }`,
             method: 'PUT',
             data:   this.k3kCluster
           });
         }
-        // save prov cluster
-        await this.save(btnCb);
+
+        // this.save is a method defined in the create edit view mixin
+        // it handles errors returned when POSTing the new provisioning cluster - we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
+        const cb = (passed) => {
+          if (!passed && this.mode === _CREATE) {
+            this.deleteK3kCluster();
+          }
+
+          return btnCb(passed);
+        };
+
+        await this.save(cb);
       } catch (err) {
         this.errors.push(err);
         btnCb(false);
+      }
+    },
+
+    async deleteK3kCluster() {
+      const cluster = await this.findNormanCluster();
+      const { name, namespace } = this.k3kCluster.metadata || {};
+
+      if (name && namespace) {
+        try {
+          const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
+
+          await this.$store.dispatch('management/request', {
+            url,
+            method: 'DELETE'
+          });
+        } catch (e) {
+          this.errors.push(e);
+        }
+      }
+    },
+
+    handleInstallationError(e) {
+      const msg = this.t('k3k.errors.installingK3k');
+
+      // component will emit "false" to clear errors
+      if (e) {
+        this.errors.push(`${ msg }: ${ e }`);
+      } else {
+        this.errors = this.errors.filter((err) => {
+          return typeof err !== 'string' || !err.includes(msg);
+        });
       }
     },
 
@@ -384,8 +429,8 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="[...errors, ...fvUnreportedValidationErrors]"
-    :validation-passed="fvFormIsValid"
+    :errors="fvUnreportedValidationErrors"
+    :validation-passed="fvFormIsValid && k3kInstalled"
     component-testid="cluster-manager-virtual-cluster"
     :cancel-event="true"
     @finish="saveOverride"
@@ -423,8 +468,10 @@ export default {
     >
       <HostCluster
         v-model:parent-cluster="parentCluster"
+        v-model:k3k-installed="k3kInstalled"
         :mode="mode"
         :clusters="provClusters"
+        @error="handleInstallationError"
       />
 
       <div class="row mb-20">

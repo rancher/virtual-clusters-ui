@@ -48,8 +48,12 @@ export class VClusterModelExtension implements IClusterModelExtension {
           url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
           method: 'DELETE',
         });
-        await cluster.$dispatch('request', {
-          url:    `/k8s/clusters/${ parentClusterId }/v1/namespaces/${ namespace }`,
+          await cluster.$dispatch('request', {
+          url:    `/k8s/clusters/${ parentClusterId }/v1/batch.jobs/${ namespace }/import-${ name }`,
+          method: 'DELETE',
+        });
+          await cluster.$dispatch('request', {
+          url:    `/k8s/clusters/${ parentClusterId }/v1/configmaps/${ namespace }/import-${ name }`,
           method: 'DELETE',
         });
       } catch (e) {

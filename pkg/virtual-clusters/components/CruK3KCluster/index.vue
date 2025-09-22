@@ -200,6 +200,7 @@ export default {
   },
 
   data() {
+    console.log('***- cruk3k data running')
     const t = this.$store.getters['i18n/t'];
 
     return {

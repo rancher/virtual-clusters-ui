@@ -1,0 +1,9 @@
+plugin/img/generic-catalog.1842a50e.svg
+plugin/img/icon-virtual-clusters.f8237d44.svg
+plugin/package.json
+plugin/virtual-clusters-0.1.3.umd.min.37.js
+plugin/virtual-clusters-0.1.3.umd.min.37.js.map
+plugin/virtual-clusters-0.1.3.umd.min.60.js
+plugin/virtual-clusters-0.1.3.umd.min.60.js.map
+plugin/virtual-clusters-0.1.3.umd.min.js
+plugin/virtual-clusters-0.1.3.umd.min.js.map

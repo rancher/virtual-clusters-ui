@@ -1,0 +1,18 @@
+annotations:
+  catalog.cattle.io/certified: rancher
+  catalog.cattle.io/namespace: cattle-ui-plugin-system
+  catalog.cattle.io/os: linux
+  catalog.cattle.io/permits-os: linux, windows
+  catalog.cattle.io/scope: management
+  catalog.cattle.io/ui-component: plugins
+  catalog.cattle.io/display-name: Virtual Clusters
+  catalog.cattle.io/ui-extensions-version: '>= 3.0.2-rc.5'
+  catalog.cattle.io/experimental: 'true'
+apiVersion: v2
+appVersion: 0.1.3
+description: Virtual cluster provisioning using K3K
+name: virtual-clusters
+type: application
+version: 0.1.3
+icon: >-
+  https://raw.githubusercontent.com/rancher/virtual-clusters-ui/refs/heads/main/pkg/virtual-clusters/assets/icon-virtual-clusters.svg

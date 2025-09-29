@@ -1,6 +1,17 @@
 k3k:
   group: Create a Virtual Cluster
   label: K3K
+  policy:
+    label: Virtual Cluster Policy
+    tabs:
+      config: Config
+      resourceAllocation: Resource Allocation
+      advanced: Advanced
+    headers:
+      quotas: Quotas
+      resourceLimits: Container Default Resource Limits
+  targetNamespace:
+    label: Target Namespace
   hostCluster:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster

@@ -2,7 +2,7 @@
     "apiVersion": "batch/v1",
     "kind": "Job",
     "metadata": {
-      "namespace": "k3k-K3K_NAME",
+      "namespace": "",
       "name": "import-K3K_NAME"
     },
     "spec": {

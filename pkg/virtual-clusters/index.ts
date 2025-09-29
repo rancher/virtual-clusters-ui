@@ -16,7 +16,8 @@ export default function(plugin: IPlugin): void {
   // Register a model extension for the provisioning model
   plugin.addModelExtension('provisioning.cattle.io.cluster', VClusterModelExtension as unknown as ModelExtensionConstructor);
 
-  plugin.addProduct(require('./product'));
+  plugin.addProduct(require('./config/k3k-management-product'));
+  plugin.addProduct(require('./config/k3k-explorer-product'));
 
 
   // Register custom provisioner object

@@ -9,7 +9,7 @@ import { NAMESPACE } from '@shell/config/types';
 export default {
   name: 'K3kPolicySelector',
 
-  emits: ['update:policyName', 'update:targetNamespace'],
+  emits: ['update:hasPolicy', 'update:targetNamespace'],
 
   props: {
 
@@ -17,12 +17,6 @@ export default {
       type:    String,
       default: _CREATE
     },
-
-    // // virtual cluster policy name
-    // policyName: {
-    //   type:    String,
-    //   default: ''
-    // },
 
     // namespace in the host cluster the k3k cluster will be created in
     targetNamespace: {
@@ -36,6 +30,11 @@ export default {
     },
 
     k3kInstalled: {
+      type:    Boolean,
+      default: false
+    },
+
+    hasPolicy: {
       type:    Boolean,
       default: false
     },
@@ -66,6 +65,26 @@ export default {
       }
     },
 
+    policyOptions(neu = []) {
+      // by default use a policy if one exists - otherwise select 'no policy'
+      const policyOpt = neu.find((p) => p !== this.t('generic.none')) || this.t('generic.none') ;
+
+      if (this.mode === _CREATE && !neu.includes(this.policyName)) {
+        this.policyName = policyOpt;
+        this.$emit('update:targetNamespace', '');
+      }
+    },
+
+    namespaceOptions(neu = []) {
+      if (this.mode === _CREATE && !neu.includes(this.targetNamespace)) {
+        this.$emit('update:targetNamespace', neu[0] || '');
+      }
+    },
+
+    policyName(neu) {
+      this.$emit('update:hasPolicy', !!neu && neu !== this.t('generic.none'));
+    }
+
     // async policyName(neu) {
     //   if ( neu) {
     //     this.namespaces = await this.$store.dispatch('cluster/findLabelSelector', { type: NAMESPACE, matching: { labelSelector: { matchAnnotations: this.policyAnnotation } } });
@@ -91,7 +110,7 @@ export default {
     ...mapGetters(['clusterReady']),
 
     policyOptions() {
-      return this.policies.map((p) => p?.metadata?.name);
+      return [this.t('generic.none'), ...this.policies.map((p) => p?.metadata?.name)];
     },
 
     policyAnnotation() {
@@ -99,8 +118,19 @@ export default {
     },
 
     namespaceOptions() {
+      // if "no policy" is selected, show all NS without policy annotation
+      // TODO nb maybe hide system ns?
+      if (this.policyName === this.t('generic.none') || !this.policyName) {
+        return (this.namespaces || []).reduce((all, ns) => {
+          if (!ns?.metadata?.annotations?.[ANNOTATIONS.POLICY]) {
+            all.push(ns.id);
+          }
+
+          return all;
+        }, []);
+      }
+
       // TODO nb permission on each ns...?
-      // TODO nb namespaces without annotation when none option
       return (this.namespaces || []).reduce((all, ns) => {
         if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName) {
           all.push(ns.id);
@@ -109,6 +139,10 @@ export default {
         return all;
       }, []);
     },
+
+    policy() {
+      return this.policies.find((p) => p.metadata.name === this.policyName);
+    }
   },
 };
 
@@ -126,6 +160,10 @@ export default {
         :options="policyOptions"
         @selecting="e=>policyName=e"
       />
+      <!--       <span
+        v-if="hasPolicy"
+        @click="policy ? policy.showConfiguration() : noop"
+      >show policy detail</span> -->
     </div>
     <div class="col span-6">
       <LabeledSelect

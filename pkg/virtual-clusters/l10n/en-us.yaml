@@ -42,7 +42,7 @@ k3k:
       addLabel: Add Arg
   nodeSelector:
     label: Node Selector
-    tooltip: Add a node selector to all server and agent pods. In "shared" mode, the node selector will also be applied to workloads.
+    tooltip: Add a node selector to all server and agent pods. In <code>shared</code> mode, the node selector will also be applied to workloads.
     addLabel: Add Label
   clusterCIDR:
     label: Cluster CIDR

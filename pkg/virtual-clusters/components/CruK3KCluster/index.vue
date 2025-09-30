@@ -212,7 +212,7 @@ export default {
       k3kInstalled:     true,
       // TODO nb how much of this form should be hidden when true?
       // TODO nb hide node selector?
-      hasPolicy:        false,
+      policyName:        '',
       connectingToHost: false,
       provClusters:        [],
       parentCluster:       {},
@@ -252,6 +252,10 @@ export default {
         this.$emit('update:value', newValue);
       }
     },
+
+    nonePolicySelected() {
+      return this.policyName === this.t('generic.none');
+    }
   },
 
   methods: {
@@ -497,7 +501,10 @@ export default {
         />
       </template>
     </NameNsDescription>
-    <Tabbed side-tabs>
+    <Tabbed
+      :use-hash="false"
+      side-tabs
+    >
       <Tab
         name="virtual-cluster"
         label-key="k3k.sections.basics"
@@ -513,7 +520,7 @@ export default {
 
         <ClusterPolicy
           v-model:target-namespace="k3kCluster.metadata.namespace"
-          v-model:has-policy="hasPolicy"
+          v-model:policy-name="policyName"
           :host-cluster="parentCluster?.id"
           :k3k-installed="k3kInstalled"
           :mode="mode"
@@ -531,7 +538,7 @@ export default {
         </div>
 
         <template
-          v-if="!hasPolicy"
+          v-if="nonePolicySelected"
         >
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
@@ -628,7 +635,10 @@ export default {
             </KeyValue>
           </div>
         </div>
-        <div class="row mt-40 mb-20">
+        <div
+          v-if="nonePolicySelected"
+          class="row mt-40 mb-20"
+        >
           <div class="col span-12">
             <KeyValue
               v-model:value="k3kCluster.spec.nodeSelector"
@@ -640,7 +650,10 @@ export default {
             >
               <template #title>
                 <h4>{{ t('k3k.nodeSelector.label') }}</h4>
-                <span class="text-label">{{ t('k3k.nodeSelector.tooltip') }}</span>
+                <t
+                  raw
+                  k="k3k.nodeSelector.tooltip"
+                />
               </template>
             </KeyValue>
           </div>

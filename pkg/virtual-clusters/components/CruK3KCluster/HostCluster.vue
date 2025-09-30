@@ -48,14 +48,10 @@ export default {
     parentClusterOptions: {
       handler(neu = []) {
         if (!this.parentCluster?.id && neu.length) {
-          console.log('***- options handler existing parent', this.parentCluster);
-
-          console.log('***- options handler setting host cluster to ', neu[0].value);
-
           this.$emit('update:parentCluster', neu[0].value);
         }
       },
-      // immediate: true
+      immediate: true
     },
 
     'parentCluster.id': {
@@ -90,15 +86,12 @@ export default {
         return this.parentClusterOptions.find((opt) => opt?.value?.id === this.parentCluster?.id);
       },
       set(neu) {
-        console.log('***- selected parent setting host cluster to ', neu);
         this.$emit('update:parentCluster', neu);
       }
     }
   },
 
   data() {
-    console.log('***- hostCluster data rerun');
-
     // track if k3k chart is present in the currently selected host cluster AND
     // track if the user installed k3k while viewing this page
     return { didInstallK3k: false };

@@ -1,15 +1,17 @@
 <script>
-import { _CREATE } from '@shell/config/query-params';
+import { _CREATE, _EDIT } from '@shell/config/query-params';
 
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { ANNOTATIONS, K3K } from '../../types';
 import { mapGetters } from 'vuex';
 import { NAMESPACE } from '@shell/config/types';
 
+import debounce from 'lodash/debounce';
+
 export default {
   name: 'K3kPolicySelector',
 
-  emits: ['update:hasPolicy', 'update:targetNamespace'],
+  emits: ['update:policyName', 'update:targetNamespace'],
 
   props: {
 
@@ -34,16 +36,19 @@ export default {
       default: false
     },
 
-    hasPolicy: {
-      type:    Boolean,
-      default: false
+    // TODO nb need to check ns annotations to find this on edit
+    policyName: {
+      type:    String,
+      default: ''
     },
+  },
+
+  created() {
+    this.fetchPolicies();
   },
 
   data() {
     return {
-      // TODO nb need to check ns annotations to find this on edit
-      policyName:      '',
       policies:        [],
       namespaces:      [],
       loadingPolicies: false,
@@ -54,47 +59,38 @@ export default {
 
   watch: {
     clusterReady(neu, old) {
-      this.policyName = '';
+      this.$emit('update:policyName', '');
       this.$emit('update:targetNamespace', '');
-      if (!neu && old) {
-        // TODO nb clear policy and ns selection
-      }
       if (neu && this.k3kInstalled) {
         this.fetchPolicies();
         this.namespaces = this.$store.getters['cluster/all'](NAMESPACE);
       }
     },
 
-    policyOptions(neu = []) {
+    policyOptions: {
+      handler: debounce(function(neu = []) {
       // by default use a policy if one exists - otherwise select 'no policy'
-      const policyOpt = neu.find((p) => p !== this.t('generic.none')) || this.t('generic.none') ;
+        const policyOpt = neu.find((p) => p !== this.t('generic.none')) || this.t('generic.none') ;
 
-      if (this.mode === _CREATE && !neu.includes(this.policyName)) {
-        this.policyName = policyOpt;
-        this.$emit('update:targetNamespace', '');
-      }
+        if (this.mode === _CREATE && !neu.includes(this.policyName)) {
+          this.$emit('update:policyName', policyOpt);
+          this.$emit('update:targetNamespace', '');
+        }
+      }, 500)
     },
 
     namespaceOptions(neu = []) {
       if (this.mode === _CREATE && !neu.includes(this.targetNamespace)) {
         this.$emit('update:targetNamespace', neu[0] || '');
       }
-    },
-
-    policyName(neu) {
-      this.$emit('update:hasPolicy', !!neu && neu !== this.t('generic.none'));
     }
-
-    // async policyName(neu) {
-    //   if ( neu) {
-    //     this.namespaces = await this.$store.dispatch('cluster/findLabelSelector', { type: NAMESPACE, matching: { labelSelector: { matchAnnotations: this.policyAnnotation } } });
-    //   }
-    // },
   },
 
   methods: {
     async fetchPolicies() {
       this.loadingPolicies = true;
+      this.policies = [];
+
       try {
         this.policies = await this.$store.dispatch('cluster/findAll', { type: K3K.POLICY });
       } catch (err) {
@@ -103,6 +99,12 @@ export default {
       }
 
       this.loadingPolicies = false;
+    },
+
+    openDrawer() {
+      if (this.policy) {
+        this.policy.showConfiguration();
+      }
     }
   },
 
@@ -142,7 +144,7 @@ export default {
 
     policy() {
       return this.policies.find((p) => p.metadata.name === this.policyName);
-    }
+    },
   },
 };
 
@@ -158,12 +160,12 @@ export default {
         :mode="mode"
         :label="t('k3k.policy.label')"
         :options="policyOptions"
-        @selecting="e=>policyName=e"
+        @selecting="e=>$emit('update:policyName', e)"
       />
-      <!--       <span
-        v-if="hasPolicy"
-        @click="policy ? policy.showConfiguration() : noop"
-      >show policy detail</span> -->
+      <span
+        v-if="policyName && policyName !== t('generic.none')"
+        @click="openDrawer"
+      >show policy detail</span>
     </div>
     <div class="col span-6">
       <LabeledSelect

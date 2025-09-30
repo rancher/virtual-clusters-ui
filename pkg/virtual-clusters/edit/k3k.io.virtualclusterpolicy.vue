@@ -11,6 +11,9 @@ import NameNsDescription from '@shell/components/form/NameNsDescription';
 import { RANCHER_TYPES } from '@shell/components/form/ResourceQuota/shared';
 import ResourceQuota from '@shell/components/form/ResourceQuota/Project';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
+import KeyValue from '@shell/components/form/KeyValue.vue';
+import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
+import LabeledSelect from '@shell/components/form/LabeledSelect';
 
 export default {
   name: 'CRUClusterPolicy',
@@ -26,22 +29,56 @@ export default {
     Tab,
     Labels,
     ResourceQuota,
-    ContainerResourceLimit
+    ContainerResourceLimit,
+    KeyValue,
+    LabeledSelect
+  },
+
+  async fetch() {
+    if (!this.value.spec) {
+      this.value.spec = {};
+    }
+    this.allPSAs = await this.$store.dispatch('management/findAll', { type: MANAGEMENT.PSA });
+  },
+
+  data() {
+    return { allPSAs: [] };
   },
 
   computed: {
-    policySpec: {
-      get() {
-        return this.value.spec || {};
-      },
-      set(neu) {
-        this.value.spec = neu;
-      }
-    },
-
     quotaTypes() {
       return RANCHER_TYPES;
-    }
+    },
+
+    // TODO nb use host cluster type
+    defaultPsaOptionLabel() {
+      const optionCase = !this.value.isK3s ? 'default' : 'none';
+
+      return this.$store.getters['i18n/t'](`cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.option.${ optionCase }`);
+    },
+
+    psaOptions() {
+      const out = [{
+        label: this.$store.getters['i18n/t'](`cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.option.default`),
+        value: ''
+      }];
+
+      if ( this.allPSAs ) {
+        for ( const psa of this.allPSAs ) {
+          out.push({
+            label: psa.nameDisplay,
+            value: psa.id,
+          });
+        }
+      }
+      const cur = this.value.spec?.podSecurityAdmissionLevel;
+
+      if ( cur && !out.find((x) => x.value === cur) ) {
+        out.unshift({ label: `${ cur } (Current)`, value: cur });
+      }
+
+      return out;
+    },
   },
 
   methods: {
@@ -85,7 +122,7 @@ export default {
         label-key="k3k.policy.tabs.config"
       >
         <Mode
-          v-model:k3k-mode="policySpec.mode"
+          v-model:k3k-mode="value.spec.allowedMode"
           :mode="mode"
         />
       </Tab>
@@ -96,15 +133,16 @@ export default {
       >
         <h3>{{ t('k3k.policy.headers.quotas') }}</h3>
         <!-- TODO nb proper spec path -->
+        <!--  TODO nb not setting -->
         <ResourceQuota
-          v-model:value="policySpec.quota"
+          v-model:value="value.spec.quota"
           :mode="mode"
           :types="quotaTypes"
           class="mb-20"
         />
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
         <ContainerResourceLimit
-          :value="policySpec.limits"
+          :value="value.spec.limits"
           :mode="mode"
           :namespace="value"
           :register-before-hook="registerBeforeHook"
@@ -117,6 +155,37 @@ export default {
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
       >
+        <div
+          class="row mb-20"
+        >
+          <div class="col span-12">
+            <KeyValue
+              v-model:value="value.spec.nodeSelector"
+              :initial-empty-row="true"
+              :mode="mode"
+              :read-allowed="false"
+              :title="t('k3k.nodeSelector.label')"
+              :add-label="t('k3k.nodeSelector.addLabel')"
+            >
+              <template #title>
+                <h4>{{ t('k3k.nodeSelector.label') }}</h4>
+                <t
+                  raw
+                  k="k3k.nodeSelector.tooltip"
+                />
+              </template>
+            </KeyValue>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col span-6">
+            <LabeledSelect
+              :value="value.spec.podSecurityAdmissionLevel"
+              :options="psaOptions"
+              :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
+            />
+          </div>
+        </div>
       </Tab>
       <Tab
         :weight="1"

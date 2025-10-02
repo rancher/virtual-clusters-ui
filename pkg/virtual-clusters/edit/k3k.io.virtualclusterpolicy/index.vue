@@ -2,7 +2,7 @@
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
 import Labels from '@shell/components/form/Labels.vue';
-import Mode from '../components/Mode.vue';
+import Mode from '../../components/Mode.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import Tab from '@shell/components/Tabbed/Tab';
@@ -14,6 +14,8 @@ import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+
+import Projects from './Projects.vue';
 
 export default {
   name: 'CRUClusterPolicy',
@@ -31,7 +33,8 @@ export default {
     ResourceQuota,
     ContainerResourceLimit,
     KeyValue,
-    LabeledSelect
+    LabeledSelect,
+    Projects
   },
 
   async fetch() {
@@ -42,7 +45,10 @@ export default {
   },
 
   data() {
-    return { allPSAs: [] };
+    return {
+      allPSAs:                 [],
+      projectAnnotationErrors: []
+    };
   },
 
   computed: {
@@ -83,7 +89,7 @@ export default {
 
   methods: {
     updateName(e) {
-      console.log(e);
+      // console.log(e);
     }
   }
 };
@@ -100,7 +106,7 @@ export default {
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     :cancel-event="true"
-    @finish="saveOverride"
+    @finish="save"
     @error="e => errors = e"
     @cancel="cancel"
   >
@@ -121,6 +127,12 @@ export default {
         name="config"
         label-key="k3k.policy.tabs.config"
       >
+        <Projects
+          v-model:errors="projectAnnotationErrors"
+          :mode="mode"
+          :policy="value"
+          :register-before-hook="registerBeforeHook"
+        />
         <Mode
           v-model:k3k-mode="value.spec.allowedMode"
           :mode="mode"

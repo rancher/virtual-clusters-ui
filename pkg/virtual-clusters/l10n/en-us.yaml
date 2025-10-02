@@ -10,6 +10,17 @@ k3k:
     headers:
       quotas: Quotas
       resourceLimits: Container Default Resource Limits
+      projectsAndNamespaces: Projects and Namespaces
+    projects:
+      subheader: This policy will be assigned to all namespaces in the selected projects.
+      label: Rancher projects
+      table:
+        title: Assigning {policyName} to the following projects
+        subTitle: Don't refresh the page or close this window to avoid sync errors
+        projects: Projects
+        namespaces: Namespaces Assigned
+        status: Status
+        tryAgain: Try Again
   targetNamespace:
     label: Target Namespace
   hostCluster:

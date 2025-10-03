@@ -40,7 +40,9 @@ export default {
   // TODO nb read projects from annotation when editing
   // then confirm all ns in those projects are annotated
   created() {
-    this.registerBeforeHook(this.annotateNamespaces, 'annotate-namespaces');
+    // this.registerBeforeHook(this.annotateNamespaces, 'annotate-namespaces');
+    this.registerBeforeHook(this.annotateAndSaveAllNamespaces, 'annotate-namespaces');
+
     this.findSelectedProjects();
   },
 
@@ -52,37 +54,48 @@ export default {
       // TODO nb remove
       nsStatusesByProject: {
         testid: {
-          willSave: [{ name: 'abc' }, { name: 'def' }],
-          saved:    [{ name: 'abc' }],
-          errors:   []
+          willSave:        [{ name: 'abc' }, { name: 'def' }],
+          saved:           [{ name: 'abc' }],
+          permissionError:   false,
+          serverError:     false
         },
         testid2: {
-          willSave: [{ name: 'abc1' }, { name: 'def1' }],
-          saved:    [{ name: 'abc1' }],
-          errors:   ['blah blah blah']
-        }
+          willSave:        [{ name: 'abc1' }, { name: 'def1' }],
+          saved:           [{ name: 'abc1' }],
+          permissionError:   true,
+          serverError:     false
+        },
+        testid3: {
+          willSave:        [{ name: 'abc3' }, { name: 'def3' }],
+          saved:           [{ name: 'abc3' }, { name: 'def3' }],
+          permissionError:   false,
+          serverError:     true
+        },
       }
     };
   },
 
   methods: {
-    async annotateNamespaces() {
-      this.savingNamespaces = true;
-      this.projectStatuses = {};
-      const toSave = [];
 
-      // TODO nb also annotate projects?
-      // TODO nb annotate policy with all selected project id
-      this.selectedProjects.forEach((p) => {
-        const namespaces = p.namespaces || [];
+    findSelectedProjects() {
+      // TODO nb look at policy annotation to find what projects assigned via ui previously
+      // confirm all ns in the project ARE annotated
+    },
 
-        namespaces.forEach((ns) => {
-          ns.setAnnotation(ANNOTATIONS.POLICY, this.policy?.metadata?.name);
-          toSave.push(ns);
-        }
-        );
+    annotateNamespaces(project) {
+      const out = [];
+
+      const namespaces = project.namespaces || [];
+
+      namespaces.forEach((ns) => {
+        ns.setAnnotation(ANNOTATIONS.POLICY, this.policy?.metadata?.name);
+        out.push(ns);
       });
 
+      return out;
+    },
+
+    async saveNamespaces(toSave) {
       await Promise.all(toSave.map((ns) => {
         return new Promise((resolve, reject) => {
           const projectId = ns?.metadata?.labels[PROJECT];
@@ -99,39 +112,54 @@ export default {
 
           return ns.save()
             .then((res) => {
-              this.nsStatusesByProject[projectId].saved++;
+              this.nsStatusesByProject[projectId].saved.push(ns.id);
 
               return resolve(!!res);
             })
             .catch((e) => {
+              // TODO nb permissionError and serverError
               this.nsStatusesByProject[projectId].errors.push(e);
 
               return reject(e);
             });
         });
       }));
+    },
+
+    async annotateAndSaveAllNamespaces() {
+      this.savingNamespaces = true;
+      this.projectStatuses = {};
+      const toSave = [];
+
+      // TODO nb also annotate projects?
+      // TODO nb annotate policy with all selected project id
+      this.selectedProjects.forEach((p) => {
+        toSave.push(...this.annotateNamespaces(p));
+      });
+
+      await this.saveNamespaces(toSave);
 
       this.savingNamespaces = false;
     },
 
-    findSelectedProjects() {
-      // TODO nb look at policy annotation to find what projects assigned via ui previously
-      // confirm all ns in the project ARE annotated
+    async retryProject(projectId) {
+      const project = this.$store.getters['management/byId']({ type: MANAGEMENT.PROJECT, id: projectId });
+
+      if (project) {
+        const nsToSave = this.annotateNamespaces(project);
+
+        await this.saveNamespaces(nsToSave);
+      }
     }
   },
 
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
 
-    namespacesToSave() {
-
-    },
-
     allProjects() {
       return this.$store.getters['management/all']({ type: MANAGEMENT.PROJECT });
     },
 
-    // TODO nb filter system projects?
     projectOptions() {
       return this.allProjects.map((p) => {
         return {
@@ -177,7 +205,10 @@ export default {
         />
       </div>
     </div>
-    <ProjectSaveStatus :project-statuses="nsStatusesByProject" />
+    <ProjectSaveStatus
+      :project-statuses="nsStatusesByProject"
+      @retry-project="retryProject"
+    />
   </div>
 </template>
 

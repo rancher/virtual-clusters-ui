@@ -51,11 +51,14 @@ export default {
       >
         <template #label>
           <h4>{{ t('k3k.mode.label') }}</h4>
+          <h5>
+            {{ t('k3k.mode.tooltip') }}
+          </h5>
         </template>
       </RadioGroup>
     </div>
-    <div class="col span-6">
+    <!--     <div class="col span-6">
       <span class="text-label">{{ t('k3k.mode.tooltip') }}</span>
-    </div>
+    </div> -->
   </div>
 </template>

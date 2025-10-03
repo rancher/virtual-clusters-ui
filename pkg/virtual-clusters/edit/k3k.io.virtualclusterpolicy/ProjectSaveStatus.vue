@@ -2,12 +2,15 @@
 export default {
   name: 'K3kProjectNSAnnotationStatus',
 
+  emits: ['retryProject'],
+
   props: {
     /* {
         [project id]: {
             willSave: [] namespaces to save
             saved: [] namespaces saved
-            errors: [] namespace saving errors
+            serverError: bool error saving some ns but user should be given the chance to try again
+            permissionError: bool error saving ns and user shouldn't be given option to try again
         }
     } */
     projectStatuses: {
@@ -21,7 +24,7 @@ export default {
 
 <template>
   <div class="row mb-20">
-    <div class="col span-10">
+    <div class="col span-12">
       <table
         class="project-annotation-status"
       >
@@ -35,41 +38,49 @@ export default {
           <th class="status">
             {{ t('k3k.policy.projects.table.status') }}
           </th>
-          <!-- empty col for try again button -->
-        <!--   <th class="try-again" /> -->
         </tr>
         <tr
-          v-for="({willSave, saved, errors}, projectId) of projectStatuses"
+          v-for="({willSave, saved, permissionError, serverError}, projectId) of projectStatuses"
           :key="projectId"
         >
           <td>
-            {{ projectId }}
+            <div>{{ projectId }}</div>
+            <span
+              v-if="permissionError"
+              class="text-error"
+            >{{ t('k3k.policy.projects.table.errors.permission') }}</span>
+            <span
+              v-if="serverError"
+              class="text-error"
+            >{{ t('k3k.policy.projects.table.errors.server') }}</span>
           </td>
           <td class="ns">
             ({{ saved.length }}/{{ willSave.length }})
           </td>
           <td class="status">
-            <i
-              v-if="errors.length"
-              class="icon icon-x text-error"
-            />
-            <i
-              v-else-if="(saved||[]).length < (willSave||[]).length"
-              class="icon icon-spinner icon-spin"
-            />
-            <i
-              v-else
-              class="icon icon-check text-success"
-            />
+            <div>
+              <i
+                v-if="permissionError"
+                class="icon icon-error text-error"
+              />
+              <i
+                v-else-if="(saved||[]).length < (willSave||[]).length"
+                class="icon icon-spinner icon-spin"
+              />
+              <i
+                v-else-if="!permissionError && !serverError"
+                class="icon icon-checkmark text-success"
+              />
+              <button
+                v-if="serverError"
+                class="btn btn-sm role-tertiary"
+                @click="$emit('retryProject', projectId)"
+              >
+                <icon class="icon icon-sm icon-refresh" />
+                {{ t('k3k.policy.projects.table.tryAgain') }}
+              </button>
+            </div>
           </td>
-          <!--           <td class="try-again">
-            <button
-              v-if="errors.length"
-              class="btn btn-sm role-secondary"
-            >
-              Try Again
-            </button>
-          </td> -->
         </tr>
       </table>
     </div>
@@ -82,21 +93,20 @@ export default {
         border-collapse: separate;
 
         & th,td{
-            border-bottom: 1px dashed var(--border);
             text-align: left;
-            padding-bottom: 5px;
+            padding: 5px;
+        }
+
+        & tr:not(:last-of-type) td{
+            border-bottom: 1px dashed var(--border);
         }
 
         & td.ns {
-            width: 10em;
+            width: 12em;
         }
 
-        & td.status {
-            width: 3em;
-        }
-
-        & td.try-again {
-            width: 3em;
+        & td.status button .icon {
+          padding-right: 3px;
         }
 
     }

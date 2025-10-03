@@ -21,6 +21,9 @@ k3k:
         namespaces: Namespaces Assigned
         status: Status
         tryAgain: Try Again
+        errors:
+          permission: You dont have permission to edit namespaces in this project
+          server: There were connection errors while editing some namespaces in this project
   targetNamespace:
     label: Target Namespace
   hostCluster:

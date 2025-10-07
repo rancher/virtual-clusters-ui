@@ -16,6 +16,7 @@ import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 
 import Projects from './Projects.vue';
+import { ANNOTATIONS } from '../../types';
 
 export default {
   name: 'CRUClusterPolicy',
@@ -90,6 +91,14 @@ export default {
   methods: {
     updateName(e) {
       // console.log(e);
+    },
+
+    updateSelectedProjects(projects = []) {
+      if (!projects.length) {
+        this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], '');
+      } else {
+        this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], projects.map((p) => p.id).join(', '));
+      }
     }
   }
 };
@@ -98,6 +107,7 @@ export default {
 
 <template>
   <Loading v-if="$fetchState.pending" />
+  <!-- TODO nb no can save when there are projects with 'try again' option available -->
   <CruResource
     v-else
     :mode="mode"
@@ -112,6 +122,7 @@ export default {
   >
     <NameNsDescription
       v-if="!isView"
+      :mode="mode"
       :namespaced="false"
       :value="value"
       :create-namespace-override="true"
@@ -131,7 +142,9 @@ export default {
           v-model:errors="projectAnnotationErrors"
           :mode="mode"
           :policy="value"
+          :register-after-hook="registerAfterHook"
           :register-before-hook="registerBeforeHook"
+          @update:selected-projects="updateSelectedProjects"
         />
         <Mode
           v-model:k3k-mode="value.spec.allowedMode"

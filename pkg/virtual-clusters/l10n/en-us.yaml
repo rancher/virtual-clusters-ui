@@ -14,16 +14,89 @@ k3k:
     projects:
       subheader: This policy will be assigned to all namespaces in the selected projects.
       label: Rancher projects
+      notification:
+        adding: 
+          task:
+            title: Policy assignment in progress
+            message: |-
+              { namespaceCount, plural,
+                =1 {Assigning {policyName} to one namespace...}
+                other {Assigning {policyName} to {namespaceCount} namespaces...}
+              }
+          success:
+            title: Policy assignment completed
+            message: |-
+              { namespaceCount, plural,
+                =1 {{policyName} successfully assigned to the namespace.}
+                other {{policyName} successfully assigned to {namespaceCount} namespaces.}
+              }
+          error:
+            title: Policy assignment failed
+            message: |-
+              { failCount, plural,
+                =1 {Assigning {policyName} failed in one project:}
+                other {Assigning {policyName} failed in {failCount} projects:}
+              }
+            countsMessage:
+              serverError: |-
+                { failCount, plural,
+                  =1 {1 failed connection}
+                  other {{failCount} failed connections}
+                }
+              permissionError: |-
+                { failCount, plural,
+                  =1 {1 project without edit permission}
+                  other {{failCount} projects without edit permission}
+                }
+        removing:
+          task:
+            title: Policy unassignment in progress
+            message: |-
+              { namespaceCount, plural,
+                =1 {Unassigning {policyName} from one namespace...}
+                other {Unassigning {policyName} from {namespaceCount} namespaces...}
+              }
+          success:
+            title: Policy unassignment completed
+            message: |-
+              { namespaceCount, plural,
+                =1 {{policyName} successfully unassigned from the namespace.}
+                other {{policyName} successfully unassigned from {namespaceCount} namespaces.}
+              }
+          error:
+            title: Policy unassignment failed
+            message: |-
+              { failCount, plural,
+                =1 {Failed to unassign {policyName} from namespaces in one project:}
+                other {Failed to unassign {policyName} from namespaces in {failCount} projects:}
+              }
+        primaryAction: Try Again
+        secondaryAction: Edit Policy
       table:
-        title: Assigning {policyName} to the following projects
-        subTitle: Don't refresh the page or close this window to avoid sync errors
         projects: Projects
         namespaces: Namespaces Assigned
-        status: Status
+        status: Action
         tryAgain: Try Again
+        deselect: Deselect
+        errorBanner: Policy assignment has failed in some projects.
+        errorTitle: You can <b>try again</b> or <b>unselect</b> failed projects.
+        successBanner: This policy has been assigned to all namespaces in all selected projects.
+        maybeErrorBanner: It looks like the virtual cluster policy has not been assigned to every namespace in the selected projects.
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project
+    security:
+      label: Security
+      tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default. <a aria-label='link to the K3K github repository' href='https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy' target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster network policies<i class='icon icon-sm icon-external'/></a>
+    isolation:
+      label: Cluster isolation
+      tooltip: A default network policy is created for cluster isolation. You can disable it to allow the virtual cluster to communicate with other virtual clusters.
+      checkbox: Disable cluster isolation
+    synchronization:
+      label: Resource Synchronization
+      tooltip: In the shared mode, required resources are synchronized from the virtual cluster to the host cluster by default. You can also sync Ingresses and PriorityClasses.
+      ingressCheckbox: Ingresses
+      priorityClassCheckbox: PriorityClasses
   targetNamespace:
     label: Target Namespace
   hostCluster:

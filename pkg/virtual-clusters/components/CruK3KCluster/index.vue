@@ -285,22 +285,22 @@ export default {
     // connect to host cluster steve api
     // used to retrieve resources from host cluster and populate form, as well as create vcp
     async loadHostCluster() {
-      this.connectingToHost = true;
+      // this.connectingToHost = true;
 
-      const norman = await this.findNormanCluster();
-      const id = norman.id;
+      // const norman = await this.findNormanCluster();
+      // const id = norman.id;
 
-      try {
-        await this.$store.dispatch('loadCluster', {
-          id, oldProduct: 'old', product: 'new'
-        });
-      } catch (e) {
-        this.connectingToHost = false;
-        // TODO nb better error handling?
-        console.error(e);
-      }
+      // try {
+      //   await this.$store.dispatch('loadCluster', {
+      //     id, oldProduct: 'old', product: 'new'
+      //   });
+      // } catch (e) {
+      //   this.connectingToHost = false;
+      //   // TODO nb better error handling?
+      //   console.error(e);
+      // }
 
-      this.connectingToHost = false;
+      // this.connectingToHost = false;
     },
 
     // create the k3k cluster crd

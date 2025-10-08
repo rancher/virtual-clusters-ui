@@ -6,7 +6,7 @@
   "rancher": {
     "annotations": {
       "catalog.cattle.io/display-name": "Virtual Clusters",
-      "catalog.cattle.io/ui-extensions-version": ">= 3.0.2-rc.5",
+      "catalog.cattle.io/ui-extensions-version": ">= 3.0.5-rc.6",
       "catalog.cattle.io/experimental": "true",
       "catalog.cattle.io/rancher-version": ">=2.12.0"
     }

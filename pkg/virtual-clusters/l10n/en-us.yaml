@@ -87,7 +87,8 @@ k3k:
           server: There were connection errors while editing some namespaces in this project
     security:
       label: Security
-      tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default. <a aria-label='link to the K3K github repository' href='https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy' target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster network policies<i class='icon icon-sm icon-external'/></a>
+      tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default.
+      learnMore: Learn more about virtual cluster network policies
     isolation:
       label: Cluster isolation
       tooltip: A default network policy is created for cluster isolation. You can disable it to allow the virtual cluster to communicate with other virtual clusters.
@@ -189,6 +190,23 @@ k3k:
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster
+  landingPage:
+    title: Virtual Clusters
+    subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster
+    description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes encironments without the overhead of managing full clusters.
+    steps:
+      title: 'Quick guide:'
+      step1:
+        title: Install K3k
+        description: This will turn your downstream cluster into a host cluster.
+      step2:
+        title: Create a policy
+        description: 'Go to Virtual Cluster Policy and create your first policy. Policies define guardrails: modes, resource quotas, syncing, RBAC rules, etc'
+      step3:
+        title: Create a virtual cluster
+        substep1: Go to Cluster Management > Create > Create a Virtual Cluster (K3K).
+        substep2: Select a host cluster with K3k installed and at least one virtual cluster policy.
+        substep3: Deploy your virtual cluster.
 
 resourceTable:
   groupBy:
@@ -197,12 +215,12 @@ resourceTable:
 
 asyncButton:
   tryAgain:
-  action: Try Again
-  success: Saved
-  waiting: Saving&hellip;
+    action: Try Again
+    success: Saved
+    waiting: Saving&hellip;
 
 product:
-  virtual-clusters: Virtual Clusters
+  virtualclusters: Virtual Clusters
 
 typeLabel:
   k3k.io.virtualclusterpolicy: |-

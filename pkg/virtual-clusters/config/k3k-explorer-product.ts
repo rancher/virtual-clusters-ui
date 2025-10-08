@@ -1,12 +1,14 @@
 import { K3K } from "../types";
 
+export const  NAME = 'virtualclusters'
+
 export function init($plugin:any, store:any) {
   const {
     product,
     configureType,
     virtualType,
     basicType
-  } = $plugin.DSL(store, 'virtual-clusters');
+  } = $plugin.DSL(store, NAME);
   
 
 
@@ -21,7 +23,20 @@ export function init($plugin:any, store:any) {
   });
 
 
-  basicType(K3K.POLICY)
+    virtualType({
+    label:       'Virtual Clusters',
+    icon:        'k3k',
+    name:        'virtual-cluster-dashboard',
+    namespaced:  false,
+    weight:      99,
+    route:                  {
+      name:   `c-cluster-virtualclusters`,
+    },
+    overview: true,
+    exact:    true,
+  });
+
+  basicType(['virtual-cluster-dashboard', K3K.POLICY, K3K.CLUSTER])
 
 
   }

@@ -14,6 +14,7 @@ import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import Checkbox from '@components/Form/Checkbox/Checkbox';
 
 import Projects from './Projects.vue';
 import { ANNOTATIONS } from '../../types';
@@ -35,7 +36,8 @@ export default {
     ContainerResourceLimit,
     KeyValue,
     LabeledSelect,
-    Projects
+    Projects,
+    Checkbox
   },
 
   async fetch() {
@@ -86,6 +88,7 @@ export default {
 
       return out;
     },
+
   },
 
   methods: {
@@ -202,12 +205,75 @@ export default {
             </KeyValue>
           </div>
         </div>
-        <div class="row">
+
+        <div class="row mb-10">
+          <div class="col span-12">
+            <h3>{{ t('k3k.policy.security.label') }}</h3>
+            <t
+              k="k3k.policy.security.tooltip"
+              raw
+            />
+            <a
+              aria-label="link to the K3K github repository"
+              href="https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+            >
+              <t
+                k="k3k.policy.security.learnMore"
+                raw
+              />
+              <i class="icon icon-sm icon-external-link">
+              </i></a>
+          </div>
+        </div>
+        <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
               :value="value.spec.podSecurityAdmissionLevel"
               :options="psaOptions"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-10">
+          <div class="col span-12">
+            <h3>{{ t('k3k.policy.isolation.label') }}</h3>
+            <t
+              k="k3k.policy.isolation.tooltip"
+              raw
+            />
+          </div>
+        </div>
+        <div class="row mb-20">
+          <div class="col span-6">
+            <Checkbox
+              v-model:value="value.spec.disableNetworkPolicy"
+              :mode="mode"
+              :label="t('k3k.policy.isolation.checkbox')"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-10">
+          <div class="col span-12">
+            <h3>{{ t('k3k.policy.synchronization.label') }}</h3>
+            <t
+              k="k3k.policy.synchronization.tooltip"
+              raw
+            />
+          </div>
+        </div>
+        <div class="row mb-20">
+          <div class="col span-6 vertical-checkboxes">
+            <Checkbox
+              :mode="mode"
+              :label="t('k3k.policy.synchronization.ingressCheckbox')"
+            />
+            <Checkbox
+              :mode="mode"
+              :label="t('k3k.policy.synchronization.priorityClassCheckbox')"
             />
           </div>
         </div>
@@ -226,3 +292,10 @@ export default {
     </Tabbed>
   </CruResource>
 </template>
+
+<style lang="scss">
+  .vertical-checkboxes {
+    display: flex;
+    flex-direction: column;
+  }
+</style>

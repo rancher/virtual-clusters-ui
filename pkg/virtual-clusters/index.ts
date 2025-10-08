@@ -2,7 +2,7 @@ import { importTypes } from '@rancher/auto-import';
 import { IPlugin, ModelExtensionConstructor } from '@shell/core/types';
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
-
+import virtualClusterRouting from './routes'
 
 
 // Init the package
@@ -12,6 +12,9 @@ export default function(plugin: IPlugin): void {
 
   // Provide plugin metadata from package.json
   plugin.metadata = require('./package.json');
+
+ // Add Vue Routes
+  plugin.addRoutes(virtualClusterRouting);
 
   // Register a model extension for the provisioning model
   plugin.addModelExtension('provisioning.cattle.io.cluster', VClusterModelExtension as unknown as ModelExtensionConstructor);

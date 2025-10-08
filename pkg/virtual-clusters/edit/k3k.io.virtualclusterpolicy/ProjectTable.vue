@@ -1,5 +1,5 @@
 <script>
-import { _CREATE } from '@shell/config/query-params';
+import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { ANNOTATIONS } from '../../types';
 import AsyncButton from '@shell/components/AsyncButton';
 import { Banner } from '@rancher/components';
@@ -48,6 +48,10 @@ export default {
   },
 
   computed: {
+    isView() {
+      return this.mode === _VIEW;
+    },
+
     showErrorBanner() {
       return !!(Object.values(this.statuses) || []).find((status) => {
         return status?.hasServerErrors || status?.hasPermissionErrors;
@@ -172,9 +176,10 @@ export default {
                 class="icon icon-checkmark text-success"
               />
               <!-- TODO nb grey out form save button when this button is shown in any row -->
-              <!-- TODO nb async button text phases -->
+
               <AsyncButton
-                v-if="hasServerErrors || (!hasPermissionErrors && willSave.length !== saved.length)"
+                v-if="hasServerErrors || (!hasPermissionErrors && willSave.length !== saved.length) && !isView"
+                mode="tryAgain"
                 class="btn btn-sm role-tertiary"
                 @click="btnCb=>retryProject(project, btnCb)"
               >
@@ -182,7 +187,7 @@ export default {
                 {{ t('k3k.policy.projects.table.tryAgain') }}
               </AsyncButton>
               <button
-                v-if="hasPermissionErrors && !hasServerErrors"
+                v-if="hasPermissionErrors && !hasServerErrors && !isView"
                 class="btn btn-sm role-tertiary"
                 @click="e=>deselectProject(project)"
               >
@@ -218,10 +223,5 @@ export default {
         & td.status {
           min-width: 35px;
         }
-
-        // & td.status button .icon {
-        //   padding-right: 3px;
-        // }
-
     }
 </style>

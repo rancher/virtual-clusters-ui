@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@rancher/components": "^0.3.0-alpha.1",
-    "@rancher/shell": "3.0.4",
+    "@rancher/shell": "3.0.5-rc6",
     "@types/lodash": "4.14.184",
     "chart.js": "^4.5.0",
     "css-loader": "6.7.3",

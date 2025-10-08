@@ -18,7 +18,6 @@ export function init($plugin:any, store:any) {
     icon:                'k3k',
     removeable:          false,
     showNamespaceFilter: true
-    //TODO nb ifhave k3k
   });
 
 

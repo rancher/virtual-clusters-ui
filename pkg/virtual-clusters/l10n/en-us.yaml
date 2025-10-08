@@ -189,7 +189,24 @@ k3k:
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster
+
 resourceTable:
   groupBy:
     hostCluster: Host Cluster
     displayName: Display Name
+
+asyncButton:
+  tryAgain:
+  action: Try Again
+  success: Saved
+  waiting: Saving&hellip;
+
+product:
+  virtual-clusters: Virtual Clusters
+
+typeLabel:
+  k3k.io.virtualclusterpolicy: |-
+    {count, plural,
+      one { Virtual Cluster Policy }
+      other { Virtual Cluster Policies }
+    }

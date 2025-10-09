@@ -1,13 +1,10 @@
 <script>
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { ANNOTATIONS } from '../../types';
-import AsyncButton from '@shell/components/AsyncButton';
 import { Banner } from '@rancher/components';
 
 export default {
   name: 'K3kProjectNSAnnotationStatus',
-
-  emits: ['retryProject', 'update:selectedProjects', 'update:userCanTry'],
 
   props: {
     mode: {
@@ -20,33 +17,38 @@ export default {
       default: () => []
     },
 
+    deselectedProjects: {
+      type:    Array,
+      default: () => []
+    },
+
+    displayProjects: {
+      type:    Array,
+      default: () => []
+    },
+
     policyName: {
       type:    String,
       default: ''
-    },
-
-    userCanTry: {
-      type:    Boolean,
-      default: false
-    },
+    }
 
   },
 
-  components: { AsyncButton, Banner },
+  components: { Banner },
 
   created() {
-    this.selectedProjects.forEach((p) => this.computeNamespaceStatus(p));
+    this.displayProjects.forEach((p) => this.computeNamespaceStatus(p));
   },
 
   watch: {
-    selectedProjects(neu) {
+    displayProjects(neu) {
       this.statuses = {};
       neu.forEach((p) => this.computeNamespaceStatus(p));
     },
 
-    hasTryAgainButtons(neu) {
-      this.$emit('update:userCanTry', neu);
-    },
+    deselectedProjects(neu) {
+      this.displayProjects.forEach((p) => this.computeNamespaceStatus(p));
+    }
   },
 
   data() {
@@ -67,26 +69,13 @@ export default {
       });
     },
 
+    // TODO nb only use in modal
     showSuccessBanner() {
-      return !(Object.values(this.statuses) || []).find((status) => {
-        return status?.willSave?.length !== status?.saved?.length;
-      });
+      return false;
+      // return !(Object.values(this.statuses) || []).find((status) => {
+      //   return status?.willSave?.length !== status?.saved?.length;
+      // });
     },
-
-    // if there are neither errors reported nor does it appear that all ns in all selected projects have been saved a couple things may have happened:
-    // 1. there were errors saving the namespaces but the user has refreshed the page and we lost which sort of error
-    // 2. Namespaces were added to the project from outside the UI after the policy was created
-    showMaybeErrorBanner() {
-      return !this.showErrorBanner && !this.showSuccessBanner;
-    },
-
-    // TODO nb grey out save button when this is true
-    hasTryAgainButtons() {
-      return !!Object.keys(this.statuses).find((p) => {
-        return this.allowTryAgain(p);
-      });
-    },
-
   },
 
   methods: {
@@ -94,47 +83,28 @@ export default {
       const namespaces = p.namespaces;
       const hasServerErrors = namespaces.filter((ns) => !!ns?.__policyServerError)?.length;
       const hasPermissionErrors = namespaces.filter((ns) => !!ns?.__policyPermissionError)?.length;
+      const shouldHaveAnnotation = !this.deselectedProjects.find((deselectedProject) => deselectedProject.id === p.id);
+
       /**
        * parent component adds annotation to ns then attempts to save: if the save attempt fails, the ns object will still contain the updated annotation
+       * (or the parent component attempts to remove the annotation and saves)
        * so in order to determine that a ns really has been saved we also check for error properties applied by the parent component when it fails
        */
-      const saved = namespaces.filter((ns) => ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !ns?.__policyPermissionError && !ns?.__policyServerError );
+      const saved = namespaces.filter((ns) => {
+        const nsHasErrors = ns?.__policyPermissionError || ns?.__policyServerError;
+
+        return ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !nsHasErrors;
+      });
 
       this.statuses[p.id] = {
         project:             p,
         willSave:            namespaces,
         saved,
         hasServerErrors,
-        hasPermissionErrors
+        hasPermissionErrors,
+        shouldHaveAnnotation
       };
     },
-
-    async updateNsStatus(namespace = {}) {
-      const project = namespace.project;
-
-      if (!project) {
-        return;
-      }
-      this.computeNamespaceStatus(project);
-    },
-
-    retryProject(project, btnCb) {
-      return this.$emit('retryProject', project, this.updateNsStatus, btnCb);
-    },
-
-    deselectProject(project) {
-      const out = this.selectedProjects.filter((p) => p.id !== project.id);
-
-      this.$emit('update:selectedProjects', out);
-    },
-
-    allowTryAgain(projectId) {
-      const {
-        hasServerErrors, hasPermissionErrors, willSave = [], saved = []
-      } = this.statuses[projectId] || {};
-
-      return (hasServerErrors || (!hasPermissionErrors && willSave.length !== saved.length)) && !this.isView;
-    }
   },
 
 };
@@ -144,19 +114,14 @@ export default {
   <div class="row mb-20">
     <div class="col span-12">
       <Banner
-        v-if="showErrorBanner"
-        color="error"
-        :label="t('k3k.policy.projects.table.errorBanner')"
-      />
-      <Banner
         v-if="showSuccessBanner"
         color="success"
         :label="t('k3k.policy.projects.table.successBanner')"
       />
       <Banner
-        v-if="showMaybeErrorBanner"
-        color="warning"
-        :label="t('k3k.policy.projects.table.maybeErrorBanner')"
+        v-else-if="showErrorBanner"
+        color="error"
+        :label="t('k3k.policy.projects.table.errorBanner')"
       />
       <table
         class="project-annotation-status"
@@ -173,7 +138,7 @@ export default {
           </th>
         </tr>
         <tr
-          v-for="({willSave, saved, hasPermissionErrors, hasServerErrors, project}) of statuses"
+          v-for="({willSave, saved, hasPermissionErrors, hasServerErrors, project, shouldHaveAnnotation}) of statuses"
           :key="project.id"
         >
           <td>
@@ -183,7 +148,7 @@ export default {
               class="text-error"
             >{{ t('k3k.policy.projects.table.errors.permission') }}</span>
             <span
-              v-if="hasServerErrors"
+              v-if="hasServerErrors || willSave.length !== saved.length"
               class="text-error"
             >{{ t('k3k.policy.projects.table.errors.server') }}</span>
           </td>
@@ -191,33 +156,23 @@ export default {
             {{ saved.length }}/{{ willSave.length }}
           </td>
           <td class="status">
+            <!-- TODO nb icon for new projects to be saved?-->
+
             <div>
               <i
-                v-if="isSaving"
-                class="icon icon-spinner icon-spin"
+                v-if="!shouldHaveAnnotation"
+                v-clean-tooltip="t('k3k.policy.projects.table.deselectedTooltip')"
+                class="icon icon-trash text-error"
               />
               <i
-                v-if="!hasPermissionErrors && !hasServerErrors && willSave.length === saved.length"
+                v-else-if="!hasPermissionErrors && !hasServerErrors && willSave.length === saved.length"
                 class="icon icon-checkmark text-success"
               />
-              <AsyncButton
-                v-if="allowTryAgain(project.id)"
-                ref="vcp-assignment-try-again"
-                mode="tryAgain"
-                class="btn btn-sm role-tertiary"
-                @click="btnCb=>retryProject(project, btnCb)"
-              >
-                <i class="icon icon-sm icon-refresh" />
-                {{ t('k3k.policy.projects.table.tryAgain') }}
-              </AsyncButton>
-              <button
-                v-if="hasPermissionErrors && !hasServerErrors && !isView"
-                class="btn btn-sm role-tertiary"
-                @click="e=>deselectProject(project)"
-              >
-                <i class="icon icon-sm icon-x" />
-                {{ t('k3k.policy.projects.table.deselect') }}
-              </button>
+              <i
+                v-else
+                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                class="icon icon-refresh text-warning"
+              />
             </div>
           </td>
         </tr>

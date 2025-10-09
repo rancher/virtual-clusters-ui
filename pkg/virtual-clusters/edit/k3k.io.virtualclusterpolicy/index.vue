@@ -51,7 +51,6 @@ export default {
     return {
       allPSAs:                 [],
       projectAnnotationErrors: [],
-      userCanTry:              false, // project status component will update this when it renders/removes Try Again buttons
     };
   },
 
@@ -117,7 +116,7 @@ export default {
     :mode="mode"
     :resource="value"
     :errors="fvUnreportedValidationErrors"
-    :validation-passed="fvFormIsValid && !userCanTry"
+    :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     :cancel-event="true"
     @finish="save"
@@ -144,7 +143,6 @@ export default {
       >
         <Projects
           v-model:errors="projectAnnotationErrors"
-          v-model:user-can-try="userCanTry"
           :mode="mode"
           :policy="value"
           :register-after-hook="registerAfterHook"

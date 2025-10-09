@@ -76,12 +76,10 @@ k3k:
         projects: Projects
         namespaces: Namespaces Assigned
         status: Action
-        tryAgain: Try Again
-        deselect: Deselect
-        errorBanner: Policy assignment has failed in some projects.
-        errorTitle: You can <b>try again</b> or <b>unselect</b> failed projects.
+        errorBanner: Policy assignment has failed in some projects. Click save to re-attempt assigning the policy to the selected projects.
         successBanner: This policy has been assigned to all namespaces in all selected projects.
-        maybeErrorBanner: It looks like the virtual cluster policy has not been assigned to every namespace in every selected project.
+        errorTooltip: Policy assignment will be re-attempted.
+        deselectedTooltip: Policy will be unassigned from all namespaces in the project.
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project

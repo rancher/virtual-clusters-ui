@@ -132,7 +132,6 @@ export default {
     // TODO nb stay on page vs leave page if # of ns too high?
     async annotateAndSaveAllNamespaces(projects, cb = () => {}, btnCb = () => {}, addAnnotation = true) {
       projects = projects && projects.length ? projects : this.selectedProjects;
-      this.savingNamespaces = true;
 
       /**
        * these are stored as consts in this method so they're accessible in the after hook context
@@ -245,8 +244,6 @@ export default {
 
         return saveEachNamespace(ns);
       }));
-
-      this.savingNamespaces = false;
     },
 
     retryProject(project, cb, btnCb) {

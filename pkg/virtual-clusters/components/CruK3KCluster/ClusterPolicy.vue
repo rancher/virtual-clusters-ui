@@ -162,10 +162,10 @@ export default {
         :options="policyOptions"
         @selecting="e=>$emit('update:policyName', e)"
       />
-      <span
+      <!-- <span
         v-if="policyName && policyName !== t('generic.none')"
         @click="openDrawer"
-      >show policy detail</span>
+      >show policy detail</span> -->
     </div>
     <div class="col span-6">
       <LabeledSelect

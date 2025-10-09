@@ -1,8 +1,9 @@
 import { importTypes } from '@rancher/auto-import';
-import { IPlugin, ModelExtensionConstructor } from '@shell/core/types';
+import { IPlugin, ModelExtensionConstructor, PanelLocation } from '@shell/core/types';
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
 import virtualClusterRouting from './routes'
+import { NAMESPACE } from '@shell/config/types';
 
 
 // Init the package
@@ -28,4 +29,9 @@ export default function(plugin: IPlugin): void {
 
   // Built-in icon
   plugin.metadata.icon = require('./assets/icon-virtual-clusters.svg');
+
+  plugin.addPanel(PanelLocation.DETAILS_MASTHEAD, {
+    resource: [NAMESPACE],
+    mode: ['create']
+  },  {component: ()=>import('./components/NamespaceAnnotation.vue')});
 }

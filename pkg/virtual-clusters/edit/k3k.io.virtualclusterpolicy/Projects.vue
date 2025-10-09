@@ -18,7 +18,7 @@ import debounce from 'lodash/debounce';
 export default {
   name: 'K3kPolicyProjectSelect',
 
-  emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects'],
+  emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects', 'update:userCanTry'],
 
   props: {
     mode: {
@@ -29,6 +29,11 @@ export default {
     policy: {
       type:    Object,
       default: () => {}
+    },
+
+    userCanTry: {
+      type:    Boolean,
+      default: false
     },
 
     registerAfterHook: {
@@ -159,7 +164,6 @@ export default {
 
       const saveEachNamespace = (namespace) => {
         return new Promise((resolve, reject) => {
-          // TODO nb. refactor these nested promises
           this.saveNamespaceLite(namespace)
             .then(() => {
               nsSaved.push(namespace.id);
@@ -174,6 +178,8 @@ export default {
               });
               // tell the project status table that this ns is done and tell it whether or not this is the last one
               cb(namespace);
+              // TODO nb need a better way of knowing if this is the last one
+              // make the status component call asyncbutton cb when it detects all have been re-run and reported back?
               if (isLastToSave()) {
                 btnCb(!!errorCount);
               }
@@ -183,13 +189,12 @@ export default {
               errorCount++;
 
               // TODO nb permissionError and serverError
-              if (namespace.project) {
-                const projectName = namespace.project.nameDisplay;
+              namespace.__policyServerError = true;
 
-                if (!projectsWithServerErrors.includes(projectName)) {
-                  projectsWithServerErrors.push(projectName);
-                  namespace.__policyServerError = true;
-                }
+              const projectName = namespace?.project?.nameDisplay;
+
+              if (projectName && !projectsWithServerErrors.includes(projectName)) {
+                projectsWithServerErrors.push(projectName);
               }
               // tell the project status table that this ns is done and tell it whether or not this is the last one
               cb(namespace);
@@ -200,6 +205,7 @@ export default {
               this.denouncedUpdateNotification({
                 nsWillSave, nsSaved, errorCount, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
               });
+              // reject(e);
             });
         });
       };
@@ -370,9 +376,11 @@ export default {
     <ProjectTable
       v-if="selectedProjects.length && !isCreate"
       v-model:selected-projects="selectedProjects"
+      :user-can-try="userCanTry"
       :policy-name="policy?.metadata?.name"
       :mode="mode"
       @retry-project="retryProject"
+      @update:user-can-try="e=>$emit('update:userCanTry', e)"
     />
   </div>
 </template>

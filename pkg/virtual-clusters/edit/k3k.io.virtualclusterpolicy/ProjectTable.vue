@@ -7,7 +7,7 @@ import { Banner } from '@rancher/components';
 export default {
   name: 'K3kProjectNSAnnotationStatus',
 
-  emits: ['retryProject', 'update:selectedProjects'],
+  emits: ['retryProject', 'update:selectedProjects', 'update:userCanTry'],
 
   props: {
     mode: {
@@ -25,6 +25,11 @@ export default {
       default: ''
     },
 
+    userCanTry: {
+      type:    Boolean,
+      default: false
+    },
+
   },
 
   components: { AsyncButton, Banner },
@@ -37,7 +42,11 @@ export default {
     selectedProjects(neu) {
       this.statuses = {};
       neu.forEach((p) => this.computeNamespaceStatus(p));
-    }
+    },
+
+    hasTryAgainButtons(neu) {
+      this.$emit('update:userCanTry', neu);
+    },
   },
 
   data() {
@@ -69,7 +78,15 @@ export default {
     // 2. Namespaces were added to the project from outside the UI after the policy was created
     showMaybeErrorBanner() {
       return !this.showErrorBanner && !this.showSuccessBanner;
-    }
+    },
+
+    // TODO nb grey out save button when this is true
+    hasTryAgainButtons() {
+      return !!Object.keys(this.statuses).find((p) => {
+        return this.allowTryAgain(p);
+      });
+    },
+
   },
 
   methods: {
@@ -81,7 +98,7 @@ export default {
        * parent component adds annotation to ns then attempts to save: if the save attempt fails, the ns object will still contain the updated annotation
        * so in order to determine that a ns really has been saved we also check for error properties applied by the parent component when it fails
        */
-      const saved = namespaces.filter((ns) => ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] && ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !ns?.__policyPermissionError && !ns?.__policyServerError );
+      const saved = namespaces.filter((ns) => ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !ns?.__policyPermissionError && !ns?.__policyServerError );
 
       this.statuses[p.id] = {
         project:             p,
@@ -109,6 +126,14 @@ export default {
       const out = this.selectedProjects.filter((p) => p.id !== project.id);
 
       this.$emit('update:selectedProjects', out);
+    },
+
+    allowTryAgain(projectId) {
+      const {
+        hasServerErrors, hasPermissionErrors, willSave = [], saved = []
+      } = this.statuses[projectId] || {};
+
+      return (hasServerErrors || (!hasPermissionErrors && willSave.length !== saved.length)) && !this.isView;
     }
   },
 
@@ -175,15 +200,14 @@ export default {
                 v-if="!hasPermissionErrors && !hasServerErrors && willSave.length === saved.length"
                 class="icon icon-checkmark text-success"
               />
-              <!-- TODO nb grey out form save button when this button is shown in any row -->
-
               <AsyncButton
-                v-if="hasServerErrors || (!hasPermissionErrors && willSave.length !== saved.length) && !isView"
+                v-if="allowTryAgain(project.id)"
+                ref="vcp-assignment-try-again"
                 mode="tryAgain"
                 class="btn btn-sm role-tertiary"
                 @click="btnCb=>retryProject(project, btnCb)"
               >
-                <icon class="icon icon-sm icon-refresh" />
+                <i class="icon icon-sm icon-refresh" />
                 {{ t('k3k.policy.projects.table.tryAgain') }}
               </AsyncButton>
               <button
@@ -191,7 +215,7 @@ export default {
                 class="btn btn-sm role-tertiary"
                 @click="e=>deselectProject(project)"
               >
-                <icon class="icon icon-sm icon-x" />
+                <i class="icon icon-sm icon-x" />
                 {{ t('k3k.policy.projects.table.deselect') }}
               </button>
             </div>

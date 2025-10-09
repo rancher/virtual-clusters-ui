@@ -81,7 +81,7 @@ k3k:
         errorBanner: Policy assignment has failed in some projects.
         errorTitle: You can <b>try again</b> or <b>unselect</b> failed projects.
         successBanner: This policy has been assigned to all namespaces in all selected projects.
-        maybeErrorBanner: It looks like the virtual cluster policy has not been assigned to every namespace in the selected projects.
+        maybeErrorBanner: It looks like the virtual cluster policy has not been assigned to every namespace in every selected project.
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project
@@ -216,6 +216,7 @@ resourceTable:
 asyncButton:
   tryAgain:
     action: Try Again
+    actionIcon: refresh
     success: Saved
     waiting: Saving&hellip;
 

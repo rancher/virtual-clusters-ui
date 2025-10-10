@@ -15,6 +15,7 @@ import KeyValue from '@shell/components/form/KeyValue.vue';
 import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
+import { exceptionToErrorsArray } from '@shell/utils/error';
 
 import Projects from './Projects.vue';
 import { ANNOTATIONS } from '../../types';
@@ -92,6 +93,7 @@ export default {
   },
 
   methods: {
+    // TODO nb do
     updateName(e) {
       // console.log(e);
     },
@@ -102,7 +104,46 @@ export default {
       } else {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], projects.map((p) => p.id).join(', '));
       }
-    }
+    },
+
+    /**
+     * Save the policy then start annotating namespaces
+     * The component responsible for annotating namespaces will emit 'finish' event to tell this component to call create-edit-view 'done' method and return to list
+     * @param cb async button callback
+     * @param depth unfortunately this function recurses
+     */
+    async saveOverride(cb, depth) {
+      try {
+        await this.actuallySave();
+        const projectComponent = this.$refs['project-selector'];
+
+        if (projectComponent) {
+          await projectComponent.annotateAndSaveNamespaces();
+        } else {
+          // eslint-disable-next-line node/no-callback-literal
+          cb(true);
+        }
+      } catch (err) {
+        // This exception handles errors from the `request` action when it receives a failed http request. The `err` object could be from the action's error handler (raw http response object containing `status`) or thrown later on given the response of the action (a massaged object containing `_status`). TBD why one 409 triggers the error handler and another does not.
+        const IS_ERR_409 = err.status === 409 || err._status === 409;
+
+        // Conflict, the resource being edited has changed since starting editing
+        if (IS_ERR_409 && depth === 0 && this.isEdit) {
+          const errors = await this.conflict();
+
+          if ( errors === false ) {
+            // It was automatically figured out, save again
+            return this.saveOverride(cb, depth + 1);
+          } else {
+            this.errors = errors;
+          }
+        } else {
+          this.errors = exceptionToErrorsArray(err);
+        }
+        // eslint-disable-next-line node/no-callback-literal
+        cb && cb(false);
+      }
+    },
   }
 };
 
@@ -119,10 +160,11 @@ export default {
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     :cancel-event="true"
-    @finish="save"
+    @finish="saveOverride"
     @error="e => errors = e"
     @cancel="cancel"
   >
+    <!-- TODO nb make name required -->
     <NameNsDescription
       v-if="!isView"
       :mode="mode"
@@ -142,12 +184,14 @@ export default {
         label-key="k3k.policy.tabs.config"
       >
         <Projects
+          ref="project-selector"
           v-model:errors="projectAnnotationErrors"
           :mode="mode"
           :policy="value"
           :register-after-hook="registerAfterHook"
           :register-before-hook="registerBeforeHook"
           @update:selected-projects="updateSelectedProjects"
+          @finish="done"
         />
         <Mode
           v-model:k3k-mode="value.spec.allowedMode"

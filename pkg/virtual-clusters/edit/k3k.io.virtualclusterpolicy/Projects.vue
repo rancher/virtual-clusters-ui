@@ -7,6 +7,7 @@ import { randomStr } from '@shell/utils/string';
 import { sortBy } from '@shell/utils/sort';
 import { MANAGEMENT } from '@shell/config/types';
 import { NotificationLevel } from '@shell/types/notifications';
+import AppModal from '@shell/components/AppModal.vue';
 
 import { ANNOTATIONS } from '../../types';
 import ProjectTable from './ProjectTable.vue';
@@ -24,7 +25,7 @@ const MODAL_SHOW_THRESHOLD = 200;
 export default {
   name: 'K3kPolicyProjectSelect',
 
-  emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects'],
+  emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects', 'finish'],
 
   props: {
     mode: {
@@ -55,17 +56,22 @@ export default {
   },
 
   created() {
-    this.registerBeforeHook(this.annotateAndSaveNamespaces, 'annotate-namespaces');
-    this.registerBeforeHook(this.unAnnotateAndSaveAllNamespaces, 'unannotate-namespaces');
+    // this.registerBeforeHook(this.annotateAndSaveNamespaces, 'annotate-namespaces');
+    // this.registerBeforeHook(this.unAnnotateAndSaveAllNamespaces, 'unannotate-namespaces');
 
     this.findSelectedProjects();
     this.denouncedUpdateNotification = debounce(this.updateNotification, 50);
   },
 
-  components: { LabeledSelect, ProjectTable },
+  components: {
+    LabeledSelect,
+    ProjectTable,
+    AppModal
+  },
 
   data() {
     return {
+      showModal:                   false,
       selectedProjects:                [],
       deselectedProjects:              [], // these are projects that had been annotated previously and are being removed now
       displayProjects:                 [], // on edit, only projects that haven't been fully annotated, or projects that are being removed, are shown in the inline project status table
@@ -158,20 +164,20 @@ export default {
       }
     },
 
+    // TODO nb do annotate and un-annotate in one function
     // this function is also used to UN-annotate and save namespaces in projects that have been deselected on edit
     async annotateAndSaveNamespaces(addAnnotation = true) {
-      // TODO nb add/remove annotation
       const projects = addAnnotation ? this.selectedProjects || [] : this.deselectedProjects || [];
       /**
        * these are stored as consts in this method so they're accessible in the after hook context
        * they are used to generate the notification and its buttons (try again and edit policy)
-       * nsWillSave, nsSaved, errorCount are used to compute which notification message to show
+       * nsWillSave, nsSaved, nsErrored are used to compute which notification message to show
        * projectsWithServerErrors and projectsWithPermissionErrors are used to create a bulleted list in the notification and decide whether or not to show 'try again' button
        * notificationID is used to ensure we create/modify one notification per 'save' click - one notification when policy is saved and also one per click on 'try again' from edit mode
        */
       const nsWillSave = [];
       const nsSaved = [];
-      let errorCount = 0;
+      const nsErrored = [];
       const projectsWithServerErrors = [];
       const projectsWithPermissionErrors = [];
       const notificationID = randomStr();
@@ -199,6 +205,8 @@ export default {
         return all;
       }, []);
 
+      this.showModal = allSelectedNamespaces?.length > MODAL_SHOW_THRESHOLD;
+
       const saveEachNamespace = (namespace) => {
         return new Promise((resolve, reject) => {
           this.saveNamespaceLite(namespace)
@@ -211,13 +219,13 @@ export default {
               namespace.__policyPermissionError = false;
 
               this.denouncedUpdateNotification({
-                nsWillSave, nsSaved, errorCount, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
+                nsWillSave, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
               });
 
               resolve();
             })
             .catch((e) => {
-              errorCount++;
+              nsErrored.push(namespace.id);
 
               // TODO nb permissionError and serverError
               namespace.__policyServerError = true;
@@ -229,16 +237,15 @@ export default {
               }
 
               this.denouncedUpdateNotification({
-                nsWillSave, nsSaved, errorCount, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
+                nsWillSave, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
               });
               // reject(e);
             });
         });
       };
 
-      Promise.all(allSelectedNamespaces.map((ns) => {
+      await Promise.all(allSelectedNamespaces.map((ns) => {
         nsWillSave.push(ns.id);
-        // TODO nb reporting saved?
 
         // if we are adding annotations to this project's namespaces, check if it is already present each namespace and skip saving that namespace if so
         if (addAnnotation) {
@@ -262,10 +269,13 @@ export default {
 
         return saveEachNamespace(ns);
       }));
+      if (!this.showModal) {
+        this.$emit('finish');
+      }
     },
 
     updateNotification({
-      nsWillSave = [], nsSaved = [], errorCount = 0, projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
+      nsWillSave = [], nsSaved = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
     }) {
       if (!nsWillSave || !nsWillSave.length) {
         return;
@@ -278,8 +288,8 @@ export default {
       let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: nsWillSave.length, policyName });
       let primaryAction = null;
 
-      const isDone = nsWillSave?.length === errorCount + nsSaved?.length;
-      const hasErrors = !!errorCount;
+      const isDone = nsWillSave?.length === nsErrored?.length + nsSaved?.length;
+      const hasErrors = !!nsErrored?.length;
       const succeeded = isDone && !hasErrors;
 
       const progressPercent = Math.round((nsSaved.length / nsWillSave.length) * 100);
@@ -389,6 +399,24 @@ export default {
       :policy-name="policy?.metadata?.name"
       :mode="mode"
     />
+    <AppModal
+      v-if="showModal"
+      name="assign-policies"
+      :click-to-close="false"
+    >
+      <ProjectTable
+        :deselected-projects="deselectedProjects"
+        :display-projects="displayProjects"
+        :policy-name="policy?.metadata?.name"
+        :mode="mode"
+      />
+      <button
+        class="btn role-primary"
+        @click="$emit('finish')"
+      >
+        close
+      </button>
+    </AppModal>
   </div>
 </template>
 

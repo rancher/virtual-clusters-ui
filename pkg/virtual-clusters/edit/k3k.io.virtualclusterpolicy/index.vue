@@ -231,12 +231,12 @@ export default {
       >
         <h3>{{ t('k3k.policy.headers.quotas') }}</h3>
         <!--  TODO nb refactor -->
-        <Quota
+        <!-- <Quota
           v-model:value="quota"
           :mode="mode"
           :types="quotaTypes"
           class="mb-20"
-        />
+        /> -->
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
         <ContainerResourceLimit
           v-model:value="defaultLimits"

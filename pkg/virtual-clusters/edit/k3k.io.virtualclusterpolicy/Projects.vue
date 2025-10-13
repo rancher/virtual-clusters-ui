@@ -10,7 +10,7 @@ import { NotificationLevel } from '@shell/types/notifications';
 import AppModal from '@shell/components/AppModal.vue';
 
 import { ANNOTATIONS } from '../../types';
-import ProjectTable from './ProjectTable.vue';
+import ProjectTable from './InlineProjectStatus.vue';
 
 import { mapGetters } from 'vuex';
 import uniq from 'lodash/uniq';
@@ -46,9 +46,9 @@ export default {
   },
 
   created() {
+    // TODO nb force load namespaces here?
     this.findSelectedProjects();
     this.denouncedUpdateNotification = debounce(this.updateNotification, 50);
-    this.denouncedUpdateModalTable = debounce(this.updateModalTable, 50);
   },
 
   components: {
@@ -60,6 +60,8 @@ export default {
   data() {
     return {
       showModal:                   false,
+      doneSavingNamespaces:        false,
+      namespacesSaved:             [],
       selectedProjects:                [],
       deselectedProjects:              [], // these are projects that had been annotated previously and are being removed now
       displayProjects:                 [], // on edit, only projects that haven't been fully annotated, or projects that are being removed, are shown in the inline project status table
@@ -149,34 +151,21 @@ export default {
     // this function is also used to UN-annotate and save namespaces in projects that have been deselected on edit
     async annotateAndSaveNamespaces() {
       /**
-       * these are stored as consts in this method so they're accessible in the after hook context
-       * they are used to generate the notification and its buttons (try again and edit policy)
+       * these are used to generate the notification and its buttons (try again and edit policy)
        * nsWillSave, nsSaved, nsErrored are used to compute which notification message to show
-       * projectsWithServerErrors and projectsWithPermissionErrors are used to create a bulleted list in the notification and decide whether or not to show 'try again' button
-       * notificationID is used to ensure we create/modify one notification per 'save' click - one notification when policy is saved and also one per click on 'try again' from edit mode
+       * projectsWithServerErrors and projectsWithPermissionErrors are used to decide whether or not to show 'try again' button
+       * notificationID is used to ensure we create/modify one notification per 'save' click
        */
       // TODO nb do these actually need to be defined here? Doesn't make sense when this.updateNotification works outside of the create page
-      const nsShouldBeAssigned = [];
-      const nsShouldBeUnAssigned = [];
+      let toBeAssignedCount = 0;
+      let toBeUnAssssignedCount = 0;
       const nsWillSave = [];
-      const nsSaved = [];
+      const nsSaved = this.namespacesSaved;
       const nsErrored = [];
       const projectsWithServerErrors = [];
       const projectsWithPermissionErrors = [];
       const notificationID = randomStr();
       const policyName = `${ this.policy?.metadata?.name }`;
-      // // // this runs before save, so we can't just use the policy's detailLocation getter
-      // const editRoute = {
-      //   ...this.$route,
-      //   name:   'c-cluster-product-resource-id',
-      //   params: {
-      //     cluster:  this.currentCluster?.id,
-      //     id:       policyName,
-      //     product:  'virtualclusters',
-      //     resource: 'k3k.io.virtualclusterpolicy'
-      //   },
-      //   query: { [MODE]: _EDIT, [AS]: _UNFLAG }
-      // };
 
       const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
 
@@ -186,7 +175,7 @@ export default {
         const namespaces = p.namespaces || [];
 
         namespaces.forEach((ns) => {
-          nsShouldBeAssigned.push(ns);
+          toBeAssignedCount++;
           if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
             nsSaved.push(ns.id);
 
@@ -202,7 +191,7 @@ export default {
         const namespaces = p.namespaces || [];
 
         namespaces.forEach((ns) => {
-          nsShouldBeUnAssigned.push(ns);
+          toBeUnAssssignedCount++;
           if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
             nsSaved.push(ns.id);
 
@@ -228,11 +217,10 @@ export default {
               namespace.__policyPermissionError = false;
               if (!this.showModal) {
                 this.denouncedUpdateNotification({
-                  nsShouldBeAssigned, nsShouldBeUnAssigned, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
+                  toBeAssignedCount, toBeUnAssssignedCount, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
                 });
               } else {
-                // TODO nb update table per project?
-                this.denouncedUpdateModalTable();
+                this.updateModalTable(namespace.project, nsSaved);
               }
 
               resolve();
@@ -250,38 +238,47 @@ export default {
               }
               if (!this.showModal) {
                 this.denouncedUpdateNotification({
-                  nsShouldBeAssigned, nsShouldBeUnAssigned, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
+                  toBeAssignedCount, toBeUnAssssignedCount, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
                 });
               } else {
-                // TODO nb update table per project?
-                this.denouncedUpdateModalTable();
+                this.updateModalTable(namespace.project, nsSaved);
               }
-
-              // reject(e);
             });
         });
       };
 
-      await Promise.all(nsWillSave.map((ns) => {
-        return saveEachNamespace(ns);
-      }));
+      try {
+        await Promise.all(nsWillSave.map((ns) => {
+          return saveEachNamespace(ns);
+        }));
+      } catch (e) {
+        if (!this.showModal) {
+          this.$emit('finish');
+        }
+        this.doneSavingNamespaces = true;
+        throw (e);
+      }
+
+      console.log('***** this is after the promise dot all');
+
       if (!this.showModal) {
         this.$emit('finish');
       }
+      this.doneSavingNamespaces = true;
     },
 
-    updateModalTable() {
+    updateModalTable(p = {}, nsSaved) {
       const modalTableComponent = this.$refs['modal-table'];
 
       if (modalTableComponent) {
-        modalTableComponent.computeAllStatuses();
+        modalTableComponent.computeNamespaceStatus(p, nsSaved);
       }
     },
 
     updateNotification({
-      nsShouldBeAssigned = [], nsShouldBeUnAssigned = [], nsSaved = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
+      toBeAssignedCount = 0, toBeUnAssssignedCount = 0, nsSaved = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
     }) {
-      const totalNsTargeted = nsShouldBeAssigned.length + nsShouldBeUnAssigned.length;
+      const totalNsTargeted = toBeAssignedCount + toBeUnAssssignedCount;
 
       if (!totalNsTargeted) {
         return;
@@ -297,7 +294,7 @@ export default {
       const isDone = totalNsTargeted === nsErrored?.length + nsSaved?.length;
       const hasErrors = !!nsErrored?.length;
       const succeeded = isDone && !hasErrors;
-
+      // TODO nb this shouldn't include ns that are already saved
       const progressPercent = Math.round((nsSaved.length / totalNsTargeted) * 100);
 
       // show an error message with number of projects that failed in each category of failure
@@ -412,18 +409,32 @@ export default {
     >
       <ProjectTable
         ref="modal-table"
+        :is-in-modal="true"
         :deselected-projects="deselectedProjects"
         :display-projects="[...selectedProjects, ...deselectedProjects]"
         :policy-name="policy?.metadata?.name"
+        :done-saving-namespaces="doneSavingNamespaces"
+        :namespaces-saved="namespacesSaved"
         :mode="mode"
       />
-      <!-- TODO nb add back to edit button when errors -->
-      <button
-        class="btn role-primary"
-        @click="$emit('finish')"
-      >
-        close
-      </button>
+      <div class="project-modal-footer">
+        <span
+          v-if="!doneSavingNamespaces"
+          class="text-muted"
+        >
+          <i
+            class="icon icon-spin icon-spinner"
+          />
+          {{ t('k3k.policy.projects.savingNamespaces') }}</span>
+        <!-- TODO nb add back to edit button when errors? How would that work -->
+        <button
+          v-if="doneSavingNamespaces"
+          class="btn role-primary"
+          @click="$emit('finish')"
+        >
+          {{ t('generic.close') }}
+        </button>
+      </div>
     </AppModal>
   </div>
 </template>
@@ -431,5 +442,9 @@ export default {
 <style lang="scss" scoped>
 .project-select :deep().vs__selected {
     width:fit-content !important;
+}
+
+.project-modal-footer {
+
 }
 </style>

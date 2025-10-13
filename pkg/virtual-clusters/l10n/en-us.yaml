@@ -78,11 +78,14 @@ k3k:
         status: Action
         errorBanner: Policy assignment has failed in some projects. Click save to re-attempt assigning the policy to the selected projects.
         successBanner: This policy has been assigned to all namespaces in all selected projects.
-        errorTooltip: Policy assignment will be re-attempted.
+        errorTooltip: Policy assignment can be re-attempted by re-saving the virtual cluster policy.
         deselectedTooltip: Policy will be unassigned from all namespaces in the project.
+        selectedTooltip: Policy will be assigned to all namespaces in the project.
+        successTooltip: Policy has been assigned to all namespaces in the project.
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project
+      savingNamespaces: Saving namespaces; do not close or refresh the window
     security:
       label: Security
       tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default.

@@ -35,7 +35,6 @@ export default {
 
 <template>
   <div>
-    <!-- TODO nb icon here -->
     <div class="header mb-20">
       <img
         height="100"

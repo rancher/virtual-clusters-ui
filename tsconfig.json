@@ -27,7 +27,9 @@
     },
     "typeRoots": [
       "./node_modules",
-      "./node_modules/@rancher/shell/types"
+      "./node_modules/@rancher/shell/types",
+      "./node_modules/@rancher/shell/core/types"
+
     ],    
     "types": [
       "@types/node",

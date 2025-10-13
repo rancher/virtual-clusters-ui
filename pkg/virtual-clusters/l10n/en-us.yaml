@@ -85,7 +85,7 @@ k3k:
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project
-      savingNamespaces: Saving namespaces; do not close or refresh the window
+      savingNamespaces: Saving namespaces; please do not close or refresh the window...
     security:
       label: Security
       tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default.

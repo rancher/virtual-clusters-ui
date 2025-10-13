@@ -5,6 +5,7 @@ import CruK3KCluster from './components/CruK3KCluster/index.vue';
 
 export class k3kProvisioner implements IClusterProvisioner {
   static ID = 'k3k'
+
   constructor(private context: ClusterProvisionerContext) {
     mapDriver(this.id, 'k3k' );
   }

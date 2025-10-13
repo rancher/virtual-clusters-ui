@@ -3,7 +3,6 @@ import { IPlugin, ModelExtensionConstructor, PanelLocation } from '@shell/core/t
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
 import virtualClusterRouting from './routes'
-import { NAMESPACE } from '@shell/config/types';
 
 
 // Init the package
@@ -31,7 +30,7 @@ export default function(plugin: IPlugin): void {
   plugin.metadata.icon = require('./assets/icon-virtual-clusters.svg');
 
   plugin.addPanel(PanelLocation.DETAILS_MASTHEAD, {
-    resource: [NAMESPACE],
+    resource: ['namespace'],
     mode: ['create']
   },  {component: ()=>import('./components/NamespaceAnnotation.vue')});
 }

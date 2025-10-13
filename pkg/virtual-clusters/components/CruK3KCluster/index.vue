@@ -7,7 +7,7 @@ import NameNsDescription from '@shell/components/form/NameNsDescription';
 
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/components/form/Labels.vue';
+import Labels from '../../../../node_modules/@rancher/shell/components/form/Labels';
 import ArrayList from '@shell/components/form/ArrayList';
 
 import KeyValue from '@shell/components/form/KeyValue.vue';

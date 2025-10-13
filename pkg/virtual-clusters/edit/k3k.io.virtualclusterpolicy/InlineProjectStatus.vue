@@ -145,6 +145,7 @@ export default {
       />
       <table
         class="project-annotation-status"
+        :class="{'in-modal': isInModal}"
       >
         <tr>
           <th>
@@ -168,9 +169,13 @@ export default {
               class="text-error"
             >{{ errMsg }}</span>
           </td>
-          <td class="ns">
+          <td v-if='showDeselectIcon && isInModal' class="ns">
+            {{ willSave.length - saved.length }}/{{ willSave.length }}
+          </td>
+          <td v-else class="ns">
             {{ saved.length }}/{{ willSave.length }}
           </td>
+
           <td class="status">
             <div>
               <i
@@ -181,7 +186,7 @@ export default {
               <i
                 v-else-if="showDeselectIcon"
                 v-clean-tooltip="t('k3k.policy.projects.table.deselectedTooltip')"
-                class="icon icon-trash text-error"
+                class="icon icon-trash"
                 :class="{'text-error':!inModal || doneSavingNamespaces, 'text-muted': inModal && !doneSavingNamespaces}"
               />
               <i
@@ -208,25 +213,29 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-    .project-annotation-status {
-        width: 100%;
-        border-collapse: separate;
+.project-annotation-status {
+    width: 100%;
+    border-collapse: separate;
 
-        & th,td{
-            text-align: left;
-            padding: 5px;
-        }
-
-        & tr:not(:last-of-type) td{
-            border-bottom: 1px dashed var(--border);
-        }
-
-        & td.ns {
-            width: 12em;
-        }
-
-        & td.status {
-          min-width: 35px;
-        }
+    &.in-modal{
+      padding: 20px;
     }
+
+    & th,td{
+        text-align: left;
+        padding: 5px;
+    }
+
+    & tr:not(:last-of-type) td{
+        border-bottom: 1px dashed var(--border);
+    }
+
+    & td.ns {
+        width: 12em;
+    }
+
+    & td.status {
+      min-width: 35px;
+    }
+}
 </style>

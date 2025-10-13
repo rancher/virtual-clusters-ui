@@ -1,7 +1,7 @@
 <script>
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/components/form/Labels.vue';
+import Labels from '../../../../node_modules/@rancher/shell/components/form/Labels';
 import Mode from '../../components/Mode.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
@@ -9,7 +9,6 @@ import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 import NameNsDescription from '@shell/components/form/NameNsDescription';
 import { RANCHER_TYPES } from '@shell/components/form/ResourceQuota/shared';
-import ResourceQuota from '@shell/components/form/ResourceQuota/Project';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
@@ -36,7 +35,7 @@ export default {
     Tab,
     Labels,
     ContainerResourceLimit,
-    Quota,
+    // Quota,
     KeyValue,
     LabeledSelect,
     Projects,
@@ -356,10 +355,10 @@ export default {
         name="labels"
         label-key="generic.labelsAndAnnotations"
       >
-        <Labels
+        <!-- <Labels
           :mode="mode"
           :value="value"
-        />
+        /> -->
       </Tab>
     </Tabbed>
   </CruResource>

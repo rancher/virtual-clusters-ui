@@ -6,39 +6,27 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@babel/plugin-transform-class-static-block": "^7.28.3",
     "@rancher/components": "^0.3.0-alpha.1",
-    "@rancher/shell": "3.0.5-rc6",
-    "@types/lodash": "4.14.184",
-    "chart.js": "^4.5.0",
+    "@rancher/shell": "3.0.6",
+    "@types/lodash": "4.14.196",
+    "cache-loader": "4.1.0",
+    "core-js": "3.21.1",
     "css-loader": "6.7.3",
-    "focus-trap": "7.6.4"
+    "node-polyfill-webpack-plugin": "3.0.0"
   },
   "devDependencies": {
-    "@types/jest": "29.5.12",
-    "@types/lodash": "4.14.184",
-    "@types/node": "20.10.8",
-    "eslint": "7.32.0",
-    "eslint-config-standard": "16.0.3",
-    "eslint-import-resolver-node": "0.3.4",
-    "eslint-module-utils": "2.6.1",
     "eslint-plugin-cypress": "2.12.1",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-jest": "24.4.0",
-    "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "7.2.1",
-    "eslint-plugin-vue": "9.10.0",
-    "file-loader": "6.2.0",
-    "node-polyfill-webpack-plugin": "3.0.0",
-    "raw-loader": "4.0.2",
-    "url-loader": "4.1.1"
+    "eslint-plugin-vue": "9.10.0"
   },
   "resolutions": {
     "**/webpack": "5",
     "@types/node": "~20.10.0",
-    "glob": "7.2.3",
-    "@types/lodash": "4.17.5",
-    "html-webpack-plugin": "5.6.3"
+    "glob": "7.2.3"
   },
   "scripts": {
     "dev": "NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",

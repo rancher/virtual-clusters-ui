@@ -34,7 +34,8 @@ export default {
 </script>
 
 <template>
-  <div>
+  <Loading v-if="$fetchState.pending" />
+  <div v-else>
     <div class="header mb-20">
       <img
         height="100"

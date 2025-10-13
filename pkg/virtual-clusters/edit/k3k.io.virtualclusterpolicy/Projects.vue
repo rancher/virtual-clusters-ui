@@ -61,6 +61,7 @@ export default {
     return {
       showModal:                   false,
       doneSavingNamespaces:        false,
+      hasErrors:                   false,
       namespacesSaved:             [],
       selectedProjects:                [],
       deselectedProjects:              [], // these are projects that had been annotated previously and are being removed now
@@ -230,6 +231,7 @@ export default {
 
               // TODO nb permissionError and serverError
               namespace.__policyServerError = true;
+              this.hasErrors = true;
 
               const projectName = namespace?.project?.nameDisplay;
 
@@ -243,6 +245,7 @@ export default {
               } else {
                 this.updateModalTable(namespace.project, nsSaved);
               }
+              resolve();
             });
         });
       };
@@ -251,15 +254,16 @@ export default {
         await Promise.all(nsWillSave.map((ns) => {
           return saveEachNamespace(ns);
         }));
+        this.doneSavingNamespaces = true;
       } catch (e) {
         if (!this.showModal) {
           this.$emit('finish');
         }
         this.doneSavingNamespaces = true;
+        console.log('***** CATCH this is after the promise dot all');
+
         throw (e);
       }
-
-      console.log('***** this is after the promise dot all');
 
       if (!this.showModal) {
         this.$emit('finish');
@@ -294,7 +298,6 @@ export default {
       const isDone = totalNsTargeted === nsErrored?.length + nsSaved?.length;
       const hasErrors = !!nsErrored?.length;
       const succeeded = isDone && !hasErrors;
-      // TODO nb this shouldn't include ns that are already saved
       const progressPercent = Math.round((nsSaved.length / totalNsTargeted) * 100);
 
       // show an error message with number of projects that failed in each category of failure
@@ -406,6 +409,7 @@ export default {
       v-if="showModal"
       name="assign-policies"
       :click-to-close="false"
+      class="project-modal"
     >
       <ProjectTable
         ref="modal-table"
@@ -426,13 +430,19 @@ export default {
             class="icon icon-spin icon-spinner"
           />
           {{ t('k3k.policy.projects.savingNamespaces') }}</span>
-        <!-- TODO nb add back to edit button when errors? How would that work -->
+        <button
+          v-if="doneSavingNamespaces && hasErrors"
+          class="btn role-secondary"
+          @click="policy.goToEdit()"
+        >
+          Edit Policy
+        </button>
         <button
           v-if="doneSavingNamespaces"
           class="btn role-primary"
           @click="$emit('finish')"
         >
-          {{ t('generic.close') }}
+          {{ t('generic.done') }}
         </button>
       </div>
     </AppModal>
@@ -444,7 +454,13 @@ export default {
     width:fit-content !important;
 }
 
-.project-modal-footer {
+:deep(.project-modal) {
+  padding: 20px;
+}
 
+.project-modal-footer {
+  float: right;
+  overflow: hidden;
+  padding: 20px;
 }
 </style>

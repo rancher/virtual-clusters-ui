@@ -96,6 +96,11 @@ k3k:
       tooltip: In the shared mode, required resources are synchronized from the virtual cluster to the host cluster by default. You can also sync Ingresses and PriorityClasses.
       ingressCheckbox: Ingresses
       priorityClassCheckbox: PriorityClasses
+    quota: 
+      headers:
+        resourceType: Resource Type
+        clusterSetLimit: Cluster Set Limit
+        vcSetLimit: Virtual Cluster Set Limit
   targetNamespace:
     label: Target Namespace
   hostCluster:

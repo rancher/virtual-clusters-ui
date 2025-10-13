@@ -38,16 +38,6 @@ export default {
       default: () => {}
     },
 
-    // registerAfterHook: {
-    //   type:     Function,
-    //   default: () => {}
-    // },
-
-    registerBeforeHook: {
-      type:     Function,
-      default: () => {}
-    },
-
     errors: {
       type:    Array,
       default: () => []
@@ -56,11 +46,9 @@ export default {
   },
 
   created() {
-    // this.registerBeforeHook(this.annotateAndSaveNamespaces, 'annotate-namespaces');
-    // this.registerBeforeHook(this.unAnnotateAndSaveAllNamespaces, 'unannotate-namespaces');
-
     this.findSelectedProjects();
     this.denouncedUpdateNotification = debounce(this.updateNotification, 50);
+    this.denouncedUpdateModalTable = debounce(this.updateModalTable, 50);
   },
 
   components: {
@@ -158,16 +146,8 @@ export default {
       });
     },
 
-    async unAnnotateAndSaveAllNamespaces() {
-      if (this.deselectedProjects.length) {
-        return this.annotateAndSaveNamespaces(false);
-      }
-    },
-
-    // TODO nb do annotate and un-annotate in one function
     // this function is also used to UN-annotate and save namespaces in projects that have been deselected on edit
-    async annotateAndSaveNamespaces(addAnnotation = true) {
-      const projects = addAnnotation ? this.selectedProjects || [] : this.deselectedProjects || [];
+    async annotateAndSaveNamespaces() {
       /**
        * these are stored as consts in this method so they're accessible in the after hook context
        * they are used to generate the notification and its buttons (try again and edit policy)
@@ -175,6 +155,9 @@ export default {
        * projectsWithServerErrors and projectsWithPermissionErrors are used to create a bulleted list in the notification and decide whether or not to show 'try again' button
        * notificationID is used to ensure we create/modify one notification per 'save' click - one notification when policy is saved and also one per click on 'try again' from edit mode
        */
+      // TODO nb do these actually need to be defined here? Doesn't make sense when this.updateNotification works outside of the create page
+      const nsShouldBeAssigned = [];
+      const nsShouldBeUnAssigned = [];
       const nsWillSave = [];
       const nsSaved = [];
       const nsErrored = [];
@@ -182,30 +165,56 @@ export default {
       const projectsWithPermissionErrors = [];
       const notificationID = randomStr();
       const policyName = `${ this.policy?.metadata?.name }`;
-      // this runs before save, so we can't just use the policy's detailLocation getter
-      const editRoute = {
-        ...this.$route,
-        name:   'c-cluster-product-resource-id',
-        params: {
-          cluster:  this.currentCluster?.id,
-          id:       policyName,
-          product:  'virtualclusters',
-          resource: 'k3k.io.virtualclusterpolicy'
-        },
-        query: { [MODE]: _EDIT, [AS]: _UNFLAG }
-      };
+      // // // this runs before save, so we can't just use the policy's detailLocation getter
+      // const editRoute = {
+      //   ...this.$route,
+      //   name:   'c-cluster-product-resource-id',
+      //   params: {
+      //     cluster:  this.currentCluster?.id,
+      //     id:       policyName,
+      //     product:  'virtualclusters',
+      //     resource: 'k3k.io.virtualclusterpolicy'
+      //   },
+      //   query: { [MODE]: _EDIT, [AS]: _UNFLAG }
+      // };
+
+      const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
 
       const editPath = this.$router.resolve(editRoute)?.fullPath;
 
-      const allSelectedNamespaces = projects.reduce((all, p) => {
-        if (p.namespaces && p.namespaces?.length) {
-          all.push(...p.namespaces);
-        }
+      this.selectedProjects.forEach((p) => {
+        const namespaces = p.namespaces || [];
 
-        return all;
-      }, []);
+        namespaces.forEach((ns) => {
+          nsShouldBeAssigned.push(ns);
+          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
+            nsSaved.push(ns.id);
 
-      this.showModal = allSelectedNamespaces?.length > MODAL_SHOW_THRESHOLD;
+            return;
+          }
+          nsWillSave.push(ns);
+
+          ns.setAnnotation(ANNOTATIONS.POLICY, this.policy?.metadata?.name);
+        });
+      });
+
+      this.deselectedProjects.forEach((p) => {
+        const namespaces = p.namespaces || [];
+
+        namespaces.forEach((ns) => {
+          nsShouldBeUnAssigned.push(ns);
+          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
+            nsSaved.push(ns.id);
+
+            return;
+          }
+          nsWillSave.push(ns);
+
+          ns.setAnnotation(ANNOTATIONS.POLICY, null); // remove this key from the annotations object
+        });
+      });
+
+      this.showModal = nsWillSave?.length > MODAL_SHOW_THRESHOLD;
 
       const saveEachNamespace = (namespace) => {
         return new Promise((resolve, reject) => {
@@ -217,10 +226,14 @@ export default {
               // need to clear it so the table reflects that there are no more ns in error
               namespace.__policyServerError = false;
               namespace.__policyPermissionError = false;
-
-              this.denouncedUpdateNotification({
-                nsWillSave, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
-              });
+              if (!this.showModal) {
+                this.denouncedUpdateNotification({
+                  nsShouldBeAssigned, nsShouldBeUnAssigned, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
+                });
+              } else {
+                // TODO nb update table per project?
+                this.denouncedUpdateModalTable();
+              }
 
               resolve();
             })
@@ -235,38 +248,21 @@ export default {
               if (projectName && !projectsWithServerErrors.includes(projectName)) {
                 projectsWithServerErrors.push(projectName);
               }
+              if (!this.showModal) {
+                this.denouncedUpdateNotification({
+                  nsShouldBeAssigned, nsShouldBeUnAssigned, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
+                });
+              } else {
+                // TODO nb update table per project?
+                this.denouncedUpdateModalTable();
+              }
 
-              this.denouncedUpdateNotification({
-                nsWillSave, nsSaved, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID, addAnnotation
-              });
               // reject(e);
             });
         });
       };
 
-      await Promise.all(allSelectedNamespaces.map((ns) => {
-        nsWillSave.push(ns.id);
-
-        // if we are adding annotations to this project's namespaces, check if it is already present each namespace and skip saving that namespace if so
-        if (addAnnotation) {
-          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
-            nsSaved.push(ns.id);
-
-            return;
-          }
-
-          ns.setAnnotation(ANNOTATIONS.POLICY, this.policy?.metadata?.name);
-        } else {
-          // if we are removing annotations from all ns in this project, verify that each namespace has the annotation and skip saving any that are already missing it
-          // this will come up a lot eg if a user sees that only some namespaces in a project worked and decides to 'deselect' the whole project
-          if (!ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
-            nsSaved.push(ns.id);
-
-            return;
-          }
-          ns.setAnnotation(ANNOTATIONS.POLICY); // remove this key from the annotations object
-        }
-
+      await Promise.all(nsWillSave.map((ns) => {
         return saveEachNamespace(ns);
       }));
       if (!this.showModal) {
@@ -274,25 +270,35 @@ export default {
       }
     },
 
+    updateModalTable() {
+      const modalTableComponent = this.$refs['modal-table'];
+
+      if (modalTableComponent) {
+        modalTableComponent.computeAllStatuses();
+      }
+    },
+
     updateNotification({
-      nsWillSave = [], nsSaved = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
+      nsShouldBeAssigned = [], nsShouldBeUnAssigned = [], nsSaved = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
     }) {
-      if (!nsWillSave || !nsWillSave.length) {
+      const totalNsTargeted = nsShouldBeAssigned.length + nsShouldBeUnAssigned.length;
+
+      if (!totalNsTargeted) {
         return;
       }
-
+      // TODO nb fix notification messages to be "assigning x namespaces [and unassigning y namespaces...]"
       const translationKeyPath = addAnnotation ? 'k3k.policy.projects.notification.adding' : 'k3k.policy.projects.notification.removing';
 
       let level = NotificationLevel.Task;
       let title = this.t(`${ translationKeyPath }.task.title`);
-      let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: nsWillSave.length, policyName });
+      let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: totalNsTargeted, policyName });
       let primaryAction = null;
 
-      const isDone = nsWillSave?.length === nsErrored?.length + nsSaved?.length;
+      const isDone = totalNsTargeted === nsErrored?.length + nsSaved?.length;
       const hasErrors = !!nsErrored?.length;
       const succeeded = isDone && !hasErrors;
 
-      const progressPercent = Math.round((nsSaved.length / nsWillSave.length) * 100);
+      const progressPercent = Math.round((nsSaved.length / totalNsTargeted) * 100);
 
       // show an error message with number of projects that failed in each category of failure
       if (isDone ) {
@@ -405,11 +411,13 @@ export default {
       :click-to-close="false"
     >
       <ProjectTable
+        ref="modal-table"
         :deselected-projects="deselectedProjects"
-        :display-projects="displayProjects"
+        :display-projects="[...selectedProjects, ...deselectedProjects]"
         :policy-name="policy?.metadata?.name"
         :mode="mode"
       />
+      <!-- TODO nb add back to edit button when errors -->
       <button
         class="btn role-primary"
         @click="$emit('finish')"

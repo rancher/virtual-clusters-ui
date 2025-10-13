@@ -12,13 +12,15 @@ import { RANCHER_TYPES } from '@shell/components/form/ResourceQuota/shared';
 import ResourceQuota from '@shell/components/form/ResourceQuota/Project';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import KeyValue from '@shell/components/form/KeyValue.vue';
-import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
+import Quota from './Quota.vue';
 
 import Projects from './Projects.vue';
 import { ANNOTATIONS } from '../../types';
+
+const CONTAINER_LIMIT_TYPE = 'container';
 
 export default {
   name: 'CRUClusterPolicy',
@@ -33,26 +35,22 @@ export default {
     Tabbed,
     Tab,
     Labels,
-    ResourceQuota,
     ContainerResourceLimit,
+    Quota,
     KeyValue,
     LabeledSelect,
     Projects,
-    Checkbox
+    Checkbox,
   },
 
   async fetch() {
     if (!this.value.spec) {
       this.value.spec = {};
     }
-    this.allPSAs = await this.$store.dispatch('management/findAll', { type: MANAGEMENT.PSA });
   },
 
   data() {
-    return {
-      allPSAs:                 [],
-      projectAnnotationErrors: [],
-    };
+    return { projectAnnotationErrors: [] };
   },
 
   computed: {
@@ -60,49 +58,82 @@ export default {
       return RANCHER_TYPES;
     },
 
-    // TODO nb use host cluster type
-    defaultPsaOptionLabel() {
-      const optionCase = !this.value.isK3s ? 'default' : 'none';
+    defaultLimits: {
+      get() {
+        const limit = (this.value?.spec?.limit?.limits || []).find((l) => l.type === CONTAINER_LIMIT_TYPE) || {};
 
-      return this.$store.getters['i18n/t'](`cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.option.${ optionCase }`);
-    },
+        const { max = {}, defaultRequest = {} } = limit;
 
-    psaOptions() {
-      const out = [{
-        label: this.$store.getters['i18n/t'](`cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.option.default`),
-        value: ''
-      }];
+        return {
+          limitsCpu: max.cpu, limitsMemory: max.memory, limitsGpu: max.gpu, requestsCpu: defaultRequest.cpu, requestsMemory: defaultRequest.memory
+        };
+      },
 
-      if ( this.allPSAs ) {
-        for ( const psa of this.allPSAs ) {
-          out.push({
-            label: psa.nameDisplay,
-            value: psa.id,
-          });
+      set({
+        limitsCpu, limitsMemory, requestsCpu, requestsMemory, limitsGpu
+      }) {
+        if (!this.value.spec.limit) {
+          this.value.spec.limit = {};
         }
-      }
-      const cur = this.value.spec?.podSecurityAdmissionLevel;
+        if (!this.value.spec.limit.limits) {
+          this.value.spec.limit.limits = [];
+        }
+        const neu = {
+          type:           CONTAINER_LIMIT_TYPE,
+          max:            {},
+          defaultRequest: {}
+        };
 
-      if ( cur && !out.find((x) => x.value === cur) ) {
-        out.unshift({ label: `${ cur } (Current)`, value: cur });
-      }
+        if (limitsCpu !== undefined) {
+          neu.max.cpu = limitsCpu;
+        }
 
-      return out;
+        if (limitsMemory !== undefined) {
+          neu.max.memory = limitsMemory;
+        }
+
+        if (requestsCpu !== undefined) {
+          neu.defaultRequest.cpu = requestsCpu;
+        }
+
+        if (requestsMemory !== undefined) {
+          neu.defaultRequest.memory = requestsMemory;
+        }
+        if (limitsGpu !== undefined) {
+          neu.max.gpu = limitsGpu;
+        }
+        this.value.spec.limit.limits = [neu];
+      }
     },
 
+    quota: {
+      get() {
+        return this.value?.spec?.quota?.hard || {};
+      },
+      set(neu = {}) {
+        this.value.spec.quota = { hard: neu };
+      }
+    },
   },
 
   methods: {
-    // TODO nb do
-    updateName(e) {
-      // console.log(e);
-    },
-
     updateSelectedProjects(projects = []) {
       if (!projects.length) {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], '');
       } else {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], projects.map((p) => p.id).join(', '));
+      }
+    },
+
+    updateSync(key, enabled) {
+      if (!this.value.spec.sync) {
+        this.value.spec.sync = {};
+      }
+
+      if (!this.value.spec.sync[key]) {
+        this.value.spec.sync[key] = { enabled };
+      } else {
+        this.value.spec.sync[key].enabled = enabled;
       }
     },
 
@@ -151,7 +182,6 @@ export default {
 
 <template>
   <Loading v-if="$fetchState.pending" />
-  <!-- TODO nb no can save when there are projects with 'try again' option available -->
   <CruResource
     v-else
     :mode="mode"
@@ -164,14 +194,12 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
-    <!-- TODO nb make name required -->
     <NameNsDescription
       v-if="!isView"
       :mode="mode"
       :namespaced="false"
       :value="value"
       :create-namespace-override="true"
-      @update:value="updateName"
     >
     </NameNsDescription>
 
@@ -188,8 +216,6 @@ export default {
           v-model:errors="projectAnnotationErrors"
           :mode="mode"
           :policy="value"
-          :register-after-hook="registerAfterHook"
-          :register-before-hook="registerBeforeHook"
           @update:selected-projects="updateSelectedProjects"
           @finish="done"
         />
@@ -204,17 +230,16 @@ export default {
         label-key="k3k.policy.tabs.resourceAllocation"
       >
         <h3>{{ t('k3k.policy.headers.quotas') }}</h3>
-        <!-- TODO nb proper spec path -->
-        <!--  TODO nb not setting -->
-        <ResourceQuota
-          v-model:value="value.spec.quota"
+        <!--  TODO nb refactor -->
+        <Quota
+          v-model:value="quota"
           :mode="mode"
           :types="quotaTypes"
           class="mb-20"
         />
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
         <ContainerResourceLimit
-          :value="value.spec.limits"
+          v-model:value="defaultLimits"
           :mode="mode"
           :namespace="value"
           :register-before-hook="registerBeforeHook"
@@ -232,7 +257,7 @@ export default {
         >
           <div class="col span-12">
             <KeyValue
-              v-model:value="value.spec.nodeSelector"
+              v-model:value="value.spec.defaultNodeSelector"
               :initial-empty-row="true"
               :mode="mode"
               :read-allowed="false"
@@ -274,8 +299,8 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              :value="value.spec.podSecurityAdmissionLevel"
-              :options="psaOptions"
+              v-model:value="value.spec.podSecurityAdmissionLevel"
+              :options="['privileged', 'baseline', 'restricted']"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
             />
           </div>
@@ -312,19 +337,22 @@ export default {
         <div class="row mb-20">
           <div class="col span-6 vertical-checkboxes">
             <Checkbox
+              :value="value?.spec?.sync?.ingresses?.enabled"
               :mode="mode"
               :label="t('k3k.policy.synchronization.ingressCheckbox')"
+              @update:value="e=>updateSync('ingresses', e)"
             />
             <Checkbox
+              :value="value?.spec?.sync?.priorityClasses?.enabled"
               :mode="mode"
               :label="t('k3k.policy.synchronization.priorityClassCheckbox')"
+              @update:value="e=>updateSync('priorityClasses', e)"
             />
           </div>
         </div>
       </Tab>
       <Tab
         :weight="1"
-
         name="labels"
         label-key="generic.labelsAndAnnotations"
       >

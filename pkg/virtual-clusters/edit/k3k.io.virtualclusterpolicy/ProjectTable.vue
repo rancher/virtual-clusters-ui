@@ -105,6 +105,10 @@ export default {
         shouldHaveAnnotation
       };
     },
+
+    computeAllStatuses() {
+      this.displayProjects.forEach((p) => this.computeNamespaceStatus(p));
+    },
   },
 
 };

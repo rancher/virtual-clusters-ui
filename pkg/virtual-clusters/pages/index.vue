@@ -3,11 +3,12 @@ import { K3K } from '../types';
 import { SCHEMA } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallHelmCharts from '@shell/components/InstallHelmCharts';
+import Loading from '@shell/components/Loading';
 
 export default {
   name: 'K3kExplorerLandingPage',
 
-  components: { InstallHelmCharts },
+  components: { InstallHelmCharts, Loading },
 
   async beforeCreate() {
     try {

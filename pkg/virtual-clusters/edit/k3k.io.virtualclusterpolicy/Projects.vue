@@ -45,8 +45,13 @@ export default {
 
   },
 
+  async fetch() {
+    if (this.mode !== _CREATE) {
+      await this.$store.dispatch('cluster/findAll', { type: 'namespace' });
+    }
+  },
+
   created() {
-    // TODO nb force load namespaces here?
     this.findSelectedProjects();
     this.denouncedUpdateNotification = debounce(this.updateNotification, 50);
   },

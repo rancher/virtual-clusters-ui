@@ -1,10 +1,10 @@
 <script>
-import Select from '@rancher/shell/components/form/Select';
-import UnitInput from '@rancher/shell/components/form/UnitInput';
-import { ROW_COMPUTED } from '@rancher/shell/components/form/ResourceQuota/shared';
+import Select from '@shell/components/form/Select';
+import UnitInput from '@shell/components/form/UnitInput';
+import { ROW_COMPUTED } from '@shell/components/form/ResourceQuota/shared';
 
 export default {
-  emits: ['type-change'],
+  emits: ['type-change', 'update'],
 
   components: { Select, UnitInput },
 
@@ -13,14 +13,18 @@ export default {
       type:     String,
       required: true,
     },
+
     types: {
       type:    Array,
       default: () => []
     },
+
     type: {
       type:    String,
       default: ''
     },
+
+    // corev1.resourcequota.spec.hard
     value: {
       type:    Object,
       default: () => {
@@ -29,41 +33,21 @@ export default {
     }
   },
 
-  computed: {
-    ...ROW_COMPUTED,
-
-    resourceQuotaLimit: {
-      get() {
-        return this.value.spec.resourceQuota?.limit || {};
-      },
-    },
-
-    namespaceDefaultResourceQuotaLimit: {
-      get() {
-        return this.value.spec.namespaceDefaultResourceQuota?.limit || {};
-      },
-    }
-  },
+  computed: { ...ROW_COMPUTED },
 
   methods: {
+    // delete the old type key and tell the parent component to add a new one
     updateType(type) {
-      if (typeof this.value.spec.resourceQuota?.limit[this.type] !== 'undefined') {
-        delete this.value.spec.resourceQuota.limit[this.type];
-      }
-      if (typeof this.value.spec.namespaceDefaultResourceQuota?.limit[this.type] !== 'undefined') {
-        delete this.value.spec.namespaceDefaultResourceQuota.limit[this.type];
+      if (typeof this.value[this.type] !== 'undefined') {
+        delete this.value[this.type];
       }
 
       this.$emit('type-change', type);
     },
 
-    updateQuotaLimit(prop, type, val) {
-      // TODO nb do
-    //   if (!this.value.spec[prop]) {
-    //     this.value.spec[prop] = { limit: { } };
-    //   }
-
-    //   this.value.spec[prop].limit[type] = val;
+    updateQuotaLimit(type, val) {
+      this.value[type] = val;
+      this.$emit('update');
     }
   },
 };
@@ -81,7 +65,7 @@ export default {
       @update:value="updateType($event)"
     />
     <UnitInput
-      :value="resourceQuotaLimit[type]"
+      :value="value[type]"
       class="mr-10"
       :mode="mode"
       :placeholder="typeOption.placeholder"

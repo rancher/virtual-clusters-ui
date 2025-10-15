@@ -6,6 +6,8 @@ import { QUOTA_COMPUTED } from '@rancher/shell/components/form/ResourceQuota/sha
 export default {
   emits: ['remove', 'update:value'],
 
+  name: 'VirtualClusterQuota',
+
   components: { ArrayList, Row },
 
   props: {
@@ -41,14 +43,24 @@ export default {
   methods: {
     updateType(i, type) {
       this.typeValues[i] = type;
+      this.$emit('update:value', this.value);
     },
+
     remainingTypes(currentType) {
       return this.mappedTypes
         .filter((mappedType) => !this.typeValues.includes(mappedType.value) || mappedType.value === currentType);
     },
-    emitRemove(data) {
-      this.$emit('remove', data.row?.value);
-    }
+
+    removeRow(data) {
+      const { row = {} } = data;
+
+      if (row.value) {
+        this.typeValues = this.typeValues.filter((t) => t !== row.value);
+
+        delete this.value[row.value];
+        this.$emit('update:value', this.value);
+      }
+    },
   },
 };
 </script>
@@ -63,14 +75,13 @@ export default {
       </div>
     </div>
     <ArrayList
-      :value="value"
+      v-model:value="typeValues"
       label="Resources"
       :add-label="t('resourceQuota.add.label')"
       :default-add-value="remainingTypes()[0] ? remainingTypes()[0].value : ''"
       :add-allowed="remainingTypes().length > 0"
       :mode="mode"
-      @update="$emit('update:value')"
-      @remove="emitRemove"
+      @remove="removeRow"
     >
       <template #columns="props">
         <Row
@@ -78,7 +89,7 @@ export default {
           :mode="mode"
           :types="remainingTypes(typeValues[props.i])"
           :type="typeValues[props.i]"
-          @input="$emit('input', $event)"
+          @update="$emit('update:value', value)"
           @type-change="updateType(props.i, $event)"
         />
       </template>

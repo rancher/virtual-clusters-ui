@@ -74,7 +74,6 @@ export default {
   },
 
   computed: {
-    // TODO nb success banner in modal
     showErrorBanner() {
       return !!(Object.values(this.statuses) || []).find((status) => {
         return status?.hasServerErrors || status?.hasPermissionErrors;
@@ -134,14 +133,9 @@ export default {
   <div class="row mb-20">
     <div class="col span-12">
       <Banner
-        v-if="showSuccessBanner"
-        color="success"
-        :label="t('k3k.policy.projects.table.successBanner')"
-      />
-      <Banner
-        v-else-if="showErrorBanner"
+        v-if="showErrorBanner"
         color="error"
-        :label="t('k3k.policy.projects.table.errorBanner')"
+        :label="t('k3k.policy.projects.table.errorBannerInline')"
       />
       <table
         class="project-annotation-status"
@@ -169,10 +163,16 @@ export default {
               class="text-error"
             >{{ errMsg }}</span>
           </td>
-          <td v-if='showDeselectIcon && isInModal' class="ns">
+          <td
+            v-if="showDeselectIcon && isInModal"
+            class="ns"
+          >
             {{ willSave.length - saved.length }}/{{ willSave.length }}
           </td>
-          <td v-else class="ns">
+          <td
+            v-else
+            class="ns"
+          >
             {{ saved.length }}/{{ willSave.length }}
           </td>
 
@@ -185,13 +185,13 @@ export default {
               />
               <i
                 v-else-if="showDeselectIcon"
-                v-clean-tooltip="t('k3k.policy.projects.table.deselectedTooltip')"
+                v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
                 class="icon icon-trash"
-                :class="{'text-error':!inModal || doneSavingNamespaces, 'text-muted': inModal && !doneSavingNamespaces}"
+                :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-muted': isInModal && !doneSavingNamespaces}"
               />
               <i
                 v-else-if="showSuccessIcon"
-                v-clean-tooltip="t('k3k.policy.projects.table.successTooltip')"
+                v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
                 class="icon icon-checkmark text-success"
               />
               <i
@@ -216,10 +216,6 @@ export default {
 .project-annotation-status {
     width: 100%;
     border-collapse: separate;
-
-    &.in-modal{
-      padding: 20px;
-    }
 
     & th,td{
         text-align: left;

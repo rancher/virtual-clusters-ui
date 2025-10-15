@@ -1,7 +1,7 @@
 <script>
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '../../../../node_modules/@rancher/shell/components/form/Labels';
+import Labels from '@shell/components/form/Labels';
 import Mode from '../../components/Mode.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
@@ -35,7 +35,7 @@ export default {
     Tab,
     Labels,
     ContainerResourceLimit,
-    // Quota,
+    Quota,
     KeyValue,
     LabeledSelect,
     Projects,
@@ -57,9 +57,10 @@ export default {
       return RANCHER_TYPES;
     },
 
+    // format limits to match project/namesapces so we can use the same component
     defaultLimits: {
       get() {
-        const limit = (this.value?.spec?.limit?.limits || []).find((l) => l.type === CONTAINER_LIMIT_TYPE) || {};
+        const limit = (this.value.spec?.limit?.limits || []).find((l) => l.type === CONTAINER_LIMIT_TYPE) || {};
 
         const { max = {}, defaultRequest = {} } = limit;
 
@@ -110,7 +111,10 @@ export default {
         return this.value?.spec?.quota?.hard || {};
       },
       set(neu = {}) {
-        this.value.spec.quota = { hard: neu };
+        if (!this.value.spec.quota) {
+          this.value.spec.quota = {};
+        }
+        this.value.spec.quota.hard = neu;
       }
     },
   },
@@ -229,13 +233,12 @@ export default {
         label-key="k3k.policy.tabs.resourceAllocation"
       >
         <h3>{{ t('k3k.policy.headers.quotas') }}</h3>
-        <!--  TODO nb refactor -->
-        <!-- <Quota
+        <Quota
           v-model:value="quota"
           :mode="mode"
           :types="quotaTypes"
           class="mb-20"
-        /> -->
+        />
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
         <ContainerResourceLimit
           v-model:value="defaultLimits"
@@ -355,10 +358,10 @@ export default {
         name="labels"
         label-key="generic.labelsAndAnnotations"
       >
-        <!-- <Labels
+        <Labels
           :mode="mode"
           :value="value"
-        /> -->
+        />
       </Tab>
     </Tabbed>
   </CruResource>

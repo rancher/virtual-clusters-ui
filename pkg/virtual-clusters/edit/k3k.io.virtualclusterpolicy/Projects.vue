@@ -8,9 +8,10 @@ import { sortBy } from '@shell/utils/sort';
 import { MANAGEMENT } from '@shell/config/types';
 import { NotificationLevel } from '@shell/types/notifications';
 import AppModal from '@shell/components/AppModal.vue';
+import { Banner } from '@rancher/components';
 
 import { ANNOTATIONS } from '../../types';
-import ProjectTable from './InlineProjectStatus.vue';
+import ProjectStatusTable from './ProjectStatusTable.vue';
 
 import { mapGetters } from 'vuex';
 import uniq from 'lodash/uniq';
@@ -26,6 +27,13 @@ export default {
   name: 'K3kPolicyProjectSelect',
 
   emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects', 'finish'],
+
+  components: {
+    LabeledSelect,
+    ProjectStatusTable,
+    AppModal,
+    Banner
+  },
 
   props: {
     mode: {
@@ -47,19 +55,13 @@ export default {
 
   async fetch() {
     if (this.mode !== _CREATE) {
-      await this.$store.dispatch('cluster/findAll', { type: 'namespace' });
+      await this.$store.dispatch('cluster/findAll', { type: 'namespace', opt: { force: true } });
     }
   },
 
   created() {
     this.findSelectedProjects();
     this.denouncedUpdateNotification = debounce(this.updateNotification, 50);
-  },
-
-  components: {
-    LabeledSelect,
-    ProjectTable,
-    AppModal
   },
 
   data() {
@@ -143,6 +145,7 @@ export default {
     },
 
     // avoiding automatic retry logic because it crashes the UI when every ns fails and is retried
+    // because that retry involves making a GET request for each namespace and then another PUT request
     saveNamespaceLite(ns = {}) {
       if (!ns.metadata?.name) {
         return;
@@ -211,6 +214,7 @@ export default {
 
       this.showModal = nsWillSave?.length > MODAL_SHOW_THRESHOLD;
 
+      // TODO nb try bulking all to save using yaml endpoint...?
       const saveEachNamespace = (namespace) => {
         return new Promise((resolve, reject) => {
           this.saveNamespaceLite(namespace)
@@ -265,7 +269,6 @@ export default {
           this.$emit('finish');
         }
         this.doneSavingNamespaces = true;
-        console.log('***** CATCH this is after the promise dot all');
 
         throw (e);
       }
@@ -403,7 +406,7 @@ export default {
         />
       </div>
     </div>
-    <ProjectTable
+    <ProjectStatusTable
       v-if="displayProjects.length && !isCreate"
       :deselected-projects="deselectedProjects"
       :display-projects="displayProjects"
@@ -416,39 +419,51 @@ export default {
       :click-to-close="false"
       class="project-modal"
     >
-      <ProjectTable
-        ref="modal-table"
-        :is-in-modal="true"
-        :deselected-projects="deselectedProjects"
-        :display-projects="[...selectedProjects, ...deselectedProjects]"
-        :policy-name="policy?.metadata?.name"
-        :done-saving-namespaces="doneSavingNamespaces"
-        :namespaces-saved="namespacesSaved"
-        :mode="mode"
-      />
-      <div class="project-modal-footer">
-        <span
-          v-if="!doneSavingNamespaces"
-          class="text-muted"
-        >
-          <i
-            class="icon icon-spin icon-spinner"
-          />
-          {{ t('k3k.policy.projects.savingNamespaces') }}</span>
-        <button
+      <div class="project-modal-content">
+        <Banner
           v-if="doneSavingNamespaces && hasErrors"
-          class="btn role-secondary"
-          @click="policy.goToEdit()"
-        >
-          Edit Policy
-        </button>
-        <button
-          v-if="doneSavingNamespaces"
-          class="btn role-primary"
-          @click="$emit('finish')"
-        >
-          {{ t('generic.done') }}
-        </button>
+          color="error"
+          :label="t('k3k.policy.projects.table.errorBannerModal')"
+        />
+        <Banner
+          v-else-if="doneSavingNamespaces"
+          color="success"
+          :label="t('k3k.policy.projects.table.successBanner', {policyName: policy.metadata?.name || ''})"
+        />
+        <ProjectStatusTable
+          ref="modal-table"
+          :is-in-modal="true"
+          :deselected-projects="deselectedProjects"
+          :display-projects="[...selectedProjects, ...deselectedProjects]"
+          :policy-name="policy?.metadata?.name"
+          :done-saving-namespaces="doneSavingNamespaces"
+          :namespaces-saved="namespacesSaved"
+          :mode="mode"
+        />
+        <div class="project-modal-footer">
+          <span
+            v-if="!doneSavingNamespaces"
+            class="text-muted"
+          >
+            <i
+              class="icon icon-spin icon-spinner"
+            />
+            {{ t('k3k.policy.projects.savingNamespaces') }}</span>
+          <button
+            v-if="doneSavingNamespaces && hasErrors"
+            class="btn role-secondary mr-5"
+            @click="policy.goToEdit()"
+          >
+            {{ t('k3k.policy.projects.editPolicy') }}
+          </button>
+          <button
+            v-if="doneSavingNamespaces"
+            class="btn role-primary"
+            @click="$emit('finish')"
+          >
+            {{ t('generic.done') }}
+          </button>
+        </div>
       </div>
     </AppModal>
   </div>
@@ -463,9 +478,14 @@ export default {
   padding: 20px;
 }
 
-.project-modal-footer {
-  float: right;
-  overflow: hidden;
+.project-modal-content {
   padding: 20px;
+}
+
+.project-modal-footer {
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 </style>

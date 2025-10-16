@@ -49,7 +49,13 @@ export default {
   },
 
   data() {
-    return { projectAnnotationErrors: [] };
+    return {
+      projectAnnotationErrors: [],
+      fvFormRuleSets:          [{
+        path:  'name',
+        rules: ['required'],
+      }]
+    };
   },
 
   computed: {
@@ -203,6 +209,7 @@ export default {
       :namespaced="false"
       :value="value"
       :create-namespace-override="true"
+      :rules="{name:fvGetAndReportPathRules('name')}"
     >
     </NameNsDescription>
 

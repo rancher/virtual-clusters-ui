@@ -198,10 +198,8 @@ export default {
     :errors="fvUnreportedValidationErrors"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
-    :cancel-event="true"
     @finish="saveOverride"
     @error="e => errors = e"
-    @cancel="cancel"
   >
     <NameNsDescription
       v-if="!isView"

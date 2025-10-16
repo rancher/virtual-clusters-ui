@@ -39,7 +39,7 @@ export default {
   <div
     class="row mb-20"
   >
-    <div class="col span-6">
+    <div class="col span-9">
       <RadioGroup
         :value="k3kMode"
         name="k3k-cluster-mode"
@@ -51,14 +51,11 @@ export default {
       >
         <template #label>
           <h4>{{ t('k3k.mode.label') }}</h4>
-          <h5>
+          <h5 class="text-muted">
             {{ t('k3k.mode.tooltip') }}
           </h5>
         </template>
       </RadioGroup>
     </div>
-    <!--     <div class="col span-6">
-      <span class="text-label">{{ t('k3k.mode.tooltip') }}</span>
-    </div> -->
   </div>
 </template>

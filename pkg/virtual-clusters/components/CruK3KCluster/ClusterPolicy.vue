@@ -87,6 +87,7 @@ export default {
   },
 
   methods: {
+    // TODO nb fetch policies and namespaces NOT through store
     async fetchPolicies() {
       this.loadingPolicies = true;
       this.policies = [];

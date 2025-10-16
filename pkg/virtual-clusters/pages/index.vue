@@ -10,7 +10,7 @@ export default {
 
   components: { InstallHelmCharts, Loading },
 
-  async beforeCreate() {
+  async fetch() {
     try {
       const k3kClusterSchema = await this.$store.dispatch('cluster/find', {
         type: SCHEMA,
@@ -31,6 +31,7 @@ export default {
     } catch {
     }
   },
+
 };
 </script>
 

@@ -37,7 +37,7 @@ export default {
       default: false
     },
 
-    namespacesSaved: {
+    namespacesDone: {
       type:    Array,
       default: () => []
     },
@@ -92,9 +92,8 @@ export default {
        * so in order to determine that a ns really has been saved we also check for error properties applied by the parent component when it fails
        */
       const saved = namespaces.filter((ns) => {
-        // nsSaved will be passed in when the namespace-saving function calls this update function
         if (this.isInModal) {
-          return this.namespacesSaved.includes(ns.id);
+          return this.namespacesDone.includes(ns.id);
         }
         const nsHasErrors = ns?.__policyPermissionError || ns?.__policyServerError;
 
@@ -179,15 +178,15 @@ export default {
           <td class="status">
             <div>
               <i
-                v-if="errMsg"
-                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
-                class="icon icon-error text-error"
-              />
-              <i
-                v-else-if="showDeselectIcon"
+                v-if="showDeselectIcon"
                 v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
                 class="icon icon-trash"
                 :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-muted': isInModal && !doneSavingNamespaces}"
+              />
+              <i
+                v-else-if="errMsg"
+                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                class="icon icon-error text-error"
               />
               <i
                 v-else-if="showSuccessIcon"

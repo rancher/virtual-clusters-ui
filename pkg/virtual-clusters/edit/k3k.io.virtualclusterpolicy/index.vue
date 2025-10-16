@@ -269,6 +269,7 @@ export default {
               <template #title>
                 <h4>{{ t('k3k.nodeSelector.label') }}</h4>
                 <t
+                  class="text-muted"
                   raw
                   k="k3k.nodeSelector.tooltip"
                 />
@@ -281,6 +282,7 @@ export default {
           <div class="col span-12">
             <h3>{{ t('k3k.policy.security.label') }}</h3>
             <t
+              class="text-muted"
               k="k3k.policy.security.tooltip"
               raw
             />
@@ -312,6 +314,7 @@ export default {
           <div class="col span-12">
             <h3>{{ t('k3k.policy.isolation.label') }}</h3>
             <t
+              class="text-muted"
               k="k3k.policy.isolation.tooltip"
               raw
             />
@@ -331,6 +334,7 @@ export default {
           <div class="col span-12">
             <h3>{{ t('k3k.policy.synchronization.label') }}</h3>
             <t
+              class="text-muted"
               k="k3k.policy.synchronization.tooltip"
               raw
             />

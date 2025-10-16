@@ -518,7 +518,7 @@ export default {
             v-if="!doneSavingNamespaces"
             class="progress-container"
           >
-            <span class="text-muted">
+            <span class="text-muted mb-5">
               {{ t('k3k.policy.projects.savingNamespaces', {progress}) }}
             </span>
             <ProgressBar :progress="progress" />

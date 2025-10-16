@@ -1,5 +1,5 @@
+import {STATE, NAME as NAME_COL, AGE} from '@shell/config/table-headers'
 import { K3K } from "../types";
-
 export const  NAME = 'virtualclusters'
 
 export function init($plugin:any, store:any) {
@@ -7,12 +7,10 @@ export function init($plugin:any, store:any) {
     product,
     configureType,
     virtualType,
-    basicType
+    basicType,
+    headers
   } = $plugin.DSL(store, NAME);
   
-
-
-
   product({
     label: 'Virtual Clusters',
     inStore:             'cluster',
@@ -38,5 +36,22 @@ export function init($plugin:any, store:any) {
 
   basicType(['virtual-cluster-dashboard', K3K.POLICY, K3K.CLUSTER])
 
+  headers(K3K.POLICY, [
+    STATE,
+    NAME_COL,
+    {
+      name:          'vcmode',
+      labelKey:      'k3k.policy.listView.modeHeader',
+      sort:          ['spec.allowedMode'],
+      value:         'spec.allowedMode',
+    },
+        {
+      name:          'vcmode',
+      labelKey:      'k3k.policy.listView.projectHeader',
+      value:         'metadata.annotations',
+      formatter:     'PolicyAssignment'
+    },
+    AGE
+  ])
 
   }

@@ -91,15 +91,15 @@ k3k:
       editPolicy: Edit Policy
     security:
       label: Security
-      tooltip: Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default.
+      tooltip: 'Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default. '
       learnMore: Learn more about virtual cluster network policies
     isolation:
-      label: Cluster isolation
+      label: Cluster Isolation
       tooltip: A default network policy is created for cluster isolation. You can disable it to allow the virtual cluster to communicate with other virtual clusters.
       checkbox: Disable cluster isolation
     synchronization:
       label: Resource Synchronization
-      tooltip: In the shared mode, required resources are synchronized from the virtual cluster to the host cluster by default. You can also sync Ingresses and PriorityClasses.
+      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync Ingresses and PriorityClasses.
       ingressCheckbox: Ingresses
       priorityClassCheckbox: PriorityClasses
     quota: 
@@ -107,6 +107,15 @@ k3k:
         resourceType: Resource Type
         clusterSetLimit: Cluster Set Limit
         vcSetLimit: Virtual Cluster Set Limit
+    listView:
+      modeHeader: Mode
+      projectHeader: Assigned Projects
+      plusMore: |- 
+        {n, plural,
+          one { + one other}
+          other { + {n} others}
+        }
+      hasPartiallyAssigned: Policy couldn't be applied to some namespaces.
   targetNamespace:
     label: Target Namespace
   hostCluster:

@@ -158,6 +158,12 @@ export default {
       const allProjects = this.$store.getters['management/all']({ type: MANAGEMENT.PROJECT });
 
       await allProjects.forEach(async(p) => {
+        const ns = p.namespaces || [];
+
+        // don't include projects with no namespaces: there is nothing to be assigned/unassigned
+        if (!ns.length) {
+          return;
+        }
         const policyAnnotation = p?.metadata?.annotations?.[ANNOTATIONS.POLICY] || '';
 
         // project is assigned to a different policy: if that policy exists, the project shouldnt be offered here

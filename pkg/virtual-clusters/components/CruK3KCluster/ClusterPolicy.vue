@@ -27,8 +27,10 @@ export default {
     },
 
     hostCluster: {
-      type:    String,
-      default: ''
+      type:    Object,
+      default: () => {
+        return {};
+      }
     },
 
     k3kInstalled: {
@@ -45,6 +47,9 @@ export default {
 
   created() {
     this.fetchPolicies();
+    if (this.mode !== _CREATE) {
+      this.findSelectedPolicy();
+    }
   },
 
   data() {
@@ -58,12 +63,17 @@ export default {
   components: { LabeledSelect },
 
   watch: {
-    clusterReady(neu, old) {
+    hostClusterId(neu, old) {
       this.$emit('update:policyName', '');
       this.$emit('update:targetNamespace', '');
       if (neu && this.k3kInstalled) {
         this.fetchPolicies();
-        this.namespaces = this.$store.getters['cluster/all'](NAMESPACE);
+      }
+    },
+
+    k3kInstalled(neu) {
+      if (neu) {
+        this.fetchPolicies();
       }
     },
 
@@ -87,30 +97,77 @@ export default {
   },
 
   methods: {
-    // TODO nb fetch policies and namespaces NOT through store
     async fetchPolicies() {
-      this.loadingPolicies = true;
-      this.policies = [];
-
-      try {
-        this.policies = await this.$store.dispatch('cluster/findAll', { type: K3K.POLICY });
-      } catch (err) {
-        // TODO nb tell user they have permission issue w/ selected cluster?
+      if (this.hostClusterId) {
+        this.loadingPolicies = true;
         this.policies = [];
-      }
 
-      this.loadingPolicies = false;
+        try {
+          const res = await this.$store.dispatch('management/request', {
+            url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
+            method: 'GET'
+          });
+
+          this.policies = res.data || [];
+        } catch (err) {
+        // TODO nb tell user they have permission issue w/ selected cluster?
+          this.policies = [];
+        }
+
+        this.loadingPolicies = false;
+
+        return await this.fetchNamespaces();
+      }
     },
 
-    openDrawer() {
-      if (this.policy) {
-        this.policy.showConfiguration();
+    async fetchNamespaces() {
+      this.loadingNamespaces = true;
+
+      try {
+        const res = await this.$store.dispatch('management/request', {
+          url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
+          method: 'GET'
+        });
+
+        this.namespaces = res.data || [];
+      } catch (e) {
+        this.namespaces = [];
+        // TODO nb tell user they have permission issues getting ns
       }
-    }
+
+      this.loadingNamespaces = false;
+    },
+
+    // we show policies in this form but they are not saved as part of the k3k cluster spec
+    // get the namespace the k3k cluster is in and check its annotations to work out which policy the cluster falls under
+    async findSelectedPolicy() {
+      this.loadingPolicies = true; // make sure the policy dropdown doesn't show anything until we've attempted to find the relevant policy
+      if (!this.policies.length) {
+        await this.fetchPolicies(); // this will also fetch ns
+      }
+
+      const nsObject = this.namespaces.find((ns) => ns.id === this.targetNamespace);
+
+      const policyName = nsObject?.metadata?.annotations?.[ANNOTATIONS.POLICY] || '';
+
+      this.loadingPolicies = false;
+
+      // if we can't find the policy name, the namespace may be annotated with a policy that has since been deleted
+      // we should show 'none' in that case
+      if (this.policies.find((p) => p?.metadata?.name === policyName)) {
+        this.$emit('update:policyName', policyName);
+      }
+
+      return '';
+    },
   },
 
   computed: {
-    ...mapGetters(['clusterReady']),
+    hostClusterId() {
+      const mgmt = this.hostCluster?.mgmt;
+
+      return mgmt?.id;
+    },
 
     policyOptions() {
       return [this.t('generic.none'), ...this.policies.map((p) => p?.metadata?.name)];
@@ -122,7 +179,6 @@ export default {
 
     namespaceOptions() {
       // if "no policy" is selected, show all NS without policy annotation
-      // TODO nb maybe hide system ns?
       if (this.policyName === this.t('generic.none') || !this.policyName) {
         return (this.namespaces || []).reduce((all, ns) => {
           if (!ns?.metadata?.annotations?.[ANNOTATIONS.POLICY]) {
@@ -133,7 +189,6 @@ export default {
         }, []);
       }
 
-      // TODO nb permission on each ns...?
       return (this.namespaces || []).reduce((all, ns) => {
         if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName) {
           all.push(ns.id);
@@ -156,22 +211,18 @@ export default {
     <div class="col span-6">
       <LabeledSelect
         :value="policyName"
-        :loading="loadingPolicies || !clusterReady"
-        :disabled="!hostCluster || !k3kInstalled"
+        :loading="loadingPolicies"
+        :disabled="!hostClusterId || !k3kInstalled"
         :mode="mode"
         :label="t('k3k.policy.label')"
         :options="policyOptions"
         @selecting="e=>$emit('update:policyName', e)"
       />
-      <!-- <span
-        v-if="policyName && policyName !== t('generic.none')"
-        @click="openDrawer"
-      >show policy detail</span> -->
     </div>
     <div class="col span-6">
       <LabeledSelect
         :value="targetNamespace"
-        :disabled="!clusterReady || !policyName"
+        :loading="loadingNamespaces || loadingPolicies"
         :mode="mode"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"

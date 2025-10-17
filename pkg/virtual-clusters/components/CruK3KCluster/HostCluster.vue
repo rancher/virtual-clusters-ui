@@ -69,6 +69,10 @@ export default {
   computed: {
     ...mapGetters({ t: 'i18n/withFallback' }),
 
+    isCreate() {
+      return this.mode === _CREATE;
+    },
+
     parentClusterOptions() {
       const out = this.clusters.reduce((opts, cluster) => {
         if (!cluster?.metadata?.annotations?.['ui.rancher/parent-cluster'] && !(!INCLUDE_LOCAL && cluster.name === 'local') && cluster.mgmt.isReady) {
@@ -254,6 +258,7 @@ export default {
         v-model:value="selectedParentOption"
         label-key="k3k.hostCluster.label"
         :mode="mode"
+        :disabled="!isCreate"
         :options="parentClusterOptions"
       />
     </div>

@@ -59,7 +59,7 @@ const defaultCluster = {
  * also set before creation:
  * 'ui.rancher/parent-cluster' - host cluster's norman cluster id
  * 'ui.rancher/parent-cluster-display' - host cluster provisioning cluster displayName model property
- * 'ui.rancher/k3k-namespace'  - namespace/id of the k3k cluster in the host cluster
+ * 'ui.rancher/k3k-namespace'  - namespace of the k3k cluster in the host cluster
  */
 const defaultAnnotations = {
   // prevent k3s-upgrade-controller from running: this will be managed by k3k
@@ -131,19 +131,19 @@ export default {
     if (this.mode === _CREATE) {
       this.k3kCluster = await this.$store.dispatch('management/create', cloneDeep(defaultCluster));
     } else {
-      const ns = this.value.metadata.annotations['ui.rancher/k3k-namespace'] || '';
-      const id = ns.split('k3k-')[0];
-      const parentClusterId = this.value.metadata.annotations['ui.rancher/parent-cluster'] || '';
+      const ns = this.value.metadata?.annotations?.['ui.rancher/k3k-namespace'] || '';
+      const id = `${ ns }/${ this.value.metadata.name }`;
+      const parentClusterId = this.value.metadata?.annotations?.['ui.rancher/parent-cluster'] || '';
 
       const parentProvCluster = this.provClusters.find((c) => c?.mgmt?.id === parentClusterId);
 
       try {
         const res = await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ ns }/${ id }`,
+          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ id }`,
           method: 'GET',
         });
 
-        this.k3kCluster = res.data[0] || {};
+        this.k3kCluster = res || {};
         this.parentClusterId = parentProvCluster.id;
         this.parentCluster = parentProvCluster;
       } catch (e) {
@@ -198,10 +198,6 @@ export default {
           ...obj
         };
       }
-    },
-
-    'parentCluster.id'() {
-      this.loadHostCluster();
     }
   },
 
@@ -210,8 +206,6 @@ export default {
 
     return {
       k3kInstalled:     true,
-      // TODO nb how much of this form should be hidden when true?
-      // TODO nb hide node selector?
       policyName:        '',
       connectingToHost: false,
       provClusters:        [],
@@ -273,7 +267,7 @@ export default {
 
     updateName({ name }) {
       this.k3kCluster.metadata.name = name;
-      // this.k3kCluster.metadata.namespace = `k3k-${ name }`;
+      this.value.metadata.name = name;
     },
 
     async findNormanCluster() {
@@ -282,50 +276,29 @@ export default {
       }
     },
 
-    // connect to host cluster steve api
-    // used to retrieve resources from host cluster and populate form, as well as create vcp
-    async loadHostCluster() {
-      this.connectingToHost = true;
-
-      const norman = await this.findNormanCluster();
-      const id = norman.id;
-
-      try {
-        await this.$store.dispatch('loadCluster', {
-          id, oldProduct: 'old', product: 'new'
-        });
-      } catch (e) {
-        this.connectingToHost = false;
-        // TODO nb better error handling?
-        console.error(e);
-      }
-
-      this.connectingToHost = false;
-    },
-
     // create the k3k cluster crd
     async createCluster() {
       const normanCluster = await this.findNormanCluster();
-      const ns = {
-        apiVersion: 'v1',
-        kind:       'Namespace',
-        metadata:
-          { name: this.k3kCluster?.metadata?.namespace }
-      };
+      // const ns = {
+      //   apiVersion: 'v1',
+      //   kind:       'Namespace',
+      //   metadata:
+      //     { name: this.k3kCluster?.metadata?.namespace }
+      // };
 
       const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
-      const nsUrl = `${ baseUrl }/namespaces`;
+      // const nsUrl = `${ baseUrl }/namespaces`;
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
-      // check if ns exists and create if not
-      try {
-        await this.$store.dispatch('management/request', { url: `${ nsUrl }/${ this.k3kCluster?.metadata?.namespace }`, method: 'GET' });
-      } catch (e) {
-        await this.$store.dispatch('management/request', {
-          url: nsUrl, method: 'POST', data: ns
-        });
-      }
+      // // check if ns exists and create if not
+      // try {
+      //   await this.$store.dispatch('management/request', { url: `${ nsUrl }/${ this.k3kCluster?.metadata?.namespace }`, method: 'GET' });
+      // } catch (e) {
+      //   await this.$store.dispatch('management/request', {
+      //     url: nsUrl, method: 'POST', data: ns
+      //   });
+      // }
 
       await this.$store.dispatch('management/request', {
         url: k3kUrl, method: 'POST', data: this.k3kCluster
@@ -397,7 +370,7 @@ export default {
         } else {
           // save existing k3kCluster
           await cluster.$dispatch('request', {
-            url:    `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ this.value.metadata.namespace }/${ this.value.metadata.name }`,
+            url:    `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ this.k3kCluster.id }`,
             method: 'PUT',
             data:   this.k3kCluster
           });
@@ -521,7 +494,7 @@ export default {
         <ClusterPolicy
           v-model:target-namespace="k3kCluster.metadata.namespace"
           v-model:policy-name="policyName"
-          :host-cluster="parentCluster?.id"
+          :host-cluster="parentCluster"
           :k3k-installed="k3kInstalled"
           :mode="mode"
         />

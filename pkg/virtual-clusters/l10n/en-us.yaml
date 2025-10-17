@@ -87,7 +87,7 @@ k3k:
         errors:
           permission: You dont have permission to edit namespaces in this project
           server: There were connection errors while editing some namespaces in this project
-      savingNamespaces: 'Saving namespaces: please do not close or refresh the window...{progress}%'
+      savingNamespaces: 'Saving namespaces ({progress}%) &mdash; please do not close or refresh the window.'
       editPolicy: Edit Policy
     security:
       label: Security

@@ -518,9 +518,13 @@ export default {
             v-if="!doneSavingNamespaces"
             class="progress-container"
           >
-            <span>
-              {{ t('k3k.policy.projects.savingNamespaces', {progress}) }}
-            </span>
+            <t
+              class="progress-text"
+              k="k3k.policy.projects.savingNamespaces"
+              :progress="progress"
+              raw
+            />
+
             <ProgressBar :progress="progress" />
           </div>
           <Banner
@@ -573,7 +577,7 @@ export default {
     flex-direction: column;
     margin-top: 20px;
 
-    &>SPAN{
+    &>.progress-text{
       align-self: center;
       margin-bottom: 8px;
       color: var(--input-label);

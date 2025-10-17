@@ -18,10 +18,12 @@ import { mapGetters } from 'vuex';
 import uniq from 'lodash/uniq';
 import debounce from 'lodash/debounce';
 
-// if the total number of namespaces being assigned and unassigned exceeds this number, the user will be forced to stay on the policy creation page
-// and shown a progress modal
-// otherwise they will be kicked back to the policy list view right away
-// and errors/success will be reported through the notification center
+/**
+ * if the total number of namespaces being assigned and unassigned exceeds this number, the user will be forced to stay on the policy creation page
+ * and shown a progress modal
+ * otherwise they will be kicked back to the policy list view right away
+ * and error/success will be reported through the notification center
+ */
 const MODAL_SHOW_THRESHOLD = 200;
 
 export default {
@@ -146,7 +148,7 @@ export default {
         const namespaces = p.namespaces || [];
 
         return namespaces.find((ns) => {
-          return (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name ) || ns.__policyPermissionError || ns.__policyServerError;
+          return (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name ) || ns.__policyServerError;
         });
       });
 
@@ -214,8 +216,7 @@ export default {
       const nsDone = this.namespacesDone; // namespaces in the state we want them in. Maybe annotated in a previous 'save' call; maybe annotated just now
       const nsErrored = [];
       let nsSaveAttemptedCount = 0; // maybe succeeded maybe not. Used to calculate how far thru saving we are
-      const projectsWithServerErrors = [];
-      const projectsWithPermissionErrors = [];
+      const projectsWithServerErrors = []; // if some namespaces in a project fail to be unassigned, the annotation on the project wont be removed
       const notificationID = randomStr();
       const policyName = `${ this.policy?.metadata?.name }`;
 
@@ -227,7 +228,7 @@ export default {
         const namespaces = p.namespaces || [];
 
         namespaces.forEach((ns) => {
-          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
+          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policy?.metadata?.name && !ns.__policyServerError) {
             nsDone.push(ns.id);
 
             return;
@@ -244,7 +245,7 @@ export default {
         const namespaces = p.namespaces || [];
 
         namespaces.forEach((ns) => {
-          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name && !ns.__policyPermissionError && !ns.__policyServerError) {
+          if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this.policy?.metadata?.name && !ns.__policyServerError) {
             nsDone.push(ns.id);
 
             return;
@@ -272,11 +273,12 @@ export default {
               // one of these values may be set to true if this current run is re-trying a namespace
               // need to clear it so the table reflects that there are no more ns in error
               namespace.__policyServerError = false;
-              namespace.__policyPermissionError = false;
+
               if (!this.showModal) {
-                this.denouncedUpdateNotification({
-                  toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
-                });
+                // const isAdding = !!namespace?.metadata?.annotations?.[ANNOTATIONS.POLICY]
+                // this.denouncedUpdateNotification({
+                //   toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, policyName, editPath, notificationID,
+                // });
               } else {
                 this.updateModalTable(namespace.project);
                 this.progress = computeProgress();
@@ -293,7 +295,6 @@ export default {
                 namespace.setAnnotation(ANNOTATIONS.POLICY, policyName);
               }
 
-              // TODO nb permissionError and serverError
               namespace.__policyServerError = true;
               this.hasErrors = true;
 
@@ -303,9 +304,9 @@ export default {
                 projectsWithServerErrors.push(projectName);
               }
               if (!this.showModal) {
-                this.denouncedUpdateNotification({
-                  toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, projectsWithServerErrors, projectsWithPermissionErrors, policyName, editPath, notificationID,
-                });
+                // this.denouncedUpdateNotification({
+                //   toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, policyName, editPath, notificationID,
+                // });
               } else {
                 this.updateModalTable(namespace.project);
                 this.progress = computeProgress();
@@ -328,18 +329,19 @@ export default {
         await Promise.all(nsWillSave.map((ns) => {
           return saveEachNamespace(ns);
         }));
-        // TODO nb give own function? Or at least clean this shit up
+        this.doneSavingNamespaces = true;
+
         try {
           await Promise.all( this.deselectedProjects.map((p) => {
-            if (!projectsWithPermissionErrors.includes(p.nameDisplay) && !projectsWithServerErrors.includes(p.nameDisplay)) {
+            if (!projectsWithServerErrors.includes(p.nameDisplay)) {
               p.setAnnotation(ANNOTATIONS.POLICY, null);
 
               return p.save();
             }
           }));
         } catch {
+          // different trycatch block because we're not going to show an error if this fails. Doesn't matter much & too elaborate
         }
-        this.doneSavingNamespaces = true;
       } catch (e) {
         if (!this.showModal) {
           this.$emit('finish');
@@ -347,7 +349,7 @@ export default {
 
         try {
           await Promise.all( this.deselectedProjects.map((p) => {
-            if (!projectsWithPermissionErrors.includes(p.nameDisplay) && !projectsWithServerErrors.includes(p.nameDisplay)) {
+            if (!projectsWithServerErrors.includes(p.nameDisplay)) {
               p.setAnnotation(ANNOTATIONS.POLICY, null);
 
               return p.save();
@@ -374,75 +376,44 @@ export default {
     },
 
     updateNotification({
-      toBeAssignedCount = 0, toBeUnAssssignedCount = 0, nsDone = [], nsErrored = [], projectsWithServerErrors = [], projectsWithPermissionErrors = [], policyName = '', editPath, notificationID, addAnnotation = true
+      nsTargetedCount, nsDone = [], nsErrored = [], policyName = '', editPath, adding = true
     }) {
-      const totalNsTargeted = toBeAssignedCount + toBeUnAssssignedCount;
-
-      if (!totalNsTargeted) {
+      if (!nsTargetedCount) {
         return;
       }
       // TODO nb fix notification messages to be "assigning x namespaces [and unassigning y namespaces...]"
-      const translationKeyPath = addAnnotation ? 'k3k.policy.projects.notification.adding' : 'k3k.policy.projects.notification.removing';
+      const translationKeyPath = adding ? 'k3k.policy.projects.notification.adding' : 'k3k.policy.projects.notification.removing';
 
       let level = NotificationLevel.Task;
       let title = this.t(`${ translationKeyPath }.task.title`);
-      let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: totalNsTargeted, policyName });
+      let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: nsTargetedCount, policyName });
       let primaryAction = null;
 
-      const isDone = totalNsTargeted === nsErrored?.length + nsDone?.length;
-      const hasErrors = !!nsErrored?.length;
-      const succeeded = isDone && !hasErrors;
-      const progressPercent = Math.round((nsDone.length / totalNsTargeted) * 100);
+      const succeeded = !nsErrored?.length;
 
-      // show an error message with number of projects that failed in each category of failure
-      if (isDone ) {
-        if (!succeeded) {
-          const allProjectsWithErrors = uniq([...projectsWithServerErrors, ...projectsWithPermissionErrors]);
+      if (!succeeded) {
+        level = NotificationLevel.Error;
+        title = this.t(`${ translationKeyPath }.error.title`);
+        message = this.t(`${ translationKeyPath }.error.message`, { policyName });
 
-          level = NotificationLevel.Error;
-          title = this.t(`${ translationKeyPath }.error.title`);
-          message = this.t(`${ translationKeyPath }.error.message`, { failCount: allProjectsWithErrors.length, policyName });
-
-          allProjectsWithErrors.forEach((p) => {
-            const isLast = allProjectsWithErrors[allProjectsWithErrors.length - 1] === p;
-
-            if (allProjectsWithErrors.length === 1) {
-              message += ` ${ p }.`;
-            } else {
-              if (!isLast) {
-                message += ` ${ p },`;
-              } else {
-                message += `${ this.t('generic.and') }${ p }.`;
-              }
-            }
-          });
-
-          if (allProjectsWithErrors.length) {
-            primaryAction = {
-              label:  this.t('k3k.policy.projects.notification.secondaryAction'),
-              route: editPath,
-            };
-          }
-        } else {
-          level = NotificationLevel.Success;
-          title = this.t(`${ translationKeyPath }.success.title`);
-          message = this.t(`${ translationKeyPath }.success.message`, { namespaceCount: nsDone.length, policyName });
+        if (nsErrored.length) {
+          primaryAction = {
+            label:  this.t('k3k.policy.projects.notification.primaryAction'),
+            route: editPath,
+          };
         }
+      } else {
+        level = NotificationLevel.Success;
+        title = this.t(`${ translationKeyPath }.success.title`);
+        message = this.t(`${ translationKeyPath }.success.message`, { namespaceCount: nsDone.length, policyName });
       }
 
-      let storeAction = 'notifications/update';
-
-      if (!this.notified) {
-        storeAction = 'notifications/add';
-      }
-
-      this.$store.dispatch(storeAction, {
+      this.$store.dispatch('notifications/add', {
         level,
         title,
         message,
-        progress: !isDone ? progressPercent : undefined,
         primaryAction,
-        id:       notificationID
+        id: randomStr()
       });
       this.notified = true;
     },

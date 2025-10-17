@@ -76,7 +76,7 @@ export default {
   computed: {
     showErrorBanner() {
       return !!(Object.values(this.statuses) || []).find((status) => {
-        return status?.hasServerErrors || status?.hasPermissionErrors;
+        return status?.hasServerErrors;
       });
     },
   },
@@ -85,7 +85,6 @@ export default {
     computeNamespaceStatus(p = {}, nsSaved = []) {
       const namespaces = p.namespaces || [];
       const hasServerErrors = namespaces.filter((ns) => !!ns?.__policyServerError)?.length;
-      const hasPermissionErrors = namespaces.filter((ns) => !!ns?.__policyPermissionError)?.length;
       /**
        * parent component adds annotation to ns then attempts to save: if the save attempt fails, the ns object will still contain the updated annotation
        * (or the parent component attempts to remove the annotation and saves)
@@ -95,18 +94,16 @@ export default {
         if (this.isInModal) {
           return this.namespacesDone.includes(ns.id);
         }
-        const nsHasErrors = ns?.__policyPermissionError || ns?.__policyServerError;
+        const nsHasErrors = ns?.__policyServerError;
 
         return ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !nsHasErrors;
       });
 
-      const showSuccessIcon = !hasPermissionErrors && !hasServerErrors && namespaces.length === saved.length;
+      const showSuccessIcon = !hasServerErrors && namespaces.length === saved.length;
       const showDeselectIcon = this.deselectedProjects.find((deselectedProject) => deselectedProject.id === p.id);
       let errMsg;
 
-      if (hasPermissionErrors) {
-        errMsg = this.t('k3k.policy.projects.table.errors.permission');
-      } else if (hasServerErrors || (namespaces.length !== saved.length && (this.doneSavingNamespaces || !this.isInModal))) {
+      if (hasServerErrors || (namespaces.length !== saved.length && (this.doneSavingNamespaces || !this.isInModal))) {
         errMsg = this.t('k3k.policy.projects.table.errors.server');
       }
 

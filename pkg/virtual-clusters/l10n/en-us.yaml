@@ -16,13 +16,6 @@ k3k:
       label: Rancher projects
       notification:
         adding: 
-          task:
-            title: Policy assignment in progress
-            message: |-
-              { namespaceCount, plural,
-                =1 {Assigning {policyName} to one namespace...}
-                other {Assigning {policyName} to {namespaceCount} namespaces...}
-              }
           success:
             title: Policy assignment completed
             message: |-
@@ -32,30 +25,8 @@ k3k:
               }
           error:
             title: Policy assignment failed
-            message: |-
-              { failCount, plural,
-                =1 {Assigning {policyName} failed in one project:}
-                other {Assigning {policyName} failed in {failCount} projects:}
-              }
-            countsMessage:
-              serverError: |-
-                { failCount, plural,
-                  =1 {1 failed connection}
-                  other {{failCount} failed connections}
-                }
-              permissionError: |-
-                { failCount, plural,
-                  =1 {1 project without edit permission}
-                  other {{failCount} projects without edit permission}
-                }
+            message: There were errors assigning some namespaces to {policyName}. Edit the policy to try again.
         removing:
-          task:
-            title: Policy unassignment in progress
-            message: |-
-              { namespaceCount, plural,
-                =1 {Unassigning {policyName} from one namespace...}
-                other {Unassigning {policyName} from {namespaceCount} namespaces...}
-              }
           success:
             title: Policy unassignment completed
             message: |-
@@ -65,13 +36,8 @@ k3k:
               }
           error:
             title: Policy unassignment failed
-            message: |-
-              { failCount, plural,
-                =1 {Failed to unassign {policyName} from namespaces in one project:}
-                other {Failed to unassign {policyName} from namespaces in {failCount} projects:}
-              }
-        primaryAction: Try Again
-        secondaryAction: Edit Policy
+            message: There were errors unassigning some namespaces from {policyName}. Edit the policy to try again.
+        primaryAction: Edit Policy
       table:
         projects: Projects
         namespaces: Namespaces Assigned

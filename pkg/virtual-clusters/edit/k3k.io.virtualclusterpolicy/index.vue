@@ -63,6 +63,10 @@ export default {
       return RANCHER_TYPES;
     },
 
+    noneOption() {
+      return this.t('generic.none');
+    },
+
     // format limits to match project/namesapces so we can use the same component
     defaultLimits: {
       get() {
@@ -121,6 +125,19 @@ export default {
           this.value.spec.quota = {};
         }
         this.value.spec.quota.hard = neu;
+      }
+    },
+
+    podSecurityAdmissionLevel: {
+      get() {
+        return this.value.spec.podSecurityAdmissionLevel || this.noneOption;
+      },
+      set(neu) {
+        if (neu === this.noneOption) {
+          delete this.value.spec.podSecurityAdmissionLevel;
+        } else {
+          this.value.spec.podSecurityAdmissionLevel = neu;
+        }
       }
     },
   },
@@ -291,25 +308,13 @@ export default {
               k="k3k.policy.security.tooltip"
               raw
             />
-            <a
-              aria-label="link to the K3K github repository"
-              href="https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy"
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-            >
-              <t
-                k="k3k.policy.security.learnMore"
-                raw
-              />
-              <i class="icon icon-sm icon-external-link">
-              </i></a>
           </div>
         </div>
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model:value="value.spec.podSecurityAdmissionLevel"
-              :options="['privileged', 'baseline', 'restricted']"
+              v-model:value="podSecurityAdmissionLevel"
+              :options="[noneOption,'privileged', 'baseline', 'restricted']"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
             />
           </div>
@@ -323,6 +328,18 @@ export default {
               k="k3k.policy.isolation.tooltip"
               raw
             />
+            <a
+              aria-label="link to the K3K github repository"
+              href="https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+            >
+              <t
+                k="k3k.policy.isolation.learnMore"
+                raw
+              />
+              <i class="icon icon-sm icon-external-link" />
+            </a>
           </div>
         </div>
         <div class="row mb-20">

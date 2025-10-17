@@ -91,11 +91,12 @@ k3k:
       editPolicy: Edit Policy
     security:
       label: Security
-      tooltip: 'Virtual clusters wont be visible to clusters under a different policy. This isolation is achieved with network policies that are enforced by default. '
+      tooltip: Pod Security Standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
       learnMore: Learn more about virtual cluster network policies
     isolation:
       label: Cluster Isolation
-      tooltip: A default network policy is created for cluster isolation. You can disable it to allow the virtual cluster to communicate with other virtual clusters.
+      tooltip: 'Virtual clusters are isolated by default, able to communicate only with other virtual clusters within the same policy. This isolation is enforced by a default network policy. You can disable this cluster isolation, which allows the virtual cluster to communicate with virtual clusters outside of its policy. '
+      learnMore: Learn more about virtual cluster network policies
       checkbox: Disable cluster isolation
     synchronization:
       label: Resource Synchronization

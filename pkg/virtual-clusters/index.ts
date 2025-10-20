@@ -29,8 +29,4 @@ export default function(plugin: IPlugin): void {
   // Built-in icon
   plugin.metadata.icon = require('./assets/icon-virtual-clusters.svg');
 
-  plugin.addPanel(PanelLocation.DETAILS_MASTHEAD, {
-    resource: ['namespace'],
-    mode: ['create']
-  },  {component: ()=>import('./components/NamespaceAnnotation.vue')});
 }

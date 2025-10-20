@@ -36,7 +36,7 @@ import merge from 'lodash/merge';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
-  apiVersion: 'k3k.io/v1alpha1',
+  apiVersion: 'k3k.io/v1beta1',
   kind:       'Cluster',
   metadata:   { name: '' },
   spec:       {

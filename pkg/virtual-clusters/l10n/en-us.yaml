@@ -15,7 +15,7 @@ k3k:
       subheader: This policy will be assigned to all namespaces in the selected projects.
       label: Rancher projects
       notification:
-        adding: 
+        addingNamespaces: 
           success:
             title: Policy assignment completed
             message: |-
@@ -26,7 +26,7 @@ k3k:
           error:
             title: Policy assignment failed
             message: There were errors assigning some namespaces to {policyName}. Edit the policy to try again.
-        removing:
+        removingNamespaces:
           success:
             title: Policy unassignment completed
             message: |-
@@ -37,7 +37,16 @@ k3k:
           error:
             title: Policy unassignment failed
             message: There were errors unassigning some namespaces from {policyName}. Edit the policy to try again.
-        primaryAction: Edit Policy
+        addingAndRemovingNamespaces: 
+          success:
+            title: Policy assignment/unassignment completed
+            message: '{policyName} successfully assigned to {namespaceCount} namespaces and unassigned from {removeCount} namespaces.'
+          error:
+            title: Policy assignment failed
+            message: There were errors assigning some namespaces to {policyName}. Edit the policy to try again.
+        savingProjects: 
+            title: Failed to save some projects
+            message: There were errors updating some projects assigned to {policyName}. Edit the policy to try again.
       table:
         projects: Projects
         namespaces: Namespaces Assigned
@@ -175,6 +184,8 @@ k3k:
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster
+    loadingPolicies: Error fetcing virtual cluster policies from {cluster}
+    loadingNamespaces: Error fetcing namespaces from {cluster}
   landingPage:
     title: Virtual Clusters
     subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster

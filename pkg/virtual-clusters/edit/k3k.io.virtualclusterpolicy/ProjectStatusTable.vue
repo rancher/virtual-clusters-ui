@@ -137,72 +137,76 @@ export default {
         class="project-annotation-status"
         :class="{'in-modal': isInModal}"
       >
-        <tr>
-          <th>
-            {{ t('k3k.policy.projects.table.projects') }}
-          </th>
-          <th class="ns">
-            {{ t('k3k.policy.projects.table.namespaces') }}
-          </th>
-          <th class="status">
-            {{ t('k3k.policy.projects.table.status') }}
-          </th>
-        </tr>
-        <tr
-          v-for="({willSave, saved, errMsg, project, showDeselectIcon, showSuccessIcon}) of statuses"
-          :key="project.id"
-        >
-          <td>
-            <div>{{ project.nameDisplay }}</div>
-            <span
-              v-if="errMsg"
-              class="text-error"
-            >{{ errMsg }}</span>
-          </td>
-          <td
-            v-if="showDeselectIcon && isInModal"
-            class="ns"
+        <thead>
+          <tr>
+            <th>
+              {{ t('k3k.policy.projects.table.projects') }}
+            </th>
+            <th class="ns">
+              {{ t('k3k.policy.projects.table.namespaces') }}
+            </th>
+            <th class="status">
+              {{ t('k3k.policy.projects.table.status') }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="({willSave, saved, errMsg, project, showDeselectIcon, showSuccessIcon}) of statuses"
+            :key="project.id"
           >
-            {{ willSave.length - saved.length }}/{{ willSave.length }}
-          </td>
-          <td
-            v-else
-            class="ns"
-          >
-            {{ saved.length }}/{{ willSave.length }}
-          </td>
+            <td>
+              <div>{{ project.nameDisplay }}</div>
+              <span
+                v-if="errMsg"
+                class="text-error"
+              >{{ errMsg }}</span>
+            </td>
+            <td
+              v-if="showDeselectIcon && isInModal"
+              class="ns"
+            >
+              {{ willSave.length - saved.length }}/{{ willSave.length }}
+            </td>
+            <td
+              v-else
+              class="ns"
+            >
+              {{ saved.length }}/{{ willSave.length }}
+            </td>
 
-          <td class="status">
-            <div>
-              <i
-                v-if="showDeselectIcon"
-                v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
-                class="icon icon-trash"
-                :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-muted': isInModal && !doneSavingNamespaces}"
-              />
-              <i
-                v-else-if="errMsg"
-                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
-                class="icon icon-error text-error"
-              />
-              <i
-                v-else-if="showSuccessIcon"
-                v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
-                class="icon icon-checkmark text-success"
-              />
-              <i
-                v-else-if="isInModal && !doneSavingNamespaces"
-                v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
-                class="icon icon-checkmark text-muted"
-              />
-              <i
-                v-else-if="!isInModal"
-                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
-                class="icon icon-refresh text-warning"
-              />
-            </div>
-          </td>
-        </tr>
+            <td class="status">
+              <div>
+                <i
+                  v-if="showDeselectIcon"
+                  v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
+                  class="icon icon-trash"
+                  :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-muted': isInModal && !doneSavingNamespaces}"
+                />
+                <i
+                  v-else-if="errMsg"
+                  v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                  class="icon icon-error text-error"
+                />
+                <i
+                  v-else-if="showSuccessIcon"
+                  v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
+                  class="icon icon-checkmark text-success"
+                />
+                <i
+                  v-else-if="isInModal && !doneSavingNamespaces"
+                  v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
+                  class="icon icon-checkmark text-muted"
+                />
+                <i
+                  v-else-if="!isInModal"
+                  v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                  class="icon icon-refresh text-warning"
+                />
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </div>

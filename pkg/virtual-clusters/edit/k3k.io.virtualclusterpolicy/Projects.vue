@@ -15,8 +15,6 @@ import { ANNOTATIONS, K3K } from '../../types';
 import ProjectStatusTable from './ProjectStatusTable.vue';
 
 import { mapGetters } from 'vuex';
-import uniq from 'lodash/uniq';
-import debounce from 'lodash/debounce';
 
 /**
  * if the total number of namespaces being assigned and unassigned exceeds this number, the user will be forced to stay on the policy creation page
@@ -62,7 +60,6 @@ export default {
       this.findSelectedProjects();
     }
     this.getProjectOptions();
-    this.denouncedUpdateNotification = debounce(this.updateNotification, 500);
   },
 
   data() {
@@ -76,7 +73,6 @@ export default {
       selectedProjects:                [],
       deselectedProjects:              [], // these are projects that had been annotated previously and are being removed now
       displayProjects:                 [], // on edit, only projects that haven't been fully annotated, or projects that are being removed, are shown in the inline project status table
-      denouncedUpdateNotification:     () => {},
     };
   },
 
@@ -207,21 +203,19 @@ export default {
       });
     },
 
-    // this function is also used to UN-annotate and save namespaces in projects that have been deselected on edit
+    // also  UN-annotate and save namespaces
     async annotateAndSaveNamespaces() {
-      // TODO nb do these actually need to be defined here? Doesn't make sense when this.updateNotification works outside of the create page
       let toBeAssignedCount = 0;
       let toBeUnAssssignedCount = 0;
+      let nsSaveAttemptedCount = 0; // maybe succeeded maybe not. Used to calculate how far thru saving we are
+
       const nsWillSave = [];
       const nsDone = this.namespacesDone; // namespaces in the state we want them in. Maybe annotated in a previous 'save' call; maybe annotated just now
       const nsErrored = [];
-      let nsSaveAttemptedCount = 0; // maybe succeeded maybe not. Used to calculate how far thru saving we are
-      const projectsWithServerErrors = []; // if some namespaces in a project fail to be unassigned, the annotation on the project wont be removed
-      const notificationID = randomStr();
+      const projectsWithServerErrors = []; // if some namespaces in a project fail to be unassigned, the policy annotation on the project wont be removed
+
       const policyName = `${ this.policy?.metadata?.name }`;
-
       const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
-
       const editPath = this.$router.resolve(editRoute)?.fullPath;
 
       this.selectedProjects.forEach((p) => {
@@ -274,12 +268,7 @@ export default {
               // need to clear it so the table reflects that there are no more ns in error
               namespace.__policyServerError = false;
 
-              if (!this.showModal) {
-                // const isAdding = !!namespace?.metadata?.annotations?.[ANNOTATIONS.POLICY]
-                // this.denouncedUpdateNotification({
-                //   toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, policyName, editPath, notificationID,
-                // });
-              } else {
+              if (this.showModal) {
                 this.updateModalTable(namespace.project);
                 this.progress = computeProgress();
               }
@@ -289,25 +278,22 @@ export default {
             .catch((e) => {
               nsErrored.push(namespace.id);
               nsSaveAttemptedCount++;
-              if (namespace?.metadata?.annotations?.[ANNOTATIONS.POLICY] === policyName) {
-                namespace.setAnnotation(ANNOTATIONS.POLICY, null);
-              } else {
-                namespace.setAnnotation(ANNOTATIONS.POLICY, policyName);
-              }
 
               namespace.__policyServerError = true;
               this.hasErrors = true;
 
               const projectName = namespace?.project?.nameDisplay;
 
+              if (namespace?.metadata?.annotations?.[ANNOTATIONS.POLICY] === policyName) {
+                namespace.setAnnotation(ANNOTATIONS.POLICY, null);
+              } else {
+                namespace.setAnnotation(ANNOTATIONS.POLICY, policyName);
+              }
+
               if (projectName && !projectsWithServerErrors.includes(projectName)) {
                 projectsWithServerErrors.push(projectName);
               }
-              if (!this.showModal) {
-                // this.denouncedUpdateNotification({
-                //   toBeAssignedCount, toBeUnAssssignedCount, nsDone, nsErrored, policyName, editPath, notificationID,
-                // });
-              } else {
+              if (this.showModal) {
                 this.updateModalTable(namespace.project);
                 this.progress = computeProgress();
               }
@@ -316,6 +302,7 @@ export default {
         });
       };
 
+      // policy annotations on projects are used by the ui, not k3k
       try {
         await Promise.all( this.selectedProjects.map((p) => {
           p.setAnnotation(ANNOTATIONS.POLICY, this.policy?.metadata?.name);
@@ -323,6 +310,7 @@ export default {
           return p.save();
         }));
       } catch {
+        this.updateProjectNotification({ policyName, editPath });
       }
 
       try {
@@ -330,38 +318,30 @@ export default {
           return saveEachNamespace(ns);
         }));
         this.doneSavingNamespaces = true;
-
-        try {
-          await Promise.all( this.deselectedProjects.map((p) => {
-            if (!projectsWithServerErrors.includes(p.nameDisplay)) {
-              p.setAnnotation(ANNOTATIONS.POLICY, null);
-
-              return p.save();
-            }
-          }));
-        } catch {
-          // different trycatch block because we're not going to show an error if this fails. Doesn't matter much & too elaborate
-        }
       } catch (e) {
         if (!this.showModal) {
           this.$emit('finish');
         }
 
-        try {
-          await Promise.all( this.deselectedProjects.map((p) => {
-            if (!projectsWithServerErrors.includes(p.nameDisplay)) {
-              p.setAnnotation(ANNOTATIONS.POLICY, null);
-
-              return p.save();
-            }
-          }));
-        } catch {
-        }
         this.doneSavingNamespaces = true;
-
-        throw (e);
       }
+
+      try {
+        await Promise.all( this.deselectedProjects.map((p) => {
+          if (!projectsWithServerErrors.includes(p.nameDisplay)) {
+            p.setAnnotation(ANNOTATIONS.POLICY, null);
+
+            return p.save();
+          }
+        }));
+      } catch {
+        this.updateProjectNotification({ policyName, editPath });
+      }
+
       if (!this.showModal) {
+        this.updateAssignmentNotification({
+          nsErrored, policyName, editPath, toBeAssignedCount, toBeUnAssssignedCount
+        });
         this.$emit('finish');
       }
       this.doneSavingNamespaces = true;
@@ -375,18 +355,33 @@ export default {
       }
     },
 
-    updateNotification({
-      nsTargetedCount, nsDone = [], nsErrored = [], policyName = '', editPath, adding = true
+    updateAssignmentNotification({
+      toBeAssignedCount, toBeUnAssssignedCount, nsErrored = [], policyName = '', editPath,
     }) {
+      const nsTargetedCount = toBeAssignedCount + toBeUnAssssignedCount;
+
       if (!nsTargetedCount) {
         return;
       }
-      // TODO nb fix notification messages to be "assigning x namespaces [and unassigning y namespaces...]"
-      const translationKeyPath = adding ? 'k3k.policy.projects.notification.adding' : 'k3k.policy.projects.notification.removing';
+      let translationKeyPath;
+
+      if (toBeAssignedCount) {
+        if (!toBeUnAssssignedCount) {
+          translationKeyPath = 'k3k.policy.projects.notification.addingNamespaces';
+        } else {
+          translationKeyPath = 'k3k.policy.projects.notification.addingAndRemovingNamespaces';
+        }
+      } else {
+        translationKeyPath = 'k3k.policy.projects.notification.removingNamespaces';
+      }
 
       let level = NotificationLevel.Task;
       let title = this.t(`${ translationKeyPath }.task.title`);
-      let message = this.t(`${ translationKeyPath }.task.message`, { namespaceCount: nsTargetedCount, policyName });
+      let message = this.t(`${ translationKeyPath }.task.message`, {
+        namespaceCount:      toBeAssignedCount || toBeUnAssssignedCount,
+        removeCount:    toBeUnAssssignedCount,
+        policyName,
+      });
       let primaryAction = null;
 
       const succeeded = !nsErrored?.length;
@@ -394,7 +389,7 @@ export default {
       if (!succeeded) {
         level = NotificationLevel.Error;
         title = this.t(`${ translationKeyPath }.error.title`);
-        message = this.t(`${ translationKeyPath }.error.message`, { policyName });
+        message = this.t(`${ translationKeyPath }.error.message`, { policyName, removeCount: toBeUnAssssignedCount });
 
         if (nsErrored.length) {
           primaryAction = {
@@ -405,7 +400,11 @@ export default {
       } else {
         level = NotificationLevel.Success;
         title = this.t(`${ translationKeyPath }.success.title`);
-        message = this.t(`${ translationKeyPath }.success.message`, { namespaceCount: nsDone.length, policyName });
+        message = this.t(`${ translationKeyPath }.success.message`, {
+          namespaceCount:       toBeAssignedCount || toBeUnAssssignedCount,
+          removeCount:    toBeUnAssssignedCount,
+          policyName
+        });
       }
 
       this.$store.dispatch('notifications/add', {
@@ -415,8 +414,21 @@ export default {
         primaryAction,
         id: randomStr()
       });
-      this.notified = true;
     },
+
+    // notification if annotating projects fails
+    updateProjectNotification({ policyName, editPath }) {
+      this.$store.dispatch('notifications/add', {
+        level:         NotificationLevel.Error,
+        title:         this.t('k3k.projects.notification.savingProjects.title'),
+        message:       this.t('k3k.projects.notification.savingProjects.message', { policyName }),
+        primaryAction:            {
+          label:  this.t('k3k.policy.projects.notification.primaryAction'),
+          route: editPath,
+        },
+        id: randomStr()
+      });
+    }
   },
 
   computed: {
@@ -429,7 +441,6 @@ export default {
     sortedProjectOptions() {
       return sortBy(this.projectOptions, 'label');
     }
-
   },
 
 };
@@ -530,10 +541,6 @@ export default {
 <style lang="scss" scoped>
 .project-select :deep().vs__selected {
     width:fit-content !important;
-}
-
-:deep(.project-modal) {
-  padding: 20px;
 }
 
 .project-modal-content {

@@ -5,6 +5,7 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { ANNOTATIONS, K3K } from '../../types';
 import { mapGetters } from 'vuex';
 import { NAMESPACE } from '@shell/config/types';
+import { Banner } from '@rancher/components';
 
 import debounce from 'lodash/debounce';
 
@@ -12,6 +13,8 @@ export default {
   name: 'K3kPolicySelector',
 
   emits: ['update:policyName', 'update:targetNamespace'],
+
+  components: { LabeledSelect, Banner },
 
   props: {
 
@@ -38,7 +41,6 @@ export default {
       default: false
     },
 
-    // TODO nb need to check ns annotations to find this on edit
     policyName: {
       type:    String,
       default: ''
@@ -57,10 +59,10 @@ export default {
       policies:        [],
       namespaces:      [],
       loadingPolicies: false,
+      namespaceError:  false,
+      policyError:     false
     };
   },
-
-  components: { LabeledSelect },
 
   watch: {
     hostClusterId(neu, old) {
@@ -100,6 +102,8 @@ export default {
     async fetchPolicies() {
       if (this.hostClusterId) {
         this.loadingPolicies = true;
+        this.policyError = false;
+
         this.policies = [];
 
         try {
@@ -110,8 +114,8 @@ export default {
 
           this.policies = res.data || [];
         } catch (err) {
-        // TODO nb tell user they have permission issue w/ selected cluster?
           this.policies = [];
+          this.policyError = true;
         }
 
         this.loadingPolicies = false;
@@ -122,6 +126,7 @@ export default {
 
     async fetchNamespaces() {
       this.loadingNamespaces = true;
+      this.namespaceError = false;
 
       try {
         const res = await this.$store.dispatch('management/request', {
@@ -132,7 +137,7 @@ export default {
         this.namespaces = res.data || [];
       } catch (e) {
         this.namespaces = [];
-        // TODO nb tell user they have permission issues getting ns
+        this.namespaceError = true;
       }
 
       this.loadingNamespaces = false;
@@ -163,6 +168,10 @@ export default {
   },
 
   computed: {
+    isCreate() {
+      return this.mode === _CREATE;
+    },
+
     hostClusterId() {
       const mgmt = this.hostCluster?.mgmt;
 
@@ -207,6 +216,16 @@ export default {
 </script>
 
 <template>
+  <Banner
+    v-if="namespaceError"
+    color="error"
+    :label="t('k3k.errors.loadingNamespaces', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
+  />
+  <Banner
+    v-if="policyError"
+    color="error"
+    :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
+  />
   <div class="row mb-20">
     <div class="col span-6">
       <LabeledSelect
@@ -224,6 +243,7 @@ export default {
         :value="targetNamespace"
         :loading="loadingNamespaces || loadingPolicies"
         :mode="mode"
+        :disabled="!isCreate"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
         @selecting="e=>$emit('update:targetNamespace', e)"

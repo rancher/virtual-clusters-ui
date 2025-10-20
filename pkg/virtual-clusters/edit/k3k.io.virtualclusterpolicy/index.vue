@@ -166,8 +166,6 @@ export default {
     /**
      * Save the policy then start annotating namespaces
      * The component responsible for annotating namespaces will emit 'finish' event to tell this component to call create-edit-view 'done' method and return to list
-     * @param cb async button callback
-     * @param depth unfortunately this function recurses
      */
     async saveOverride(cb, depth) {
       try {
@@ -212,7 +210,7 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="fvUnreportedValidationErrors"
+    :errors="[...fvUnreportedValidationErrors, ...errors]"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     @finish="saveOverride"

@@ -142,7 +142,7 @@ export default {
   },
 
   methods: {
-    updateSelectedProjects(projects = []) {
+    annotatePolicyWithProjects(projects = []) {
       if (!projects.length) {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], '');
       } else {
@@ -237,7 +237,7 @@ export default {
           ref="project-selector"
           :mode="mode"
           :policy="value"
-          @update:selected-projects="updateSelectedProjects"
+          @update:selected-projects="annotatePolicyWithProjects"
           @finish="done"
         />
         <Mode
@@ -261,9 +261,6 @@ export default {
         <ContainerResourceLimit
           v-model:value="defaultLimits"
           :mode="mode"
-          :namespace="value"
-          :register-before-hook="registerBeforeHook"
-          data-testid="namespace-container-resource-limit"
         />
       </Tab>
       <Tab

@@ -6,7 +6,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@babel/plugin-transform-class-static-block": "^7.28.3",
+    "@babel/plugin-transform-class-static-block": "7.28.3",
     "@rancher/components": "^0.3.0-alpha.1",
     "@rancher/shell": "3.0.6",
     "@types/lodash": "4.14.196",

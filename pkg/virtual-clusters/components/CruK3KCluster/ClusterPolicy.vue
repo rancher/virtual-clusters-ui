@@ -145,7 +145,6 @@ export default {
     // we show policies in this form but they are not saved as part of the k3k cluster spec
     // get the namespace the k3k cluster is in and check its labels to work out which policy the cluster falls under
     async findSelectedPolicy() {
-      // this.loadingPolicies = true;
       if (!this.policies.length) {
         await this.fetchPolicies();
       }
@@ -153,8 +152,6 @@ export default {
       const nsObject = this.namespaces.find((ns) => ns.id === this.targetNamespace);
 
       const policyName = nsObject?.metadata?.labels?.[LABELS.POLICY] || '';
-
-      // this.loadingPolicies = false;
 
       // if we can't find the policy name, the namespace may be labeled with a policy that has since been deleted
       // we should show 'none' in that case

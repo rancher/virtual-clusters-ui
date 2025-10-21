@@ -50,7 +50,6 @@ export default {
 
   data() {
     return {
-      projectAnnotationErrors: [],
       fvFormRuleSets:          [{
         path:  'name',
         rules: ['required'],
@@ -236,7 +235,6 @@ export default {
       >
         <Projects
           ref="project-selector"
-          v-model:errors="projectAnnotationErrors"
           :mode="mode"
           :policy="value"
           @update:selected-projects="updateSelectedProjects"

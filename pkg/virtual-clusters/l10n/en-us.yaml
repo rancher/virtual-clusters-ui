@@ -192,12 +192,12 @@ k3k:
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster
-    loadingPolicies: Error fetcing virtual cluster policies from {cluster}
-    loadingNamespaces: Error fetcing namespaces from {cluster}
+    loadingPolicies: Error fetching virtual cluster policies from {cluster}
+    loadingNamespaces: Error fetching namespaces from {cluster}
   landingPage:
     title: Virtual Clusters
     subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster
-    description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes encironments without the overhead of managing full clusters.
+    description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes environments without the overhead of managing full clusters.
     steps:
       title: 'Quick guide:'
       step1:
@@ -217,12 +217,6 @@ resourceTable:
     hostCluster: Host Cluster
     displayName: Display Name
 
-asyncButton:
-  tryAgain:
-    action: Try Again
-    actionIcon: refresh
-    success: Saved
-    waiting: Saving&hellip;
 
 product:
   virtualclusters: Virtual Clusters

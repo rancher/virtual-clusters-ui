@@ -45,7 +45,6 @@ export default {
         name="k3k-cluster-mode"
         :row="true"
         :mode="mode"
-        label-key="k3k.mode.label"
         :options="[{label: t('k3k.mode.shared'), value: modes.SHARED},{label: t('k3k.mode.virtual'), value: modes.VIRTUAL} ]"
         @update:value="e=>$emit('update:k3kMode', e)"
       >

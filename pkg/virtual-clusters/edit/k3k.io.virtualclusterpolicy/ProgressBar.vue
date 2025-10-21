@@ -4,8 +4,8 @@ export default {
 
   props: {
     progress: {
-      type:    String,
-      default: ''
+      type:    Number,
+      default: 0
     }
   },
 };

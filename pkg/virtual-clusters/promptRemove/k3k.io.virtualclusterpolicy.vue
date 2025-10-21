@@ -55,7 +55,7 @@ export default {
 
 <template>
   <div>
-    {{ t('promptRemove.attemptingToRemove', { type: K3K.POLICY }) }} <span />
+    {{ t('promptRemove.attemptingToRemove', { type: K3K.POLICY }) }} <span v-clean-html="resourceNames" />
 
     <Banner
       v-if="assignedClusters.length"

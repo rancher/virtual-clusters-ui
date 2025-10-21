@@ -6,7 +6,6 @@ import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
 
-import debounce from 'lodash/debounce';
 import isEmpty from 'lodash/isEmpty';
 
 export default {
@@ -82,10 +81,10 @@ export default {
     },
 
     policyOptions(neu = []) {
-      const policyOpt = neu.find((p) => !!p?.value ) || null ;
+      const policyOpt = neu.find((p) => !!p?.value ) ;
 
       if (this.mode === _CREATE) {
-        this.$emit('update:policy', policyOpt);
+        this.$emit('update:policy', policyOpt?.value || null);
         this.$emit('update:targetNamespace', '');
       }
     },

@@ -76,7 +76,6 @@ export default {
     </div>
     <ArrayList
       v-model:value="typeValues"
-      label="Resources"
       :add-label="t('resourceQuota.add.label')"
       :default-add-value="remainingTypes()[0] ? remainingTypes()[0].value : ''"
       :add-allowed="remainingTypes().length > 0"

@@ -48,7 +48,8 @@ const defaultCluster = {
       storageRequestSize: '5Gi',
       type:               'dynamic',
     },
-    servers: 1,
+    servers:      1,
+    nodeSelector: {}
   }
 };
 
@@ -202,7 +203,7 @@ export default {
       handler(neu) {
         if (neu?.spec) {
           this.k3kCluster.spec.mode = neu.spec.allowedMode;
-          this.k3kCluster.spec.nodeSelector = neu.spec.nodeSelector || defaultCluster.spec.nodeSelector;
+          this.k3kCluster.spec.nodeSelector = neu.spec.defaultNodeSelector || defaultCluster.spec.nodeSelector;
         } else {
           this.k3kCluster.spec.mode = defaultCluster.spec.mode;
           this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;

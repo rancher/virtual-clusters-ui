@@ -12,7 +12,6 @@ export function init($plugin:any, store:any) {
   } = $plugin.DSL(store, NAME);
   
   product({
-    label: 'Virtual Clusters',
     inStore:             'cluster',
     inExplorer:          true,
     icon:                'k3k',
@@ -22,7 +21,7 @@ export function init($plugin:any, store:any) {
 
 
     virtualType({
-    label:       'Virtual Clusters',
+    labelKey:       'product.virtualclusters',
     icon:        'k3k',
     name:        'virtual-cluster-dashboard',
     namespaced:  false,

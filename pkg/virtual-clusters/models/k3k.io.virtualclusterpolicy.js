@@ -28,13 +28,13 @@ export default class VirtualClusterPolicy extends SteveModel {
     return false;
   }
 
-  get allAssignedNamespaces() {
+  get allAssignedNamespaceIds() {
     return this.projectIds.reduce((allNs, p) => {
       const storeObject = this.$rootGetters['management/byId'](MANAGEMENT.PROJECT, p);
 
       const namespaces = storeObject?.namespaces || [];
 
-      allNs.push(...namespaces);
+      allNs.push(...namespaces.map((ns) => ns.id));
 
       return allNs;
     }, []);
@@ -60,12 +60,12 @@ export default class VirtualClusterPolicy extends SteveModel {
   }
 
   async findAssignedClusters() {
-    const clusters = await this.$dispatch('cluster/findAll', { type: K3K.CLUSTER, opt: { namespaced: this.allAssignedNamespaces.map((ns) => ns.id) } }, { root: true });
+    const clusters = await this.$dispatch('cluster/findAll', { type: K3K.CLUSTER, opt: { namespaced: this.allAssignedNamespaceIds } }, { root: true });
 
     return clusters || [];
   }
 
   get needsConfirm() {
-    return this.allAssignedNamespaces && this.allAssignedNamespaces.length;
+    return this.allAssignedNamespaceIds && this.allAssignedNamespaceIds?.length;
   }
 }

@@ -21,7 +21,7 @@ import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/
 import { CAPI, MANAGEMENT } from '@shell/config/types';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
-import { _CREATE } from '@shell/config/query-params';
+import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
@@ -231,6 +231,7 @@ export default {
           rules:      ['required']
         },
       ],
+      VIEW: _VIEW
     };
   },
 
@@ -240,6 +241,10 @@ export default {
       clusterBadgeAbbreviation: 'customisation/getPreviewCluster',
       clusterReady:             'clusterReady'
     }),
+
+    isCreate() {
+      return this.mode === _CREATE;
+    },
 
     canManageMembers() {
       return canViewClusterMembershipEditor(this.$store);
@@ -507,7 +512,7 @@ export default {
         >
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
-            :mode="mode"
+            :mode="isCreate ? mode : VIEW"
           />
         </template>
         <Storage

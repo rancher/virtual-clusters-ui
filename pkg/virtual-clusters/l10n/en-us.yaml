@@ -3,6 +3,7 @@ k3k:
   label: K3K
   policy:
     label: Virtual Cluster Policy
+    noneWarning: Clusters created without a policy should only be used for testing purposes.
     tabs:
       config: Config
       resourceAllocation: Resource Allocation

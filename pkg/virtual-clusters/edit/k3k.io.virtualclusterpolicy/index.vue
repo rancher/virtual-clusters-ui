@@ -210,7 +210,7 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="[...fvUnreportedValidationErrors, ...errors]"
+    :errors="fvUnreportedValidationErrors"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     @finish="saveOverride"

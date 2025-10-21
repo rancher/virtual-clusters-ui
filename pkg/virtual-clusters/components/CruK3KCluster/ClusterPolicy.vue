@@ -7,6 +7,7 @@ import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
 
 import debounce from 'lodash/debounce';
+import isEmpty from 'lodash/isEmpty';
 
 export default {
   name: 'K3kPolicySelector',
@@ -80,15 +81,13 @@ export default {
       }
     },
 
-    policyOptions: {
-      handler: debounce(function(neu = []) {
-        const policyOpt = neu.find((p) => p !== this.t('generic.none')) || this.t('generic.none') ;
+    policyOptions(neu = []) {
+      const policyOpt = neu.find((p) => !!p?.value ) || null ;
 
-        if (this.mode === _CREATE) {
-          this.$emit('update:policy', policyOpt);
-          this.$emit('update:targetNamespace', '');
-        }
-      }, 500)
+      if (this.mode === _CREATE) {
+        this.$emit('update:policy', policyOpt);
+        this.$emit('update:targetNamespace', '');
+      }
     },
 
     namespaceOptions(neu = []) {
@@ -167,6 +166,8 @@ export default {
 
       return '';
     },
+
+    isEmpty
   },
 
   computed: {
@@ -218,21 +219,26 @@ export default {
     :label="t('k3k.errors.loadingNamespaces', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
   <Banner
-    v-if="policyError"
+    v-if="policyError && k3kInstalled"
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
   <div class="row mb-20">
     <div class="col span-6">
       <LabeledSelect
-        :value="policy || t('generic.none')"
+        :value="policy && !isEmpty(policy) ? policy : t('generic.none')"
         :loading="loadingPolicies"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
         :label="t('k3k.policy.label')"
         :options="policyOptions"
+        :hover-tooltip="false"
         @selecting="e=>$emit('update:policy', e)"
       />
+      <span
+        v-if="!policy && !loadingPolicies && k3kInstalled"
+        class="nonepolicy-warning text-muted"
+      ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
     </div>
     <div class="col span-6">
       <LabeledSelect
@@ -247,3 +253,13 @@ export default {
     </div>
   </div>
 </template>
+
+<style lang="scss">
+.nonepolicy-warning {
+  margin: 3px;
+  display: flex;
+  & i {
+    margin-right: 3px;
+  }
+}
+</style>

@@ -22,10 +22,14 @@ export default {
 
   async fetch() {
     this.value.forEach(async(policy) => {
-      const assigned = await policy.findAssignedClusters();
+      try {
+        const assigned = await policy.findAssignedClusters();
 
-      if (assigned && assigned.length) {
-        this.assignedClusters.push(...assigned);
+        if (assigned && assigned.length) {
+          this.assignedClusters.push(...assigned);
+        }
+      } catch {
+        // if users can't load virtual clusters, they will see a generic deletion warning instead
       }
     });
   },
@@ -37,15 +41,13 @@ export default {
     };
   },
 
-  methods: {
-    resourceNames() {
-      return resourceNames(this.names, null, this.$store.getters['i18n/t']);
-    }
-  },
-
   computed: {
     isBulk() {
       return this.value?.length && this.value?.length > 1;
+    },
+
+    resourceNames() {
+      return resourceNames(this.names, null, this.$store.getters['i18n/t']);
     }
   },
 };
@@ -53,9 +55,7 @@ export default {
 
 <template>
   <div>
-    {{ t('promptRemove.attemptingToRemove', { type: K3K.POLICY }) }} <span
-      v-clean-html="resourceNames(names, null, t)"
-    />
+    {{ t('promptRemove.attemptingToRemove', { type: K3K.POLICY }) }} <span />
 
     <Banner
       v-if="assignedClusters.length"

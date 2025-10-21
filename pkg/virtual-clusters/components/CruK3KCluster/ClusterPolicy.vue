@@ -47,10 +47,10 @@ export default {
     },
   },
 
-  created() {
+  async fetch() {
     this.fetchPolicies();
     if (this.mode !== _CREATE) {
-      this.findSelectedPolicy();
+      await this.findSelectedPolicy();
     }
   },
 
@@ -100,6 +100,7 @@ export default {
     async fetchPolicies() {
       if (this.hostClusterId) {
         this.loadingPolicies = true;
+
         this.policyError = false;
 
         this.policies = [];
@@ -144,7 +145,7 @@ export default {
     // we show policies in this form but they are not saved as part of the k3k cluster spec
     // get the namespace the k3k cluster is in and check its labels to work out which policy the cluster falls under
     async findSelectedPolicy() {
-      this.loadingPolicies = true;
+      // this.loadingPolicies = true;
       if (!this.policies.length) {
         await this.fetchPolicies();
       }
@@ -153,7 +154,7 @@ export default {
 
       const policyName = nsObject?.metadata?.labels?.[LABELS.POLICY] || '';
 
-      this.loadingPolicies = false;
+      // this.loadingPolicies = false;
 
       // if we can't find the policy name, the namespace may be labeled with a policy that has since been deleted
       // we should show 'none' in that case
@@ -223,10 +224,12 @@ export default {
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
   <div class="row mb-20">
-    <div class="col span-6">
+    <div
+      class="col span-6"
+    >
       <LabeledSelect
         :value="policy && !isEmpty(policy) ? policy : t('generic.none')"
-        :loading="loadingPolicies"
+        :loading="loadingPolicies || $fetchState.pending"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
         :label="t('k3k.policy.label')"
@@ -235,7 +238,7 @@ export default {
         @selecting="e=>$emit('update:policy', e)"
       />
       <span
-        v-if="!policy && !loadingPolicies && k3kInstalled"
+        v-if="!policy && !loadingPolicies && k3kInstalled && !$fetchState.pending"
         class="nonepolicy-warning text-muted"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
     </div>

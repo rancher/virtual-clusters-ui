@@ -61,7 +61,7 @@ export default class VirtualClusterPolicy extends SteveModel {
 
   async findAssignedClusters() {
     // TODO nb can't query for large #'s of namespaces at once - need to refactor if we stick with this promptRemove approach
-    if (this.allAssignedNamespaceIds?.length < 20) {
+    if (this.allAssignedNamespaceIds?.length && this.allAssignedNamespaceIds?.length < 20 ) {
       const clusters = await this.$dispatch('cluster/findAll', { type: K3K.CLUSTER, opt: { namespaced: this.allAssignedNamespaceIds } }, { root: true });
 
       return clusters || [];

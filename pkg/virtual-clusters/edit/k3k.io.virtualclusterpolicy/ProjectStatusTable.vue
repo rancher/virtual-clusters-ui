@@ -159,7 +159,7 @@ export default {
               <div>{{ project.nameDisplay }}</div>
               <span
                 v-if="errMsg"
-                class="text-error"
+                class="project-err-msg"
               >{{ errMsg }}</span>
             </td>
             <td
@@ -233,5 +233,9 @@ export default {
     & td.status {
       min-width: 35px;
     }
+}
+
+.project-err-msg {
+  color: var(--error-text);
 }
 </style>

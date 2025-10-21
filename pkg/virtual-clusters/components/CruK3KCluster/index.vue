@@ -444,7 +444,6 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
-    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -503,14 +502,14 @@ export default {
           </div>
         </div>
 
-        <!-- <template
+        <template
           v-if="!policy"
-        > -->
-        <Mode
-          v-model:k3k-mode="k3kCluster.spec.mode"
-          :mode="mode"
-        />
-        <!-- </template> -->
+        >
+          <Mode
+            v-model:k3k-mode="k3kCluster.spec.mode"
+            :mode="mode"
+          />
+        </template>
         <Storage
           v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
           v-model:persistence-type="k3kCluster.spec.persistence.type"

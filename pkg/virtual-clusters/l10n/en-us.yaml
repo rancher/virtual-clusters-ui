@@ -92,6 +92,13 @@ k3k:
           other { + {n} others}
         }
       hasPartiallyAssigned: Policy couldn't be applied to some namespaces.
+    promptRemove:
+      onePolicy: |-
+        { count, plural,
+          one {This policy is currently applied to one virtual cluster. Deleting the policy now will remove resource constraints from that cluster.}
+          other {This policy is currently applied to {count} virtual clusters. Deleting the policy now will remove resource constraints from those clusters.}
+        }
+      multiplePolicies: The selected policies are collectively applied to {count} virtual clusters. Deleting them now will remove resource constraints from those clusters.
   targetNamespace:
     label: Target Namespace
   hostCluster:

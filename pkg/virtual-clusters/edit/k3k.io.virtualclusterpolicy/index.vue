@@ -15,6 +15,8 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import Quota from './Quota.vue';
+import { clear } from '@shell/utils/array';
+import { Banner } from '@rancher/components';
 
 import Projects from './Projects.vue';
 import { ANNOTATIONS } from '../../types';
@@ -40,6 +42,7 @@ export default {
     LabeledSelect,
     Projects,
     Checkbox,
+    Banner
   },
 
   async fetch() {
@@ -50,6 +53,7 @@ export default {
 
   data() {
     return {
+      errors:         [],
       fvFormRuleSets:          [{
         path:  'name',
         rules: ['required'],
@@ -167,6 +171,10 @@ export default {
      * The component responsible for annotating namespaces will emit 'finish' event to tell this component to call create-edit-view 'done' method and return to list
      */
     async saveOverride(cb, depth) {
+      if ( this.errors ) {
+        clear(this.errors);
+      }
+
       try {
         await this.actuallySave();
         const projectComponent = this.$refs['project-selector'];
@@ -198,6 +206,10 @@ export default {
         cb && cb(false);
       }
     },
+
+    closeError(index) {
+      this.errors = this.errors.filter((_, i) => i !== index);
+    }
   }
 };
 
@@ -209,12 +221,21 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
-    :errors="fvUnreportedValidationErrors"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     @finish="saveOverride"
-    @error="e => errors = e"
+    @cancel="cancel"
+    @error="e=>errors=e"
   >
+    <Banner
+      v-for="(err, i) in errors"
+      :key="i"
+      color="error"
+      :data-testid="`error-banner${i}`"
+      :label="err"
+      :closable="true"
+      @close="closeError(i)"
+    />
     <NameNsDescription
       v-if="!isView"
       :mode="mode"

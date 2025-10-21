@@ -10,6 +10,12 @@ const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
 const INCLUDE_LOCAL = process.env.dev;
 
+export const K3K_CHART_NAME = 'k3k';
+export const K3K_CHART_NAMESPACE = 'k3k-system';
+
+export const K3K_REPO_NAME = 'k3k';
+export const K3K_REPO_URL = 'https://rancher.github.io/k3k';
+
 export default {
   name: 'K3kHostCluster',
 
@@ -111,7 +117,7 @@ export default {
         const mgmtCluster = cluster.mgmt;
 
         await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.app/k3k-system/k3k`,
+          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.app/${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }`,
           method: 'GET',
         });
 
@@ -129,8 +135,8 @@ export default {
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
-        metadata:   { name: 'k3k' },
-        spec:       { url: 'https://rancher.github.io/k3k' }
+        metadata:   { name: K3K_REPO_NAME },
+        spec:       { url: K3K_REPO_URL }
       };
 
       const cluster = this.parentCluster;

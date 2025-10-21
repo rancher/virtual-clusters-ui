@@ -13,13 +13,12 @@ import ArrayList from '@shell/components/form/ArrayList';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import { Banner } from '@components/Banner';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
-import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
-import { CAPI, MANAGEMENT, NAMESPACE } from '@shell/config/types';
+import { CAPI, MANAGEMENT } from '@shell/config/types';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE } from '@shell/config/query-params';
@@ -80,7 +79,6 @@ export default {
     ClusterMembershipEditor,
     Banner,
     LabeledInput,
-    RadioGroup,
     KeyValue,
     ClusterAppearance,
     HostCluster,
@@ -198,7 +196,20 @@ export default {
           ...obj
         };
       }
-    }
+    },
+
+    policy: {
+      handler(neu) {
+        if (neu?.spec) {
+          this.k3kCluster.spec.mode = neu.spec.allowedMode;
+          this.k3kCluster.spec.nodeSelector = neu.spec.nodeSelector || defaultCluster.spec.nodeSelector;
+        } else {
+          this.k3kCluster.spec.mode = defaultCluster.spec.mode;
+          this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;
+        }
+      },
+      deep: true
+    },
   },
 
   data() {
@@ -206,7 +217,7 @@ export default {
 
     return {
       k3kInstalled:     true,
-      policyName:        '',
+      policy:           null,
       connectingToHost: false,
       provClusters:        [],
       parentCluster:       {},
@@ -246,10 +257,6 @@ export default {
         this.$emit('update:value', newValue);
       }
     },
-
-    nonePolicySelected() {
-      return this.policyName === this.t('generic.none');
-    }
   },
 
   methods: {
@@ -279,26 +286,11 @@ export default {
     // create the k3k cluster crd
     async createCluster() {
       const normanCluster = await this.findNormanCluster();
-      // const ns = {
-      //   apiVersion: 'v1',
-      //   kind:       'Namespace',
-      //   metadata:
-      //     { name: this.k3kCluster?.metadata?.namespace }
-      // };
 
       const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
       // const nsUrl = `${ baseUrl }/namespaces`;
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
-
-      // // check if ns exists and create if not
-      // try {
-      //   await this.$store.dispatch('management/request', { url: `${ nsUrl }/${ this.k3kCluster?.metadata?.namespace }`, method: 'GET' });
-      // } catch (e) {
-      //   await this.$store.dispatch('management/request', {
-      //     url: nsUrl, method: 'POST', data: ns
-      //   });
-      // }
 
       await this.$store.dispatch('management/request', {
         url: k3kUrl, method: 'POST', data: this.k3kCluster
@@ -452,6 +444,7 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
+    {{ {...k3kCluster} }}
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -493,7 +486,7 @@ export default {
 
         <ClusterPolicy
           v-model:target-namespace="k3kCluster.metadata.namespace"
-          v-model:policy-name="policyName"
+          v-model:policy="policy"
           :host-cluster="parentCluster"
           :k3k-installed="k3kInstalled"
           :mode="mode"
@@ -510,14 +503,14 @@ export default {
           </div>
         </div>
 
-        <template
-          v-if="nonePolicySelected"
-        >
-          <Mode
-            v-model:k3k-mode="k3kCluster.spec.mode"
-            :mode="mode"
-          />
-        </template>
+        <!-- <template
+          v-if="!policy"
+        > -->
+        <Mode
+          v-model:k3k-mode="k3kCluster.spec.mode"
+          :mode="mode"
+        />
+        <!-- </template> -->
         <Storage
           v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
           v-model:persistence-type="k3kCluster.spec.persistence.type"
@@ -609,7 +602,7 @@ export default {
           </div>
         </div>
         <div
-          v-if="nonePolicySelected"
+          v-if="!policy"
           class="row mt-40 mb-20"
         >
           <div class="col span-12">

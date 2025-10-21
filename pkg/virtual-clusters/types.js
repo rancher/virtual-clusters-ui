@@ -4,6 +4,8 @@ export const K3K = {
 };
 
 export const ANNOTATIONS = {
-  POLICY:             'policy.k3k.io/virtual-cluster-policy',
+  POLICY:             'policy.k3k.io/policy-name',
   POLICY_ASSIGNED_TO: 'policy.k3k.io/ui-project-ids'
 };
+
+export const LABELS = { POLICY: 'policy.k3k.io/policy-name' };

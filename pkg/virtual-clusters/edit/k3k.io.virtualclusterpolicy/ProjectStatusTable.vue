@@ -1,10 +1,10 @@
 <script>
 import { _CREATE } from '@shell/config/query-params';
-import { ANNOTATIONS } from '../../types';
+import { LABELS } from '../../types';
 import { Banner } from '@rancher/components';
 
 export default {
-  name: 'K3kProjectNSAnnotationStatus',
+  name: 'K3kProjectNSLabelStatus',
 
   props: {
     mode: {
@@ -86,8 +86,8 @@ export default {
       const namespaces = p.namespaces || [];
       const hasServerErrors = namespaces.filter((ns) => !!ns?.__policyServerError)?.length;
       /**
-       * parent component adds annotation to ns then attempts to save: if the save attempt fails, the ns object will still contain the updated annotation
-       * (or the parent component attempts to remove the annotation and saves)
+       * parent component adds label to ns then attempts to save: if the save attempt fails, the ns object will still contain the updated label
+       * (or the parent component attempts to remove the label and saves)
        * so in order to determine that a ns really has been saved we also check for error properties applied by the parent component when it fails
        */
       const saved = namespaces.filter((ns) => {
@@ -96,7 +96,7 @@ export default {
         }
         const nsHasErrors = ns?.__policyServerError;
 
-        return ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName && !nsHasErrors;
+        return ns?.metadata?.labels?.[LABELS.POLICY] === this.policyName && !nsHasErrors;
       });
 
       const showSuccessIcon = !hasServerErrors && namespaces.length === saved.length;
@@ -134,7 +134,7 @@ export default {
         :label="t('k3k.policy.projects.table.errorBannerInline')"
       />
       <table
-        class="project-annotation-status"
+        class="project-label-status"
         :class="{'in-modal': isInModal}"
       >
         <thead>
@@ -213,7 +213,7 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.project-annotation-status {
+.project-label-status {
     width: 100%;
     border-collapse: separate;
 

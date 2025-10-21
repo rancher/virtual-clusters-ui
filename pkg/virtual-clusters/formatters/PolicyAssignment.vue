@@ -2,8 +2,6 @@
 import Shortened from '@shell/components/formatter/Shortened';
 import { MANAGEMENT } from '@shell/config/types';
 
-import { ANNOTATIONS } from '../types';
-
 const MAX_CHARS = 30; // maximum characters to show before using + n more and a tooltip to show the full list
 
 export default {
@@ -21,8 +19,10 @@ export default {
 
     // metadata.annotations
     value: {
-      type:    Array,
-      default: () => []
+      type:    Object,
+      default: () => {
+        return {};
+      }
     },
 
     col:   {
@@ -79,12 +79,9 @@ export default {
 </script>
 
 <template>
-  <div>
-    <span v-if="hasIncompleteAssignments">u messed up bb </span>
-    <Shortened
-      long-value-key="fullList"
-      :row="{fullList: projectFullDisplayValue}"
-      :value="projectShortDisplayValue"
-    />
-  </div>
+  <Shortened
+    long-value-key="fullList"
+    :row="{fullList: projectFullDisplayValue}"
+    :value="projectShortDisplayValue"
+  />
 </template>

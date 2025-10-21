@@ -1,9 +1,8 @@
 <script>
-import { _CREATE, _EDIT } from '@shell/config/query-params';
+import { _CREATE } from '@shell/config/query-params';
 
 import LabeledSelect from '@shell/components/form/LabeledSelect';
-import { ANNOTATIONS, K3K } from '../../types';
-import { mapGetters } from 'vuex';
+import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
 
@@ -12,7 +11,7 @@ import debounce from 'lodash/debounce';
 export default {
   name: 'K3kPolicySelector',
 
-  emits: ['update:policyName', 'update:targetNamespace'],
+  emits: ['update:policy', 'update:targetNamespace'],
 
   components: { LabeledSelect, Banner },
 
@@ -23,7 +22,6 @@ export default {
       default: _CREATE
     },
 
-    // namespace in the host cluster the k3k cluster will be created in
     targetNamespace: {
       type:    String,
       default: ''
@@ -41,9 +39,11 @@ export default {
       default: false
     },
 
-    policyName: {
-      type:    String,
-      default: ''
+    policy: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
     },
   },
 
@@ -56,17 +56,18 @@ export default {
 
   data() {
     return {
-      policies:        [],
-      namespaces:      [],
-      loadingPolicies: false,
-      namespaceError:  false,
-      policyError:     false
+      policies:          [],
+      namespaces:        [],
+      loadingPolicies:   false,
+      loadingNamespaces:  false,
+      namespaceError:    false,
+      policyError:       false
     };
   },
 
   watch: {
     hostClusterId(neu, old) {
-      this.$emit('update:policyName', '');
+      this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
       if (neu && this.k3kInstalled) {
         this.fetchPolicies();
@@ -81,11 +82,10 @@ export default {
 
     policyOptions: {
       handler: debounce(function(neu = []) {
-      // by default use a policy if one exists - otherwise select 'no policy'
         const policyOpt = neu.find((p) => p !== this.t('generic.none')) || this.t('generic.none') ;
 
-        if (this.mode === _CREATE && !neu.includes(this.policyName)) {
-          this.$emit('update:policyName', policyOpt);
+        if (this.mode === _CREATE) {
+          this.$emit('update:policy', policyOpt);
           this.$emit('update:targetNamespace', '');
         }
       }, 500)
@@ -144,23 +144,25 @@ export default {
     },
 
     // we show policies in this form but they are not saved as part of the k3k cluster spec
-    // get the namespace the k3k cluster is in and check its annotations to work out which policy the cluster falls under
+    // get the namespace the k3k cluster is in and check its labels to work out which policy the cluster falls under
     async findSelectedPolicy() {
-      this.loadingPolicies = true; // make sure the policy dropdown doesn't show anything until we've attempted to find the relevant policy
+      this.loadingPolicies = true;
       if (!this.policies.length) {
-        await this.fetchPolicies(); // this will also fetch ns
+        await this.fetchPolicies();
       }
 
       const nsObject = this.namespaces.find((ns) => ns.id === this.targetNamespace);
 
-      const policyName = nsObject?.metadata?.annotations?.[ANNOTATIONS.POLICY] || '';
+      const policyName = nsObject?.metadata?.labels?.[LABELS.POLICY] || '';
 
       this.loadingPolicies = false;
 
-      // if we can't find the policy name, the namespace may be annotated with a policy that has since been deleted
+      // if we can't find the policy name, the namespace may be labeled with a policy that has since been deleted
       // we should show 'none' in that case
-      if (this.policies.find((p) => p?.metadata?.name === policyName)) {
-        this.$emit('update:policyName', policyName);
+      const policyObject = this.policies.find((p) => p?.metadata?.name === policyName);
+
+      if (policyObject) {
+        this.$emit('update:policy', policyObject);
       }
 
       return '';
@@ -179,18 +181,16 @@ export default {
     },
 
     policyOptions() {
-      return [this.t('generic.none'), ...this.policies.map((p) => p?.metadata?.name)];
-    },
-
-    policyAnnotation() {
-      return { [ANNOTATIONS.POLICY]: `${ this.policyName }` };
+      return [{ label: this.t('generic.none'), value: null }, ...this.policies.map((p) => {
+        return { label: p?.metadata?.name, value: p };
+      })];
     },
 
     namespaceOptions() {
-      // if "no policy" is selected, show all NS without policy annotation
-      if (this.policyName === this.t('generic.none') || !this.policyName) {
+      // if "no policy" is selected, show all NS without policy label
+      if ( !this.policy) {
         return (this.namespaces || []).reduce((all, ns) => {
-          if (!ns?.metadata?.annotations?.[ANNOTATIONS.POLICY]) {
+          if (!ns?.metadata?.labels?.[LABELS.POLICY]) {
             all.push(ns.id);
           }
 
@@ -199,17 +199,13 @@ export default {
       }
 
       return (this.namespaces || []).reduce((all, ns) => {
-        if (ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] === this.policyName) {
+        if (ns?.metadata?.labels?.[LABELS.POLICY] === this.policy?.metadata?.name) {
           all.push(ns.id);
         }
 
         return all;
       }, []);
-    },
-
-    policy() {
-      return this.policies.find((p) => p.metadata.name === this.policyName);
-    },
+    }
   },
 };
 
@@ -229,13 +225,13 @@ export default {
   <div class="row mb-20">
     <div class="col span-6">
       <LabeledSelect
-        :value="policyName"
+        :value="policy || t('generic.none')"
         :loading="loadingPolicies"
-        :disabled="!hostClusterId || !k3kInstalled"
+        :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
         :label="t('k3k.policy.label')"
         :options="policyOptions"
-        @selecting="e=>$emit('update:policyName', e)"
+        @selecting="e=>$emit('update:policy', e)"
       />
     </div>
     <div class="col span-6">

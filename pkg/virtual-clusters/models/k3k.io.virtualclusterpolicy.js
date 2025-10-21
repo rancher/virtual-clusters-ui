@@ -2,7 +2,7 @@ import { MANAGEMENT } from '@shell/config/types';
 import SteveModel from '@shell/plugins/steve/steve-class';
 import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 
-import { ANNOTATIONS } from '../types';
+import { ANNOTATIONS, LABELS } from '../types';
 
 export default class VirtualClusterPolicy extends SteveModel {
   get projectIds() {
@@ -18,7 +18,7 @@ export default class VirtualClusterPolicy extends SteveModel {
       }
       const namespaces = storeObject.namespaces || [];
 
-      const unAssigned = namespaces.find((ns) => ns?.metadata?.annotations?.[ANNOTATIONS.POLICY] !== this?.metadata?.name);
+      const unAssigned = namespaces.find((ns) => ns?.metadata?.labels?.[LABELS.POLICY] !== this?.metadata?.name);
 
       if (!!unAssigned) {
         return true;

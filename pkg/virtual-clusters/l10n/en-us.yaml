@@ -16,6 +16,7 @@ k3k:
       subheader: This policy will be assigned to all namespaces in the selected projects.
       label: Rancher projects
       notification:
+        primaryAction: Edit Policy
         addingNamespaces: 
           success:
             title: Policy assignment completed

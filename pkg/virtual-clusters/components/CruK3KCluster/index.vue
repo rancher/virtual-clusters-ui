@@ -280,7 +280,6 @@ export default {
 
     updateName({ name }) {
       this.k3kCluster.metadata.name = name;
-      this.value.metadata.name = name;
     },
 
     async findNormanCluster() {
@@ -295,7 +294,6 @@ export default {
 
       const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
 
-      // const nsUrl = `${ baseUrl }/namespaces`;
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
       await this.$store.dispatch('management/request', {
@@ -513,7 +511,7 @@ export default {
         >
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
-            :mode="isCreate ? mode : VIEW"
+            :mode="mode"
           />
         </template>
         <Storage

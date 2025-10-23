@@ -76,13 +76,13 @@ export default {
   computed: {
     showErrorBanner() {
       return !!(Object.values(this.statuses) || []).find((status) => {
-        return status?.hasServerErrors;
-      });
+        return status?.errMsg;
+      }) && !this.isInModal;
     },
   },
 
   methods: {
-    computeNamespaceStatus(p = {}, nsSaved = []) {
+    computeNamespaceStatus(p = {}) {
       const namespaces = p.namespaces || [];
       const hasServerErrors = namespaces.filter((ns) => !!ns?.__policyServerError)?.length;
       /**

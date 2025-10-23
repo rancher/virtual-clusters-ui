@@ -31,7 +31,13 @@ export default {
     return { modes: MODES };
   },
 
-  computed: { ...mapGetters({ t: 'i18n/t' }) }
+  computed: {
+    ...mapGetters({ t: 'i18n/t' }),
+
+    isCreate() {
+      return this.mode === _CREATE;
+    }
+  }
 };
 </script>
 
@@ -41,6 +47,7 @@ export default {
   >
     <div class="col span-9">
       <RadioGroup
+        :disabled="!isCreate"
         :value="k3kMode"
         name="k3k-cluster-mode"
         :row="true"

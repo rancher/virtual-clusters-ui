@@ -5,7 +5,7 @@ import {
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { randomStr } from '@shell/utils/string';
 import { sortBy } from '@shell/utils/sort';
-import { MANAGEMENT } from '@shell/config/types';
+import { MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import { NotificationLevel } from '@shell/types/notifications';
 import AppModal from '@shell/components/AppModal.vue';
 import ProgressBar from './ProgressBar.vue';
@@ -70,9 +70,16 @@ export default {
       hasErrors:                   false,
       namespacesDone:              [],
       progress:                    0,
-      selectedProjects:                [],
-      deselectedProjects:              [], // these are projects that had been annotated previously and are being removed now
-      displayProjects:                 [], // on edit, only projects that haven't been fully annotated, or projects that are being removed, are shown in the inline project status table
+      nsWillSave:                  [], // namespaces to be edited
+      toBeAssignedCount:           0,
+      toBeUnAssssignedCount:       0,
+      nsSaveAttemptedCount:        0, // maybe succeeded maybe not. Used to calculate how far thru saving we are
+      nsErrored:                   [],
+      projectsWithServerErrors:    [], // track which projects have been fully assigned/unassigned and annotate the project as well
+
+      selectedProjects:            [],
+      deselectedProjects:          [], // these are projects that had been annotated previously and are being removed now
+      displayProjects:             [], // on edit, only projects that haven't been fully annotated, or projects that are being removed, are shown in the inline project status table
     };
   },
 
@@ -85,23 +92,21 @@ export default {
 
       const removed = old.filter((oldP) => !neu.find((newP) => newP.id === oldP.id));
 
-      if (removed) {
-        // check if any of the namespaces were annotated. If yes, we need to make sure to UN-annotate them on save
-        const wasAnnotated = removed.filter((p) => {
-          const namespaces = p.namespaces || [];
+      // check if any of the namespaces were annotated. If yes, we need to make sure to UN-annotate them on save
+      const wasAnnotated = removed.filter((p) => {
+        const namespaces = p.namespaces || [];
 
-          return !!namespaces.find((ns) => ns?.metadata?.labels[LABELS.POLICY] && ns?.metadata?.labels[LABELS.POLICY] === this.policy?.metadata?.name);
-        });
+        return !!namespaces.find((ns) => ns?.metadata?.labels[LABELS.POLICY] && ns?.metadata?.labels[LABELS.POLICY] === this.policy?.metadata?.name);
+      });
 
-        wasAnnotated.forEach((p) => {
-          if (!this.deselectedProjects.find((project) => project.id === p.id)) {
-            this.deselectedProjects.push(p);
-            if (!this.displayProjects.find((project) => project.id === p.id)) {
-              this.displayProjects.push(p);
-            }
+      wasAnnotated.forEach((p) => {
+        if (!this.deselectedProjects.find((project) => project.id === p.id)) {
+          this.deselectedProjects.push(p);
+          if (!this.displayProjects.find((project) => project.id === p.id)) {
+            this.displayProjects.push(p);
           }
-        });
-      }
+        }
+      });
 
       // if projects have been added to selectedProjects, make sure they are removed from deselectedProjects
       this.deselectedProjects = this.deselectedProjects.filter((p) => !neu.find((selectedProject) => selectedProject.id === p.id));
@@ -141,7 +146,6 @@ export default {
       this.selectedProjects = selectedProjectObjects.filter((p) => p && p.id);
 
       this.deselectedProjects = allProjects.filter((p) => p?.metadata?.labels?.[LABELS.POLICY] === this?.policy?.metadata?.name && !this.selectedProjects.find((sp) => sp.id === p.id));
-
       const selectedButInError = this.selectedProjects.filter((p) => {
         const namespaces = p.namespaces || [];
 
@@ -194,28 +198,31 @@ export default {
      * and automatically retrying requests that return 409 responses seems to compound the flakiness of saving a ton of namespaces at once
      * @param ns namespace resource to be updated
      */
-    saveNamespaceLite(ns = {}) {
+    async saveNamespaceLite(ns = {}) {
       if (!ns.metadata?.name) {
         return;
       }
 
       const url = `/k8s/clusters/${ this.currentCluster.id }/v1/namespaces/${ ns.metadata.name }`;
 
-      return this.$store.dispatch('cluster/request', {
+      return await this.$store.dispatch('cluster/request', {
         url, method: 'PUT', data: ns.cleanForSave(JSON.parse(JSON.stringify(ns)))
       });
     },
 
     // also  UN-annotate and save namespaces
     async annotateAndSaveNamespaces() {
-      const nsWillSave = []; // namespaces to be edited
-      let toBeAssignedCount = 0;
-      let toBeUnAssssignedCount = 0;
-      let nsSaveAttemptedCount = 0; // maybe succeeded maybe not. Used to calculate how far thru saving we are
-      const nsDone = this.namespacesDone; // namespaces in the state we want them in. Maybe annotated in a previous 'save' call; maybe annotated just now
+      let {
+        nsWillSave, toBeAssignedCount, toBeUnAssssignedCount, nsSaveAttemptedCount, namespacesDone: nsDone, nsErrored, projectsWithServerErrors
+      } = this;
+      // const nsWillSave = []; // namespaces to be edited
+      // let toBeAssignedCount = 0;
+      // let toBeUnAssssignedCount = 0;
+      // let nsSaveAttemptedCount = 0; // maybe succeeded maybe not. Used to calculate how far thru saving we are
+      // const nsDone = this.namespacesDone; // namespaces in the state we want them in. Maybe annotated in a previous 'save' call; maybe annotated just now
 
-      const nsErrored = [];
-      const projectsWithServerErrors = []; // track which projects have been fully assigned/unassigned and annotate the project as well
+      // const nsErrored = [];
+      // const projectsWithServerErrors = []; // track which projects have been fully assigned/unassigned and annotate the project as well
 
       const policyName = `${ this.policy?.metadata?.name }`;
       const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
@@ -260,49 +267,71 @@ export default {
         return Math.round(( nsSaveAttemptedCount / (toBeUnAssssignedCount + toBeAssignedCount)) * 100);
       };
 
-      const saveEachNamespace = (namespace) => {
-        return new Promise((resolve, reject) => {
-          this.saveNamespaceLite(namespace)
-            .then(() => {
-              nsDone.push(namespace.id);
-              nsSaveAttemptedCount++;
-
-              // one of these values may be set to true if this current run is re-trying a namespace
-              // need to clear it so the table reflects that there are no more ns in error
-              namespace.__policyServerError = false;
-
-              if (this.showModal) {
-                this.updateModalTable(namespace.project);
-                this.progress = computeProgress();
-              }
-
-              resolve();
-            })
-            .catch((e) => {
-              nsErrored.push(namespace.id);
-              nsSaveAttemptedCount++;
-
-              namespace.__policyServerError = true;
-              this.hasErrors = true;
-
-              const projectName = namespace?.project?.nameDisplay;
-
-              if (namespace?.metadata?.labels?.[LABELS.POLICY] === policyName) {
-                namespace.setLabel(LABELS.POLICY, null);
-              } else {
-                namespace.setLabel(LABELS.POLICY, policyName);
-              }
-
-              if (projectName && !projectsWithServerErrors.includes(projectName)) {
-                projectsWithServerErrors.push(projectName);
-              }
-              if (this.showModal) {
-                this.updateModalTable(namespace.project);
-                this.progress = computeProgress();
-              }
-              resolve();
-            });
+      const verifyNamespaceWasUpdated = async(namespace) => {
+        const shouldBeLabeled = !!namespace?.metdata?.labels[LABELS.POLICY];
+        const refreshed = await this.$store.dispatch('cluster/find', {
+          type: NAMESPACE, id: namespace.id, opt: { force: true }
         });
+
+        return shouldBeLabeled ? !!refreshed?.metadata?.labels[LABELS.POLICY] : !refreshed?.metadata?.labels[LABELS.POLICY];
+      };
+
+      const reportNamespaceSaved = (namespace) => {
+        nsDone.push(namespace.id);
+        nsSaveAttemptedCount++;
+
+        // one of these values may be set to true if this current run is re-trying a namespace
+        // need to clear it so the table reflects that there are no more ns in error
+        namespace.__policyServerError = false;
+
+        if (this.showModal) {
+          this.updateModalTable(namespace.project);
+          this.progress = computeProgress();
+        }
+      };
+
+      const reportNamesapceFailedToSave = (namespace) => {
+        nsErrored.push(namespace.id);
+        nsSaveAttemptedCount++;
+
+        namespace.__policyServerError = true;
+        this.hasErrors = true;
+
+        const projectName = namespace?.project?.nameDisplay;
+
+        if (namespace?.metadata?.labels?.[LABELS.POLICY] === policyName) {
+          namespace.setLabel(LABELS.POLICY, null);
+        } else {
+          namespace.setLabel(LABELS.POLICY, policyName);
+        }
+
+        if (projectName && !projectsWithServerErrors.includes(projectName)) {
+          projectsWithServerErrors.push(projectName);
+        }
+        if (this.showModal) {
+          this.updateModalTable(namespace.project);
+          this.progress = computeProgress();
+        }
+      };
+
+      const saveEachNamespace = async(namespace) => {
+        try {
+          await this.saveNamespaceLite(namespace);
+          reportNamespaceSaved(namespace);
+        } catch (e) {
+          // Sometimes the server sends 500 responses but the namespace did save successfully
+          // when we get 500 errors we re-fetch the namespace from the server to see if the label actually was applied
+          if (e._status === 500) {
+            const wasSaved = await verifyNamespaceWasUpdated(namespace);
+
+            if (wasSaved) {
+              reportNamespaceSaved(namespace);
+
+              return;
+            }
+          }
+          reportNamesapceFailedToSave(namespace);
+        }
       };
 
       // annotate/un-annotate projects to help the UI track what to show during edit
@@ -338,31 +367,29 @@ export default {
           }
         }));
       } catch {
-        this.addProjectNotification({ policyName, editPath });
+        this.addProjectNotification({ editPath });
       }
 
       if (!this.showModal) {
-        this.addAssignmentNotification({
-          nsErrored, policyName, editPath, toBeAssignedCount, toBeUnAssssignedCount
-        });
+        this.addAssignmentNotification({ editPath });
         this.$emit('finish');
       }
       this.doneSavingNamespaces = true;
     },
 
     // each time a ns finishes saving/errors out tell the live status table to update only that namespace's project's row
-    updateModalTable(p = {}, nsDone) {
+    updateModalTable(p = {}) {
       const modalTableComponent = this.$refs['modal-table'];
 
       if (modalTableComponent) {
-        modalTableComponent.computeNamespaceStatus(p, nsDone);
+        modalTableComponent.computeNamespaceStatus(p, this.namespacesDone);
       }
     },
 
     // notification when assignment/unassignment succeeds/fails
-    addAssignmentNotification({
-      toBeAssignedCount, toBeUnAssssignedCount, nsErrored = [], policyName = '', editPath,
-    }) {
+    addAssignmentNotification({ editPath }) {
+      const { toBeAssignedCount, toBeUnAssssignedCount, nsErrored = [] } = this;
+      const policyName = this.policy?.metadata?.name;
       const nsTargetedCount = toBeAssignedCount + toBeUnAssssignedCount;
 
       if (!nsTargetedCount) {
@@ -422,11 +449,13 @@ export default {
     },
 
     // notification if annotating projects fails
-    addProjectNotification({ policyName, editPath }) {
+    addProjectNotification({ editPath }) {
+      const policyName = this.policy?.metadata?.name;
+
       this.$store.dispatch('notifications/add', {
         level:         NotificationLevel.Error,
-        title:         this.t('k3k.projects.notification.savingProjects.title'),
-        message:       this.t('k3k.projects.notification.savingProjects.message', { policyName }),
+        title:         this.t('k3k.policy.projects.notification.savingProjects.title'),
+        message:       this.t('k3k.policy.projects.notification.savingProjects.message', { policyName }),
         primaryAction:            {
           label:  this.t('k3k.policy.projects.notification.primaryAction'),
           route: editPath,

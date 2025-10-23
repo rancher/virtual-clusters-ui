@@ -66,7 +66,7 @@ export default {
   },
 
   watch: {
-    hostClusterId(neu, old) {
+    hostClusterId(neu) {
       this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
       if (neu && this.k3kInstalled) {
@@ -160,8 +160,6 @@ export default {
       if (policyObject) {
         this.$emit('update:policy', policyObject);
       }
-
-      return '';
     },
 
     isEmpty

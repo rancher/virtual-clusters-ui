@@ -6,7 +6,7 @@ import { ROW_COMPUTED } from '@shell/components/form/ResourceQuota/shared';
 export default {
   emits: ['type-change', 'update'],
 
-  components: { Select, UnitInput },
+  components: { UnabeledSelect: Select, UnitInput },
 
   props: {
     mode: {
@@ -57,7 +57,7 @@ export default {
     v-if="typeOption"
     class="row"
   >
-    <Select
+    <UnabeledSelect
       :value="type"
       class="mr-10"
       :mode="mode"

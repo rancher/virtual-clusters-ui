@@ -15,7 +15,7 @@ export default {
       type:     String,
       required: true,
     },
-    // corev1.resourcequota.spec.hard
+
     value: {
       type:    Object,
       default: () => {

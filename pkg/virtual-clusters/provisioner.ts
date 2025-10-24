@@ -11,7 +11,7 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get icon(): any {
-    return require('./assets/icon-virtual-clusters.svg');
+    return require('./assets/icon-k3k.svg');
   }
 
   get id(): string {

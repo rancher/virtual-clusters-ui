@@ -27,6 +27,6 @@ export default function(plugin: IPlugin): void {
   plugin.register('provisioner', k3kProvisioner.ID, k3kProvisioner);
 
   // Built-in icon
-  plugin.metadata.icon = require('./assets/icon-virtual-clusters.svg');
+  plugin.metadata.icon = require('./assets/icon-k3k.svg');
 
 }

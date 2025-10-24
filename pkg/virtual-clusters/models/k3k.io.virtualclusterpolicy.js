@@ -1,4 +1,4 @@
-import { MANAGEMENT } from '@shell/config/types';
+import { COUNT, MANAGEMENT } from '@shell/config/types';
 import SteveModel from '@shell/plugins/steve/steve-class';
 import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 
@@ -63,14 +63,17 @@ export default class VirtualClusterPolicy extends SteveModel {
     );
   }
 
-  async findAssignedClusters() {
-    // TODO nb can't query for large #'s of namespaces at once - need to refactor if we stick with this promptRemove approach
-    if (this.allAssignedNamespaceIds?.length && this.allAssignedNamespaceIds?.length < 20 ) {
-      const clusters = await this.$dispatch('cluster/findAll', { type: K3K.CLUSTER, opt: { namespaced: this.allAssignedNamespaceIds } }, { root: true });
+  async fetchAssignedClusterCount() {
+    const clusterCountByNamespace = this.$rootGetters['cluster/all'](COUNT)?.[0]?.counts?.[K3K.CLUSTER]?.namespaces || {};
 
-      return clusters || [];
-    } else {
-      return [];
-    }
+    let count = 0;
+
+    this.allAssignedNamespaceIds.forEach(( nsId) => {
+      const nsCount = clusterCountByNamespace[nsId]?.count || 0;
+
+      count += nsCount;
+    });
+
+    return count;
   }
 }

@@ -75,7 +75,7 @@ export default {
     hostClusterId(neu) {
       this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
-      if (neu && this.k3kInstalled) {
+      if (neu) {
         this.fetchPolicies();
       }
     },
@@ -189,7 +189,10 @@ export default {
         // the latter is used in policy annotations
         const projectId = (ns.metadata?.annotations?.[PROJECT] || '').replace(':', '/') || null;
 
-        if (!projectId) {
+        const policyLabel = ns?.metadata?.labels[LABELS.POLICY];
+        const policyInLabelExists = this.policies.find((p) => p.id === policyLabel);
+
+        if (!policyLabel || !policyInLabelExists) {
           out.none.push(ns.id);
         } else if (!out[projectId]) {
           out[projectId] = [ns.id];

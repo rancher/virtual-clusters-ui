@@ -2,12 +2,11 @@
 import { K3K } from '../types';
 import { resourceNames } from '@shell/utils/string';
 import { Banner } from '@rancher/components';
-import Loading from '@shell/components/Loading';
 
 export default {
   name: 'VirtualClusterPolicyPromptRemove',
 
-  components: { Banner, Loading },
+  components: { Banner },
 
   props: {
     value: {
@@ -24,10 +23,10 @@ export default {
   async fetch() {
     for (const policy of this.value) {
       try {
-        const assigned = await policy.findAssignedClusters();
+        const assigned = await policy.fetchAssignedClusterCount();
 
-        if (assigned && assigned.length) {
-          this.assignedClusters.push(...assigned);
+        if (assigned) {
+          this.assignedClusterCount += assigned;
         }
       } catch {
         // if users can't load virtual clusters, they will see a generic deletion warning instead
@@ -37,7 +36,7 @@ export default {
 
   data() {
     return {
-      assignedClusters: [],
+      assignedClusterCount: 0,
       K3K,
     };
   },
@@ -59,19 +58,19 @@ export default {
     {{ t('promptRemove.attemptingToRemove', { type: K3K.POLICY }) }} <span v-clean-html="resourceNames" />
 
     <Banner
-      v-if="assignedClusters.length"
+      v-if="assignedClusterCount"
       class="mt-20"
       color="warning"
     >
       <t
         v-if="isBulk"
         k="k3k.policy.promptRemove.multiplePolicies"
-        :count="assignedClusters?.length"
+        :count="assignedClusterCount"
       />
       <t
         v-else
         k="k3k.policy.promptRemove.onePolicy"
-        :count="assignedClusters?.length"
+        :count="assignedClusterCount"
       />
     </Banner>
   </div>

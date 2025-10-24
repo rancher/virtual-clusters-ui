@@ -23,7 +23,14 @@ export default {
       default: () => {
         return {};
       }
-    }
+    },
+
+    // col:   {
+    //   type:    Object,
+    //   default: () => {
+    //     return {};
+    //   }
+    // },
   },
 
   computed: {
@@ -50,16 +57,16 @@ export default {
         const storeObject = this.$store.getters['management/byId'](MANAGEMENT.PROJECT, p);
         const i = projectIds.indexOf(p);
 
-        if (!storeObject) {
-          out += p;
-        } else {
-          out += storeObject.nameDisplay;
+        const toAdd = storeObject.nameDisplay || p;
+
+        if (maxLength && out.length + toAdd.length >= maxLength) {
+          out += ` ${ this.t('k3k.policy.listView.plusMore', { n: projectIds.length - i }) }`;
+          break;
         }
+
+        out += toAdd;
+
         if (i < projectIds.length - 1) {
-          if (maxLength && out.length >= maxLength) {
-            out += ` ${ this.t('k3k.policy.listView.plusMore', { n: projectIds.length - i - 1 }) }`;
-            break;
-          }
           out += ', ';
         }
       }

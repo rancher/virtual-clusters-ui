@@ -23,14 +23,7 @@ export default {
       default: () => {
         return {};
       }
-    },
-
-    col:   {
-      type:    Object,
-      default: () => {
-        return {};
-      }
-    },
+    }
   },
 
   computed: {

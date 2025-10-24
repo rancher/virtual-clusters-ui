@@ -2,11 +2,12 @@
 import { K3K } from '../types';
 import { resourceNames } from '@shell/utils/string';
 import { Banner } from '@rancher/components';
+import Loading from '@shell/components/Loading';
 
 export default {
   name: 'VirtualClusterPolicyPromptRemove',
 
-  components: { Banner },
+  components: { Banner, Loading },
 
   props: {
     value: {
@@ -21,7 +22,7 @@ export default {
   },
 
   async fetch() {
-    this.value.forEach(async(policy) => {
+    for (const policy of this.value) {
       try {
         const assigned = await policy.findAssignedClusters();
 
@@ -31,7 +32,7 @@ export default {
       } catch {
         // if users can't load virtual clusters, they will see a generic deletion warning instead
       }
-    });
+    }
   },
 
   data() {

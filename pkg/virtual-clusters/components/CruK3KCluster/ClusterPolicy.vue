@@ -5,8 +5,10 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
+import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
 
 import isEmpty from 'lodash/isEmpty';
+import { PROJECT } from '@shell/config/labels-annotations';
 
 export default {
   name: 'K3kPolicySelector',
@@ -45,6 +47,11 @@ export default {
         return {};
       }
     },
+
+    rules: {
+      type:    Object,
+      default: () => {}
+    },
   },
 
   async fetch() {
@@ -56,12 +63,11 @@ export default {
 
   data() {
     return {
-      policies:          [],
-      namespaces:        [],
-      loadingPolicies:   false,
-      loadingNamespaces:  false,
-      namespaceError:    false,
-      policyError:       false
+      policies:                     [],
+      namespaces:                   [],
+      loadingPoliciesAndNamespaces: false,
+      namespaceError:               false,
+      policyError:                  false
     };
   },
 
@@ -99,7 +105,7 @@ export default {
   methods: {
     async fetchPolicies() {
       if (this.hostClusterId) {
-        this.loadingPolicies = true;
+        this.loadingPoliciesAndNamespaces = true;
 
         this.policyError = false;
 
@@ -117,14 +123,11 @@ export default {
           this.policyError = true;
         }
 
-        this.loadingPolicies = false;
-
         return await this.fetchNamespaces();
       }
     },
 
     async fetchNamespaces() {
-      this.loadingNamespaces = true;
       this.namespaceError = false;
 
       try {
@@ -139,7 +142,7 @@ export default {
         this.namespaceError = true;
       }
 
-      this.loadingNamespaces = false;
+      this.loadingPoliciesAndNamespaces = false;
     },
 
     // we show policies in this form but they are not saved as part of the k3k cluster spec
@@ -176,31 +179,59 @@ export default {
       return mgmt?.id;
     },
 
+    namespaceIdsByProject() {
+      const out = { none: [] };
+
+      this.namespaces.forEach((ns) => {
+        // the ns project annotation is formatted differently than resource ids
+        // ns annotation is <project ns in local cluster>:project.metadata.name
+        // ids are <namespace>/resource.metadata.name
+        // the latter is used in policy annotations
+        const projectId = (ns.metadata?.annotations?.[PROJECT] || '').replace(':', '/') || null;
+
+        if (!projectId) {
+          out.none.push(ns.id);
+        } else if (!out[projectId]) {
+          out[projectId] = [ns.id];
+        } else {
+          out[projectId].push(ns.id);
+        }
+      });
+
+      return out;
+    },
+
     policyOptions() {
-      return [{ label: this.t('generic.none'), value: null }, ...this.policies.map((p) => {
-        return { label: p?.metadata?.name, value: p };
-      })];
+      return [{ label: this.t('generic.none'), value: null }, ...this.policies.reduce((hasNs, p) => {
+        const projectIds = (getProjectIds(p) || []);
+
+        const hasNamespaces = (projectIds).find((p) => this.namespaceIdsByProject[p]);
+
+        if (hasNamespaces) {
+          hasNs.push({ label: p?.metadata?.name, value: p });
+        }
+
+        return hasNs;
+      }, [])];
     },
 
     namespaceOptions() {
       // if "no policy" is selected, show all NS without policy label
       if ( !this.policy) {
-        return (this.namespaces || []).reduce((all, ns) => {
-          if (!ns?.metadata?.labels?.[LABELS.POLICY]) {
-            all.push(ns.id);
-          }
-
-          return all;
-        }, []);
+        return this.namespaceIdsByProject.none;
       }
 
-      return (this.namespaces || []).reduce((all, ns) => {
-        if (ns?.metadata?.labels?.[LABELS.POLICY] === this.policy?.metadata?.name) {
-          all.push(ns.id);
-        }
+      const projectIds = getProjectIds(this.policy);
 
-        return all;
+      return projectIds.reduce((nsOpts, id) => {
+        nsOpts.push(...(this.namespaceIdsByProject[id] || []));
+
+        return nsOpts;
       }, []);
+    },
+
+    showLoadingSpinner() {
+      return this.loadingPoliciesAndNamespaces || this.$fetchState.pending;
     }
   },
 };
@@ -224,7 +255,7 @@ export default {
     >
       <LabeledSelect
         :value="policy && !isEmpty(policy) ? policy : t('generic.none')"
-        :loading="loadingPolicies || $fetchState.pending"
+        :loading="showLoadingSpinner"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
         :label="t('k3k.policy.label')"
@@ -233,18 +264,19 @@ export default {
         @selecting="e=>$emit('update:policy', e)"
       />
       <span
-        v-if="!policy && !loadingPolicies && k3kInstalled && !$fetchState.pending"
+        v-if="!policy && !showLoadingSpinner"
         class="nonepolicy-warning text-muted"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
     </div>
     <div class="col span-6">
       <LabeledSelect
         :value="targetNamespace"
-        :loading="loadingNamespaces || loadingPolicies"
+        :loading="showLoadingSpinner"
         :mode="mode"
         :disabled="!isCreate"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
+        :rules="rules.namespace"
         @selecting="e=>$emit('update:targetNamespace', e)"
       />
     </div>

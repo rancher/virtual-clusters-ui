@@ -2,7 +2,7 @@
 import Shortened from '@shell/components/formatter/Shortened';
 import { MANAGEMENT } from '@shell/config/types';
 
-const MAX_CHARS = 30; // maximum characters to show before using + n more and a tooltip to show the full list
+const MAX_CHARS = 35; // maximum characters to show before using + n more and a tooltip to show the full list
 
 export default {
   name: 'K3KPolicyAssignmentFormatter',
@@ -17,20 +17,11 @@ export default {
       }
     },
 
-    // metadata.annotations
+    // not used, but the component throws console warnings if this prop is not defined
     value: {
-      type:    Object,
-      default: () => {
-        return {};
-      }
+      type:    String,
+      default: ''
     },
-
-    // col:   {
-    //   type:    Object,
-    //   default: () => {
-    //     return {};
-    //   }
-    // },
   },
 
   computed: {
@@ -57,7 +48,7 @@ export default {
         const storeObject = this.$store.getters['management/byId'](MANAGEMENT.PROJECT, p);
         const i = projectIds.indexOf(p);
 
-        const toAdd = storeObject.nameDisplay || p;
+        const toAdd = storeObject?.nameDisplay || p;
 
         if (maxLength && out.length + toAdd.length >= maxLength) {
           out += ` ${ this.t('k3k.policy.listView.plusMore', { n: projectIds.length - i }) }`;

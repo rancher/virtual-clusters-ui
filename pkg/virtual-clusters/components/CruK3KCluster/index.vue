@@ -231,6 +231,11 @@ export default {
           rootObject: this.k3kCluster,
           rules:      ['required']
         },
+        {
+          path:       'metadata.namespace',
+          rootObject: this.k3kCluster,
+          rules:      ['required']
+        },
       ],
       VIEW: _VIEW
     };
@@ -493,6 +498,7 @@ export default {
           :host-cluster="parentCluster"
           :k3k-installed="k3kInstalled"
           :mode="mode"
+          :rules="{namespace:fvGetAndReportPathRules('metadata.namespace')}"
         />
 
         <div class="row mb-20">

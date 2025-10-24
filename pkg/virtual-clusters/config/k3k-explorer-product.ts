@@ -47,7 +47,6 @@ export function init($plugin:any, store:any) {
         {
       name:          'vcmode',
       labelKey:      'k3k.policy.listView.projectHeader',
-      value:         'metadata.annotations',
       formatter:     'PolicyAssignment'
     },
     AGE

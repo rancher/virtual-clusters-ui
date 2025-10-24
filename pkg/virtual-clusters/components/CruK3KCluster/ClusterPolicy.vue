@@ -80,12 +80,6 @@ export default {
       }
     },
 
-    k3kInstalled(neu) {
-      if (neu) {
-        this.fetchPolicies();
-      }
-    },
-
     policyOptions(neu = []) {
       const policyOpt = neu.find((p) => !!p?.value ) ;
 
@@ -184,9 +178,7 @@ export default {
 
       this.namespaces.forEach((ns) => {
         // the ns project annotation is formatted differently than resource ids
-        // ns annotation is <project ns in local cluster>:project.metadata.name
-        // ids are <namespace>/resource.metadata.name
-        // the latter is used in policy annotations
+        // which are used in policy annotations
         const projectId = (ns.metadata?.annotations?.[PROJECT] || '').replace(':', '/') || null;
 
         const policyLabel = ns?.metadata?.labels[LABELS.POLICY];
@@ -219,7 +211,6 @@ export default {
     },
 
     namespaceOptions() {
-      // if "no policy" is selected, show all NS without policy label
       if ( !this.policy) {
         return this.namespaceIdsByProject.none;
       }

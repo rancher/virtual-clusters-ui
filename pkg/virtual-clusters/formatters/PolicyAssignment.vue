@@ -17,7 +17,7 @@ export default {
       }
     },
 
-    // not used, but the component throws console warnings if this prop is not defined
+    // not used, but the component doesn't render if its not defined
     value: {
       type:    String,
       default: ''

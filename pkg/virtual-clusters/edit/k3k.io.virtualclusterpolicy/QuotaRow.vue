@@ -24,7 +24,6 @@ export default {
       default: ''
     },
 
-    // corev1.resourcequota.spec.hard
     value: {
       type:    Object,
       default: () => {

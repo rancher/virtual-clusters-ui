@@ -17,7 +17,7 @@ export const K3K_REPO_NAME = 'k3k';
 export const K3K_REPO_URL = 'https://rancher.github.io/k3k';
 
 export default {
-  name: 'K3kHostCluster',
+  name: 'K3kHostClusterAndInstallk3k',
 
   emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
 
@@ -47,7 +47,6 @@ export default {
       type:    Boolean,
       default: true
     }
-
   },
 
   watch: {

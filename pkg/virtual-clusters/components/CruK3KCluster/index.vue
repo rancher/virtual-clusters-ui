@@ -26,7 +26,7 @@ import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
-import HostCluster from './HostCluster.vue';
+import HostCluster from '../HostCluster.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';

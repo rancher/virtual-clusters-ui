@@ -5,12 +5,13 @@ import CruK3KCluster from './components/CruK3KCluster/index.vue';
 
 export class k3kProvisioner implements IClusterProvisioner {
   static ID = 'k3k'
+
   constructor(private context: ClusterProvisionerContext) {
     mapDriver(this.id, 'k3k' );
   }
 
   get icon(): any {
-    return require('./assets/icon-virtual-clusters.svg');
+    return require('./assets/icon-k3k.svg');
   }
 
   get id(): string {

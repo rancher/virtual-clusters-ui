@@ -1,7 +1,6 @@
 <script>
 import { mapGetters } from 'vuex';
 import { _CREATE } from '@shell/config/query-params';
-import { STORAGE_CLASS } from '@shell/config/types';
 import { Banner } from '@components/Banner';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { STORAGE } from '@shell/config/labels-annotations';

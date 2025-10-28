@@ -55,7 +55,7 @@ export default {
   },
 
   async fetch() {
-    this.fetchPolicies();
+    await this.fetchPolicies();
     if (this.mode !== _CREATE) {
       await this.findSelectedPolicy();
     }

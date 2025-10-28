@@ -70,7 +70,7 @@ export default {
       return this.t('generic.none');
     },
 
-    // format limits to match project/namesapces so we can use the same component
+    // format limits to match project/namespace so we can use the same component
     defaultLimits: {
       get() {
         const limit = (this.value.spec?.limit?.limits || []).find((l) => l.type === CONTAINER_LIMIT_TYPE) || {};

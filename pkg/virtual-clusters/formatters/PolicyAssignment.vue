@@ -51,6 +51,11 @@ export default {
         const toAdd = storeObject?.nameDisplay || p;
 
         if (maxLength && out.length + toAdd.length >= maxLength) {
+          if (i === 0) {
+            const shortened = toAdd.slice(0, 34);
+
+            out += `${ shortened }...`;
+          }
           out += ` ${ this.t('k3k.policy.listView.plusMore', { n: projectIds.length - i }) }`;
           break;
         }

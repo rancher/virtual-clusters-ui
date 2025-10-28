@@ -2,6 +2,7 @@
 import { K3K } from '../types';
 import { resourceNames } from '@shell/utils/string';
 import { Banner } from '@rancher/components';
+import sum from 'lodash/sum';
 
 export default {
   name: 'VirtualClusterPolicyPromptRemove',
@@ -21,17 +22,9 @@ export default {
   },
 
   async fetch() {
-    for (const policy of this.value) {
-      try {
-        const assigned = await policy.fetchAssignedClusterCount();
+    const counts = await Promise.all(this.value.map((policy) => policy.fetchAssignedClusterCount()));
 
-        if (assigned) {
-          this.assignedClusterCount += assigned;
-        }
-      } catch {
-        // if users can't load virtual clusters, they will see a generic deletion warning instead
-      }
-    }
+    this.assignedClusterCount = sum(counts);
   },
 
   data() {

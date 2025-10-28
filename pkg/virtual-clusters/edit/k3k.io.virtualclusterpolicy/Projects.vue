@@ -209,7 +209,7 @@ export default {
     },
 
     async verifyNamespaceWasSaved(namespace) {
-      const shouldBeLabeled = !!namespace?.metdata?.labels[LABELS.POLICY];
+      const shouldBeLabeled = !!namespace?.metadata?.labels[LABELS.POLICY];
       const refreshed = await this.$store.dispatch('cluster/find', {
         type: NAMESPACE, id: namespace.id, opt: { force: true }
       });
@@ -217,7 +217,7 @@ export default {
       return shouldBeLabeled ? !!refreshed?.metadata?.labels[LABELS.POLICY] : !refreshed?.metadata?.labels[LABELS.POLICY];
     },
 
-    reportNamesapceFailedToSave(namespace) {
+    reportNamespaceFailedToSave(namespace) {
       const policyName = this.policy?.metadata?.name ;
 
       this.nsErrored.push(namespace.id);
@@ -270,7 +270,7 @@ export default {
             return;
           }
         }
-        this.reportNamesapceFailedToSave(namespace);
+        this.reportNamespaceFailedToSave(namespace);
       }
     },
 

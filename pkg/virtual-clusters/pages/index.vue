@@ -5,6 +5,7 @@ import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallHelmCharts from '@shell/components/InstallHelmCharts';
 import Loading from '@shell/components/Loading';
 import { K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_REPO_NAME, K3K_REPO_URL } from '../components/CruK3KCluster/HostCluster.vue';
+import { allHash } from '@shell/utils/promise';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -13,21 +14,24 @@ export default {
 
   async fetch() {
     try {
-      const k3kClusterSchema = await this.$store.dispatch('cluster/find', {
-        type: SCHEMA,
-        id:   K3K.CLUSTER,
-        opt:  { force: true },
-      });
+      const hash = {
+        k3kClusterSchema:  this.$store.dispatch('cluster/find', {
+          type: SCHEMA,
+          id:   K3K.CLUSTER,
+          opt:  { force: true },
+        }),
+        appSchema:  this.$store.dispatch('cluster/find', {
+          type: SCHEMA,
+          id:   CATALOG.APP,
+          opt:  { force: true },
+        })
+      };
 
-      const appSchema = await this.$store.dispatch('cluster/find', {
-        type: SCHEMA,
-        id:   CATALOG.APP,
-        opt:  { force: true },
-      });
+      await allHash(hash);
 
-      const k3kApp = appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+      const k3kApp = hash.appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
 
-      if ((appSchema && k3kApp ) || (!appSchema && k3kClusterSchema)) {
+      if ((hash.appSchema && k3kApp ) || (!hash.appSchema && hash.k3kClusterSchema)) {
         this.$router.replace({
           name:   'c-cluster-product-resource',
           params: {

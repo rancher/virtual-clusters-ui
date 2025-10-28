@@ -46,7 +46,12 @@ export default {
     k3kInstalled: {
       type:    Boolean,
       default: true
-    }
+    },
+
+    showButtonOnly: {
+      type:    Boolean,
+      default: false
+    },
   },
 
   watch: {
@@ -258,7 +263,10 @@ export default {
 
 <template>
   <div class="row mb-20">
-    <div class="col span-6">
+    <div
+      v-if="!showButtonOnly"
+      class="col span-6"
+    >
       <LabeledSelect
         v-model:value="selectedParentOption"
         label-key="k3k.hostCluster.label"
@@ -272,6 +280,7 @@ export default {
       class="col span-6 centered text-label"
     >
       <t
+        v-if="!showButtonOnly"
         raw
         k="k3k.hostCluster.notInstalled"
       />

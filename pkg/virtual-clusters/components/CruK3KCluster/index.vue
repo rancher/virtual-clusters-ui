@@ -26,7 +26,7 @@ import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
-import HostCluster from '../HostCluster.vue';
+import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
@@ -82,7 +82,7 @@ export default {
     LabeledInput,
     KeyValue,
     ClusterAppearance,
-    HostCluster,
+    InstallK3k,
     Tabbed,
     Tab,
     Networking,
@@ -484,7 +484,7 @@ export default {
         label-key="k3k.sections.basics"
         :weight="10"
       >
-        <HostCluster
+        <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"
           :mode="mode"

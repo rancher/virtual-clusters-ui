@@ -1,58 +1,66 @@
 <script>
 import { K3K } from '../types';
-import { CATALOG, SCHEMA } from '@shell/config/types';
+import { CAPI, CATALOG, SCHEMA } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
-import InstallHelmCharts from '@shell/components/InstallHelmCharts';
+import InstallK3k, { K3K_CHART_NAMESPACE, K3K_CHART_NAME } from '../components/InstallK3k.vue';
 import Loading from '@shell/components/Loading';
-import { K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_REPO_NAME, K3K_REPO_URL } from '../components/CruK3KCluster/HostCluster.vue';
-import { allHash } from '@shell/utils/promise';
 
 export default {
   name: 'K3kExplorerLandingPage',
 
-  components: { InstallHelmCharts, Loading },
+  components: { InstallK3k, Loading },
 
   async fetch() {
+    const currentCluster = this.$store.getters['currentCluster'];
+    const provClusterId = currentCluster.provClusterId;
+    let k3kClusterSchema;
+    let appSchema;
+
     try {
-      const hash = {
-        k3kClusterSchema:  this.$store.dispatch('cluster/find', {
-          type: SCHEMA,
-          id:   K3K.CLUSTER,
-          opt:  { force: true },
-        }),
-        appSchema:  this.$store.dispatch('cluster/find', {
-          type: SCHEMA,
-          id:   CATALOG.APP,
-          opt:  { force: true },
-        })
-      };
+      k3kClusterSchema = await this.$store.dispatch('cluster/find', {
+        type: SCHEMA,
+        id:   K3K.CLUSTER,
+        opt:  { force: true },
+      });
+    } catch {}
 
-      await allHash(hash);
+    try {
+      appSchema = await this.$store.dispatch('cluster/find', {
+        type: SCHEMA,
+        id:   CATALOG.APP,
+        opt:  { force: true },
+      });
+    } catch {}
 
-      const k3kApp = hash.appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+    try {
+      this.currentProvCluster = await this.$store.dispatch('management/find', {
+        type: CAPI.RANCHER_CLUSTER, id: provClusterId, opt: { force: true }
+      });
+    } catch {}
 
-      if ((hash.appSchema && k3kApp ) || (!hash.appSchema && hash.k3kClusterSchema)) {
-        this.$router.replace({
-          name:   'c-cluster-product-resource',
-          params: {
-            ...this.$router.currentRoute.params,
-            resource: K3K.POLICY,
-            product:  PRODUCT_NAME
-          }
-        });
-      }
-    } catch {
+    const k3kApp = appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+
+    if ((appSchema && k3kApp ) || (!appSchema && k3kClusterSchema)) {
+      this.$router.replace({
+        name:   'c-cluster-product-resource',
+        params: {
+          ...this.$router.currentRoute.params,
+          resource: K3K.POLICY,
+          product:  PRODUCT_NAME
+        }
+      });
     }
   },
 
   data() {
     return {
-      repoUrl:         K3K_REPO_URL,
-      repoName:        K3K_REPO_NAME,
-      chartName:       K3K_CHART_NAME,
-      targetNamespace: K3K_CHART_NAMESPACE
+      chartName:          K3K_CHART_NAME,
+      targetNamespace:    K3K_CHART_NAMESPACE,
+      currentProvCluster: null,
+      k3kInstalled:       false // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
     };
   },
+
 };
 </script>
 
@@ -86,12 +94,11 @@ export default {
         <li class="mb-20">
           <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
           <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
-          <InstallHelmCharts
-            class="mt-10"
-            :chart-name="chartName"
-            :repo-url="repoUrl"
-            :repo-name="repoName"
-            :target-namespace="targetNamespace"
+          <InstallK3k
+            v-if="currentProvCluster"
+            v-model:k3k-installed="k3kInstalled"
+            :parent-cluster="currentProvCluster"
+            :show-button-only="true"
           />
         </li>
         <li class="mb-20">

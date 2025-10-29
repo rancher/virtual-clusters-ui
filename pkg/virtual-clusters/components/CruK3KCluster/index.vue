@@ -26,7 +26,7 @@ import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
-import HostCluster from './HostCluster.vue';
+import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
@@ -40,7 +40,7 @@ const defaultCluster = {
   type:       K3K.CLUSTER,
   apiVersion: 'k3k.io/v1beta1',
   kind:       'Cluster',
-  metadata:   { name: '' },
+  metadata:   { name: '', namespace: '' },
   spec:       {
     mode:        'shared',
     agents:      0,
@@ -82,7 +82,7 @@ export default {
     LabeledInput,
     KeyValue,
     ClusterAppearance,
-    HostCluster,
+    InstallK3k,
     Tabbed,
     Tab,
     Networking,
@@ -210,31 +210,30 @@ export default {
         }
       },
       deep: true
-    },
+    }
   },
 
   data() {
     const t = this.$store.getters['i18n/t'];
 
     return {
-      k3kInstalled:     true,
-      policy:           null,
-      connectingToHost: false,
-      provClusters:        [],
-      parentCluster:       {},
-      k3kCluster:          {},
-      modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
-      k3sVersions:         [],
-      fvFormRuleSets:   [
+      k3kInstalled:               false,
+      policy:                     null,
+      connectingToHost:           false,
+      provClusters:               [],
+      parentCluster:              {},
+      k3kCluster:                 {},
+      modeOptions:                [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
+      k3sVersions:                [],
+      fvFormRuleSets:             [
         {
           path:       'metadata.name',
-          rootObject: this.k3kCluster,
           rules:      ['required']
         },
         {
           path:       'metadata.namespace',
           rootObject: this.k3kCluster,
-          rules:      ['required']
+          rules:      ['namespaceRequired']
         },
       ],
       VIEW: _VIEW
@@ -247,6 +246,16 @@ export default {
       clusterBadgeAbbreviation: 'customisation/getPreviewCluster',
       clusterReady:             'clusterReady'
     }),
+
+    fvExtraRules() {
+      return {
+        namespaceRequired: () => {
+          const ns = this.k3kCluster?.metadata?.namespace;
+
+          return !ns ? this.t('validation.required', { key: this.t('tableHeaders.namespace') }) : null;
+        }
+      };
+    },
 
     isCreate() {
       return this.mode === _CREATE;
@@ -484,7 +493,7 @@ export default {
         label-key="k3k.sections.basics"
         :weight="10"
       >
-        <HostCluster
+        <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"
           :mode="mode"

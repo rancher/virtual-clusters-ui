@@ -5,6 +5,7 @@ import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
+import isEmpty from 'lodash/isEmpty';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
@@ -17,7 +18,7 @@ export const K3K_REPO_NAME = 'k3k';
 export const K3K_REPO_URL = 'https://rancher.github.io/k3k';
 
 export default {
-  name: 'K3kHostCluster',
+  name: 'K3kHostClusterAndInstallk3k',
 
   emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
 
@@ -45,27 +46,30 @@ export default {
 
     k3kInstalled: {
       type:    Boolean,
-      default: true
-    }
+      default: false
+    },
 
+    showButtonOnly: {
+      type:    Boolean,
+      default: false
+    }
+  },
+
+  created() {
+    this.verifyK3kIsInstalled();
+  },
+
+  data() {
+    // track if k3k chart is present in the currently selected host cluster AND
+    // track if the user installed k3k while viewing this page
+    return { didInstallK3k: false, localParentCluster: this.parentCluster };
   },
 
   watch: {
     parentClusterOptions: {
       handler(neu = []) {
         if (!this.parentCluster?.id && neu.length) {
-          this.$emit('update:parentCluster', neu[0].value);
-        }
-      },
-      immediate: true
-    },
-
-    'parentCluster.id': {
-      handler(neu) {
-        // tell the parent component to remove any installation error messages from the error array
-        this.$emit('error', false);
-        if (neu && this.mode === _CREATE) {
-          this.verifyK3kIsInstalled();
+          this.selectedParentOption = neu[0].value;
         }
       },
       immediate: true
@@ -93,25 +97,22 @@ export default {
 
     selectedParentOption: {
       get() {
-        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.parentCluster?.id);
+        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.localParentCluster?.id);
       },
-      set(neu) {
-        this.$emit('update:parentCluster', neu);
+      async set( value ) {
+        this.localParentCluster = value;
+        await this.verifyK3kIsInstalled(value);
+        this.$emit('update:parentCluster', value);
       }
     }
   },
 
-  data() {
-    // track if k3k chart is present in the currently selected host cluster AND
-    // track if the user installed k3k while viewing this page
-    return { didInstallK3k: false };
-  },
-
   methods: {
+    isEmpty,
     // check if the currently-selected cluster has the k3k chart's namespace and assume k3k is running if it does
-    async verifyK3kIsInstalled() {
+    async verifyK3kIsInstalled(c) {
       try {
-        const cluster = this.parentCluster;
+        const cluster = c || this.parentCluster;
 
         await cluster.waitForMgmt();
         const mgmtCluster = cluster.mgmt;
@@ -259,7 +260,10 @@ export default {
 
 <template>
   <div class="row mb-20">
-    <div class="col span-6">
+    <div
+      v-if="!showButtonOnly"
+      class="col span-6"
+    >
       <LabeledSelect
         v-model:value="selectedParentOption"
         label-key="k3k.hostCluster.label"
@@ -269,10 +273,11 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !k3kInstalled"
+      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
       class="col span-6 centered text-label"
     >
       <t
+        v-if="!showButtonOnly"
         raw
         k="k3k.hostCluster.notInstalled"
       />
@@ -285,7 +290,7 @@ export default {
       />
     </div>
     <div
-      v-else-if="parentCluster && didInstallK3k"
+      v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
       class="col span-6 centered"
     >
       <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>

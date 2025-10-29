@@ -267,7 +267,7 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !k3kInstalled"
+      v-if="parentCluster && !k3kInstalled && isCreate"
       class="col span-6 centered text-label"
     >
       <t

@@ -93,28 +93,29 @@ export default {
       if (this.mode === _CREATE && !neu.includes(this.targetNamespace)) {
         this.$emit('update:targetNamespace', neu[0] || '');
       }
-    }
+    },
+
   },
 
   methods: {
     async fetchPolicies() {
+      this.policyError = false;
+      this.policies = [];
       if (this.hostClusterId) {
-        this.loadingPoliciesAndNamespaces = true;
+        if (this.k3kInstalled) {
+          this.loadingPoliciesAndNamespaces = true;
 
-        this.policyError = false;
+          try {
+            const res = await this.$store.dispatch('management/request', {
+              url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
+              method: 'GET'
+            });
 
-        this.policies = [];
-
-        try {
-          const res = await this.$store.dispatch('management/request', {
-            url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
-            method: 'GET'
-          });
-
-          this.policies = res.data || [];
-        } catch (err) {
-          this.policies = [];
-          this.policyError = true;
+            this.policies = res.data || [];
+          } catch (err) {
+            this.policies = [];
+            this.policyError = true;
+          }
         }
 
         return await this.fetchNamespaces();
@@ -123,7 +124,7 @@ export default {
 
     async fetchNamespaces() {
       this.namespaceError = false;
-
+      this.namespaces = [];
       try {
         const res = await this.$store.dispatch('management/request', {
           url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
@@ -211,7 +212,7 @@ export default {
     },
 
     namespaceOptions() {
-      if ( !this.policy) {
+      if (!this.policy || isEmpty(this.policy)) {
         return this.namespaceIdsByProject.none;
       }
 
@@ -239,7 +240,7 @@ export default {
     :label="t('k3k.errors.loadingNamespaces', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
   <Banner
-    v-if="policyError && k3kInstalled"
+    v-if="policyError && k3kInstalled && !showLoadingSpinner"
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />

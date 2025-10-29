@@ -210,22 +210,22 @@ export default {
         }
       },
       deep: true
-    },
+    }
   },
 
   data() {
     const t = this.$store.getters['i18n/t'];
 
     return {
-      k3kInstalled:     true,
-      policy:           null,
-      connectingToHost: false,
-      provClusters:        [],
-      parentCluster:       {},
-      k3kCluster:          {},
-      modeOptions:         [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
-      k3sVersions:         [],
-      fvFormRuleSets:   [
+      k3kInstalled:               false,
+      policy:                     null,
+      connectingToHost:           false,
+      provClusters:               [],
+      parentCluster:              {},
+      k3kCluster:                 {},
+      modeOptions:                [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
+      k3sVersions:                [],
+      fvFormRuleSets:             [
         {
           path:       'metadata.name',
           rootObject: this.k3kCluster,

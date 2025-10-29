@@ -45,31 +45,26 @@ export default {
 
     k3kInstalled: {
       type:    Boolean,
-      default: true
+      default: false
     },
 
     showButtonOnly: {
       type:    Boolean,
       default: false
-    },
+    }
+  },
+
+  data() {
+    // track if k3k chart is present in the currently selected host cluster AND
+    // track if the user installed k3k while viewing this page
+    return { didInstallK3k: false, localParentCluster: this.parentCluster };
   },
 
   watch: {
     parentClusterOptions: {
       handler(neu = []) {
         if (!this.parentCluster?.id && neu.length) {
-          this.$emit('update:parentCluster', neu[0].value);
-        }
-      },
-      immediate: true
-    },
-
-    'parentCluster.id': {
-      handler(neu) {
-        // tell the parent component to remove any installation error messages from the error array
-        this.$emit('error', false);
-        if (neu && this.mode === _CREATE) {
-          this.verifyK3kIsInstalled();
+          this.selectedParentOption = neu[0].value;
         }
       },
       immediate: true
@@ -97,25 +92,21 @@ export default {
 
     selectedParentOption: {
       get() {
-        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.parentCluster?.id);
+        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.localParentCluster?.id);
       },
-      set(neu) {
-        this.$emit('update:parentCluster', neu);
+      async set( value ) {
+        this.localParentCluster = value;
+        await this.verifyK3kIsInstalled(value);
+        this.$emit('update:parentCluster', value);
       }
     }
   },
 
-  data() {
-    // track if k3k chart is present in the currently selected host cluster AND
-    // track if the user installed k3k while viewing this page
-    return { didInstallK3k: false };
-  },
-
   methods: {
     // check if the currently-selected cluster has the k3k chart's namespace and assume k3k is running if it does
-    async verifyK3kIsInstalled() {
+    async verifyK3kIsInstalled(c) {
       try {
-        const cluster = this.parentCluster;
+        const cluster = c || this.parentCluster;
 
         await cluster.waitForMgmt();
         const mgmtCluster = cluster.mgmt;
@@ -126,9 +117,13 @@ export default {
         });
 
         this.$emit('update:k3kInstalled', true);
+
+        return true;
       } catch (err) {
         this.didInstallK3k = false;
         this.$emit('update:k3kInstalled', false);
+
+        return false;
       }
     },
 
@@ -276,7 +271,7 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !k3kInstalled"
+      v-if="parentCluster && !k3kInstalled && !isVerifyingK3kInstallation"
       class="col span-6 centered text-label"
     >
       <t

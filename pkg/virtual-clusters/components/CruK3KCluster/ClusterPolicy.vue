@@ -256,7 +256,7 @@ export default {
         :label="t('k3k.policy.label')"
         :options="policyOptions"
         :hover-tooltip="false"
-        @selecting="e=>$emit('update:policy', e)"
+        @update:value="e=>$emit('update:policy', e)"
       />
       <span
         v-if="!policy && !showLoadingSpinner"
@@ -272,6 +272,7 @@ export default {
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
         :rules="rules.namespace"
+        :require-dirty="false"
         @selecting="e=>$emit('update:targetNamespace', e)"
       />
     </div>

@@ -40,7 +40,7 @@ const defaultCluster = {
   type:       K3K.CLUSTER,
   apiVersion: 'k3k.io/v1beta1',
   kind:       'Cluster',
-  metadata:   { name: '' },
+  metadata:   { name: '', namespace: '' },
   spec:       {
     mode:        'shared',
     agents:      0,
@@ -228,13 +228,12 @@ export default {
       fvFormRuleSets:             [
         {
           path:       'metadata.name',
-          rootObject: this.k3kCluster,
           rules:      ['required']
         },
         {
           path:       'metadata.namespace',
           rootObject: this.k3kCluster,
-          rules:      ['required']
+          rules:      ['namespaceRequired']
         },
       ],
       VIEW: _VIEW
@@ -247,6 +246,16 @@ export default {
       clusterBadgeAbbreviation: 'customisation/getPreviewCluster',
       clusterReady:             'clusterReady'
     }),
+
+    fvExtraRules() {
+      return {
+        namespaceRequired: () => {
+          const ns = this.k3kCluster?.metadata?.namespace;
+
+          return !ns ? this.t('validation.required', { key: this.t('tableHeaders.namespace') }) : null;
+        }
+      };
+    },
 
     isCreate() {
       return this.mode === _CREATE;

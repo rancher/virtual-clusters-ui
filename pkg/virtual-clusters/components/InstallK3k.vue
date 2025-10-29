@@ -54,6 +54,10 @@ export default {
     }
   },
 
+  created() {
+    this.verifyK3kIsInstalled();
+  },
+
   data() {
     // track if k3k chart is present in the currently selected host cluster AND
     // track if the user installed k3k while viewing this page

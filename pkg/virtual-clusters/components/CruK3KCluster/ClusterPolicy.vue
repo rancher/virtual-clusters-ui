@@ -273,7 +273,7 @@ export default {
         :options="namespaceOptions"
         :rules="rules.namespace"
         :require-dirty="false"
-        @selecting="e=>$emit('update:targetNamespace', e)"
+        @update:value="e=>$emit('update:targetNamespace', e)"
       />
     </div>
   </div>

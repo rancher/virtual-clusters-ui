@@ -164,7 +164,7 @@ export default {
           :mode="mode"
           label-key="k3k.storage.storageClass.label"
           :options="storageClassOptions"
-          @selecting="updateStorageClass"
+          @update:value="updateStorageClass"
         />
       </div>
       <div class="col span-6">

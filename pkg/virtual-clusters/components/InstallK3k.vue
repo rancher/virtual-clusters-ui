@@ -117,13 +117,9 @@ export default {
         });
 
         this.$emit('update:k3kInstalled', true);
-
-        return true;
       } catch (err) {
         this.didInstallK3k = false;
         this.$emit('update:k3kInstalled', false);
-
-        return false;
       }
     },
 
@@ -271,7 +267,7 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !k3kInstalled && !isVerifyingK3kInstallation"
+      v-if="parentCluster && !k3kInstalled"
       class="col span-6 centered text-label"
     >
       <t

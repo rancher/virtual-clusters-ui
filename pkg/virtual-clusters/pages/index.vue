@@ -4,7 +4,6 @@ import { CAPI, CATALOG, SCHEMA } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k, { K3K_CHART_NAMESPACE, K3K_CHART_NAME } from '../components/InstallK3k.vue';
 import Loading from '@shell/components/Loading';
-import { allHash } from '@shell/utils/promise';
 
 export default {
   name: 'K3kExplorerLandingPage',

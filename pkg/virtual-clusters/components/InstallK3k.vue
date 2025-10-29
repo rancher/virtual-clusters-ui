@@ -5,6 +5,7 @@ import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
+import isEmpty from 'lodash/isEmpty';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
@@ -107,6 +108,7 @@ export default {
   },
 
   methods: {
+    isEmpty,
     // check if the currently-selected cluster has the k3k chart's namespace and assume k3k is running if it does
     async verifyK3kIsInstalled(c) {
       try {
@@ -271,7 +273,7 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !k3kInstalled && isCreate"
+      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
       class="col span-6 centered text-label"
     >
       <t
@@ -288,7 +290,7 @@ export default {
       />
     </div>
     <div
-      v-else-if="parentCluster && didInstallK3k"
+      v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
       class="col span-6 centered"
     >
       <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>

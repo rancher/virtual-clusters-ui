@@ -12,46 +12,53 @@ export default {
   components: { InstallK3k, Loading },
 
   async fetch() {
+    const currentCluster = this.$store.getters['currentCluster'];
+    const provClusterId = currentCluster.provClusterId;
+    let k3kClusterSchema;
+    let appSchema;
+
     try {
-      const currentCluster = this.$store.getters['currentCluster']
-      const provClusterId = currentCluster.provClusterId
-      const hash = await allHash({
-        k3kClusterSchema:  this.$store.dispatch('cluster/find', {
-          type: SCHEMA,
-          id:   K3K.CLUSTER,
-          opt:  { force: true },
-        }),
-        appSchema:  this.$store.dispatch('cluster/find', {
-          type: SCHEMA,
-          id:   CATALOG.APP,
-          opt:  { force: true },
-        }),
-        currentProvCluster:  this.$store.dispatch('management/find', {type: CAPI.RANCHER_CLUSTER, id: provClusterId})
+      k3kClusterSchema = await this.$store.dispatch('cluster/find', {
+        type: SCHEMA,
+        id:   K3K.CLUSTER,
+        opt:  { force: true },
       });
+    } catch {}
 
-      this.currentProvCluster = hash.currentProvCluster
-      const k3kApp = hash.appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+    try {
+      appSchema = await this.$store.dispatch('cluster/find', {
+        type: SCHEMA,
+        id:   CATALOG.APP,
+        opt:  { force: true },
+      });
+    } catch {}
 
-      if ((hash.appSchema && k3kApp ) || (!hash.appSchema && hash.k3kClusterSchema)) {
-        this.$router.replace({
-          name:   'c-cluster-product-resource',
-          params: {
-            ...this.$router.currentRoute.params,
-            resource: K3K.POLICY,
-            product:  PRODUCT_NAME
-          }
-        });
-      }
-    } catch {
+    try {
+      this.currentProvCluster = await this.$store.dispatch('management/find', {
+        type: CAPI.RANCHER_CLUSTER, id: provClusterId, opt: { force: true }
+      });
+    } catch {}
+
+    const k3kApp = appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+
+    if ((appSchema && k3kApp ) || (!appSchema && k3kClusterSchema)) {
+      this.$router.replace({
+        name:   'c-cluster-product-resource',
+        params: {
+          ...this.$router.currentRoute.params,
+          resource: K3K.POLICY,
+          product:  PRODUCT_NAME
+        }
+      });
     }
   },
 
   data() {
     return {
-      chartName:       K3K_CHART_NAME,
-      targetNamespace: K3K_CHART_NAMESPACE,
+      chartName:          K3K_CHART_NAME,
+      targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
-      k3kInstalled: false // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
+      k3kInstalled:       false // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
     };
   },
 
@@ -88,8 +95,12 @@ export default {
         <li class="mb-20">
           <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
           <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
-
-          <InstallK3k v-if="currentProvCluster" :parent-cluster="currentProvCluster" :show-button-only="true" v-model:k3k-installed="k3kInstalled" />
+          <InstallK3k
+            v-if="currentProvCluster"
+            v-model:k3k-installed="k3kInstalled"
+            :parent-cluster="currentProvCluster"
+            :show-button-only="true"
+          />
         </li>
         <li class="mb-20">
           <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>

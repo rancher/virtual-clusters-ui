@@ -1,6 +1,6 @@
 {
   "name": "virtual-clusters",
-  "version": "0.1.3",
+  "version": "1.0.0-rc1",
   "private": false,
   "engines": {
     "node": ">=20.0.0"

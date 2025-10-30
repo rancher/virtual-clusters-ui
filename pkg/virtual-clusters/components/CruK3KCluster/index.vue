@@ -215,6 +215,10 @@ export default {
         }
       },
       deep: true
+    },
+
+    'parentCluster.id'() {
+      this.loadHostCluster();
     }
   },
 
@@ -285,6 +289,30 @@ export default {
   },
 
   methods: {
+    // connect to host cluster steve api
+    // used to retrieve resources from host cluster and populate form, as well as create vcp
+    async loadHostCluster() {
+      this.connectingToHost = true;
+
+      const norman = await this.findNormanCluster();
+      const id = norman.id;
+
+      console.log('***- loading host cluster with id ', id);
+      try {
+        // await this.$store.dispatch('loadCluster', {
+        //   id, oldProduct: 'old', product: 'new', /* targetRoute: this.$route */ targetRoute: { ...this.$route, meta: { ...this.$route.meta, cluster: id } }
+        // });
+        await this.$store.dispatch('loadCluster', {
+          id, oldProduct: 'old', product: 'new'
+        });
+      } catch (e) {
+        this.connectingToHost = false;
+        console.error(e);
+      }
+
+      this.connectingToHost = false;
+    },
+
     onMembershipUpdate(update) {
       this['membershipUpdate'] = update;
     },

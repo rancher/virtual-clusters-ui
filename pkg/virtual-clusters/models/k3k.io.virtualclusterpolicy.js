@@ -88,6 +88,13 @@ export default class VirtualClusterPolicy extends SteveModel {
     );
   }
 
+  get detailLocation() {
+    console.log('*** getting detail location ', this._detailLocation);
+    const params = { ...this._detailLocation.params, product: 'explorer' };
+
+    return { ...this._detailLocation, params };
+  }
+
   async fetchAssignedClusterCount() {
     const clusterCountByNamespace = this.$rootGetters['cluster/all'](COUNT)?.[0]?.counts?.[K3K.CLUSTER]?.namespaces || {};
 

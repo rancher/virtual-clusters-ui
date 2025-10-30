@@ -9,6 +9,7 @@ import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
 
 import isEmpty from 'lodash/isEmpty';
 import { PROJECT } from '@shell/config/labels-annotations';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'K3kPolicySelector',
@@ -75,14 +76,11 @@ export default {
     hostClusterId(neu) {
       this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
-      if (neu) {
-        this.fetchPolicies();
-      }
+
     },
 
     policyOptions(neu = []) {
       const policyOpt = neu.find((p) => !!p?.value ) ;
-
       if (this.mode === _CREATE) {
         this.$emit('update:policy', policyOpt?.value || null);
         this.$emit('update:targetNamespace', '');
@@ -95,9 +93,41 @@ export default {
       }
     },
 
+    clusterReady(neu){
+      if (neu) {
+      console.log('*** cluster ready and current cluster and id are ', this.currentCluster, this.clusterId)
+
+        this.fetchPolicies();
+      }
+    }
+
   },
 
   methods: {
+    // async fetchPolicies() {
+    //   this.policyError = false;
+    //   this.policies = [];
+    //   if (this.hostClusterId) {
+    //     if (this.k3kInstalled) {
+    //       this.loadingPoliciesAndNamespaces = true;
+
+    //       try {
+    //         const res = await this.$store.dispatch('management/request', {
+    //           url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
+    //           method: 'GET'
+    //         });
+
+    //         this.policies = res.data || [];
+    //       } catch (err) {
+    //         this.policies = [];
+    //         this.policyError = true;
+    //       }
+    //     }
+
+    //     return await this.fetchNamespaces();
+    //   }
+    // },
+
     async fetchPolicies() {
       this.policyError = false;
       this.policies = [];
@@ -106,12 +136,7 @@ export default {
           this.loadingPoliciesAndNamespaces = true;
 
           try {
-            const res = await this.$store.dispatch('management/request', {
-              url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
-              method: 'GET'
-            });
-
-            this.policies = res.data || [];
+            this.policies = await this.$store.dispatch('cluster/findAll', { type: K3K.POLICY });
           } catch (err) {
             this.policies = [];
             this.policyError = true;
@@ -164,6 +189,8 @@ export default {
   },
 
   computed: {
+    ...mapGetters(['clusterReady', 'currentCluster', 'clusterId']),
+
     isCreate() {
       return this.mode === _CREATE;
     },
@@ -258,6 +285,11 @@ export default {
         :hover-tooltip="false"
         @update:value="e=>$emit('update:policy', e)"
       />
+      <div
+      class="text-muted mt-5"
+        v-if="policy && !isEmpty(policy)"
+        @click="()=>policy.showConfiguration(null, true)"
+      >View policy details</div>
       <span
         v-if="!policy && !showLoadingSpinner"
         class="nonepolicy-warning text-muted"

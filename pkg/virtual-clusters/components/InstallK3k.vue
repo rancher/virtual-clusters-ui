@@ -6,16 +6,11 @@ import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
+import { verifyK3kIsInstalled, K3K_REPO_NAME, K3K_REPO_URL } from '../utils/k3kInstalled';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
 const INCLUDE_LOCAL = process.env.dev;
-
-export const K3K_CHART_NAME = 'k3k';
-export const K3K_CHART_NAMESPACE = 'k3k-system';
-
-export const K3K_REPO_NAME = 'k3k';
-export const K3K_REPO_URL = 'https://rancher.github.io/k3k';
 
 export default {
   name: 'K3kHostClusterAndInstallk3k',
@@ -115,17 +110,16 @@ export default {
         const cluster = c || this.parentCluster;
 
         await cluster.waitForMgmt();
-        const mgmtCluster = cluster.mgmt;
 
-        await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.app/${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }`,
-          method: 'GET',
-        });
+        const isInstalled = await verifyK3kIsInstalled(this.$store, cluster.mgmt.id);
 
-        this.$emit('update:k3kInstalled', true);
-      } catch (err) {
-        this.didInstallK3k = false;
-        this.$emit('update:k3kInstalled', false);
+        if (!isInstalled) {
+          this.didInstallK3k = false;
+        }
+        this.$emit('update:k3kInstalled', isInstalled);
+      } catch {
+        // timed out trying to load mgmt cluster
+        // the list of available clusters is filtered using a property on mgmt so we shouldn't hit this block
       }
     },
 

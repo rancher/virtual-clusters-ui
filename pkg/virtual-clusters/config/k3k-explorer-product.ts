@@ -1,5 +1,7 @@
 import {STATE, NAME as NAME_COL, AGE} from '@shell/config/table-headers'
 import { K3K } from "../types";
+import { getVersionData } from '@shell/config/version';
+
 export const  NAME = 'virtualclusters'
 
 export function init($plugin:any, store:any) {
@@ -10,46 +12,49 @@ export function init($plugin:any, store:any) {
     basicType,
     headers
   } = $plugin.DSL(store, NAME);
-  
-  product({
-    inStore:             'cluster',
-    inExplorer:          true,
-    icon:                'k3k',
-    removeable:          false,
-    showNamespaceFilter: true
-  });
+    if(getVersionData().RancherPrime === 'true') {
+      product({
+        inStore:             'cluster',
+        inExplorer:          true,
+        icon:                'k3k',
+        removeable:          false,
+        showNamespaceFilter: true,
+        ifHaveType: new RegExp(/^(?!$)(?!.*management)/g)
+      });
 
 
-    virtualType({
-    labelKey:       'product.virtualclusters',
-    icon:        'k3k',
-    name:        'virtual-cluster-dashboard',
-    namespaced:  false,
-    weight:      99,
-    route:                  {
-      name:   `c-cluster-virtualclusters`,
-    },
-    overview: true,
-    exact:    true,
-  });
+        virtualType({
+        labelKey:       'product.virtualclusters',
+        icon:        'k3k',
+        name:        'virtual-cluster-dashboard',
+        namespaced:  false,
+        weight:      99,
+        route:                  {
+          name:   `c-cluster-virtualclusters`,
+        },
+        overview: true,
+        exact:    true,
+      });
 
-  basicType(['virtual-cluster-dashboard', K3K.POLICY, K3K.CLUSTER])
+      basicType(['virtual-cluster-dashboard', K3K.POLICY, K3K.CLUSTER])
 
-  headers(K3K.POLICY, [
-    STATE,
-    NAME_COL,
-    {
-      name:          'vcmode',
-      labelKey:      'k3k.policy.listView.modeHeader',
-      sort:          ['spec.allowedMode'],
-      value:         'spec.allowedMode',
-    },
+      headers(K3K.POLICY, [
+        STATE,
+        NAME_COL,
         {
-      name:          'vcmode',
-      labelKey:      'k3k.policy.listView.projectHeader',
-      formatter:     'PolicyAssignment'
-    },
-    AGE
-  ])
-
+          name:          'vcmode',
+          labelKey:      'k3k.policy.listView.modeHeader',
+          sort:          ['spec.allowedMode'],
+          value:         'spec.allowedMode',
+        },
+            {
+          name:          'vcmode',
+          labelKey:      'k3k.policy.listView.projectHeader',
+          formatter:     'PolicyAssignment'
+        },
+        AGE
+      ])
+    } else {
+      configureType(K3K.POLICY, {isCreatable: false, isEditable: false, isRemovable: false, canYaml:false})
+    }
   }

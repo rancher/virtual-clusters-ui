@@ -3,7 +3,7 @@ import SteveModel from '@shell/plugins/steve/steve-class';
 import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 
 import { ANNOTATIONS, LABELS, K3K } from '../types';
-import { getVersionData } from '@shell/config/version';
+import { isRancherPrime } from '@shell/config/version';
 
 export const getProjectIds = (policy) => {
   return (policy.metadata?.annotations?.[ANNOTATIONS.POLICY_ASSIGNED_TO] || '').split(',').map((p) => p.trim()).filter((p) => !!p);
@@ -11,27 +11,27 @@ export const getProjectIds = (policy) => {
 
 export default class VirtualClusterPolicy extends SteveModel {
   get canEdit() {
-    return super.canEdit && getVersionData().RancherPrime === 'true';
+    return super.canEdit && isRancherPrime();
   }
 
   get canDelete() {
-    return super.canDelete && getVersionData().RancherPrime === 'true';
+    return super.canDelete && isRancherPrime();
   }
 
   get canClone() {
-    return super.canClone && getVersionData().RancherPrime === 'true';
+    return super.canClone && isRancherPrime();
   }
 
   get canUpdate() {
-    return super.canUpdate && getVersionData().RancherPrime === 'true';
+    return super.canUpdate && isRancherPrime();
   }
 
   get canCustomEdit() {
-    return super.canCustomEdit && getVersionData().RancherPrime === 'true';
+    return super.canCustomEdit && isRancherPrime();
   }
 
   get canCreate() {
-    return super.canCreate && getVersionData().RancherPrime === 'true';
+    return super.canCreate && isRancherPrime();
   }
 
   get projectIds() {

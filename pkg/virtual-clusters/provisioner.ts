@@ -1,7 +1,7 @@
 import { IClusterProvisioner, ClusterProvisionerContext } from '@shell/core/types';
 import { mapDriver } from '@shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster/index.vue';
-import { getVersionData } from '@shell/config/version';
+import { isRancherPrime } from '@shell/config/version';
 
 
 export class k3kProvisioner implements IClusterProvisioner {
@@ -48,6 +48,6 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get hidden(){
-    return getVersionData().RancherPrime !== 'true'
+    return !isRancherPrime()
   }
 }

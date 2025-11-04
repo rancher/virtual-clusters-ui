@@ -5,7 +5,7 @@ import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k from '../components/InstallK3k.vue';
 import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
-import { getVersionData } from '@shell/config/version';
+import { isRancherPrime } from '@shell/config/version';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -13,7 +13,7 @@ export default {
   components: { InstallK3k, Loading },
 
   async fetch() {
-    this.isPrime = getVersionData()?.RancherPrime === 'true';
+    this.isPrime = isRancherPrime();
     if (this.isPrime) {
       const currentCluster = this.$store.getters['currentCluster'];
       const provClusterId = currentCluster.provClusterId;
@@ -49,7 +49,7 @@ export default {
   data() {
     return {
       isLocal:            false,
-      isPrime:            true,
+      isPrime:            false,
       chartName:          K3K_CHART_NAME,
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,

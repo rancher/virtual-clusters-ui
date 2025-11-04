@@ -1,14 +1,10 @@
-import { K3K } from "../types";
-import { getVersionData } from '@shell/config/version';
+import { isRancherPrime } from '@shell/config/version';
 
 export function init($plugin:any, store:any) {
   const {
-    product,
     configureType,
-    virtualType,
-    basicType
   } = $plugin.DSL(store, 'manager');
-    if(getVersionData().RancherPrime === 'true') {
+    if(isRancherPrime()) {
       configureType('provisioning.cattle.io.cluster', {
         listGroups: [  
           {

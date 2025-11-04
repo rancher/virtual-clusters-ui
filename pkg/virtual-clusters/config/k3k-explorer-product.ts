@@ -1,6 +1,6 @@
 import {STATE, NAME as NAME_COL, AGE} from '@shell/config/table-headers'
 import { K3K } from "../types";
-import { getVersionData } from '@shell/config/version';
+import { isRancherPrime } from '@shell/config/version';
 
 export const  NAME = 'virtualclusters'
 
@@ -12,7 +12,7 @@ export function init($plugin:any, store:any) {
     basicType,
     headers
   } = $plugin.DSL(store, NAME);
-    if(getVersionData().RancherPrime === 'true') {
+    if(isRancherPrime()) {
       product({
         inStore:             'cluster',
         inExplorer:          true,

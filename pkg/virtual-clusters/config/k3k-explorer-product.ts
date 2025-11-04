@@ -52,4 +52,6 @@ export function init($plugin:any, store:any) {
       },
       AGE
     ])
+
+    configureType(K3K.POLICY, {showListMasthead: false})
   }

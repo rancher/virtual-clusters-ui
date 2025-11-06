@@ -1,9 +1,11 @@
 <script>
 import { K3K } from '../types';
-import { CAPI, CATALOG, SCHEMA } from '@shell/config/types';
+import { CAPI } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
-import InstallK3k, { K3K_CHART_NAMESPACE, K3K_CHART_NAME } from '../components/InstallK3k.vue';
+import InstallK3k from '../components/InstallK3k.vue';
+import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
+import { isRancherPrime } from '@shell/config/version';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -11,49 +13,43 @@ export default {
   components: { InstallK3k, Loading },
 
   async fetch() {
-    const currentCluster = this.$store.getters['currentCluster'];
-    const provClusterId = currentCluster.provClusterId;
-    let k3kClusterSchema;
-    let appSchema;
+    this.isPrime = isRancherPrime();
+    if (this.isPrime) {
+      const currentCluster = this.$store.getters['currentCluster'];
+      const provClusterId = currentCluster.provClusterId;
 
-    try {
-      k3kClusterSchema = await this.$store.dispatch('cluster/find', {
-        type: SCHEMA,
-        id:   K3K.CLUSTER,
-        opt:  { force: true },
-      });
-    } catch {}
+      this.isLocal = currentCluster.id === 'local';
 
-    try {
-      appSchema = await this.$store.dispatch('cluster/find', {
-        type: SCHEMA,
-        id:   CATALOG.APP,
-        opt:  { force: true },
-      });
-    } catch {}
+      try {
+        this.currentProvCluster = await this.$store.dispatch('management/find', {
+          type: CAPI.RANCHER_CLUSTER, id: provClusterId, opt: { force: true }
+        });
+      } catch {}
 
-    try {
-      this.currentProvCluster = await this.$store.dispatch('management/find', {
-        type: CAPI.RANCHER_CLUSTER, id: provClusterId, opt: { force: true }
-      });
-    } catch {}
+      let k3kIsAlreadyInstalled;
 
-    const k3kApp = appSchema ? await this.$store.dispatch('cluster/find', { type: CATALOG.APP, id: `${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }` }) : null;
+      try {
+        k3kIsAlreadyInstalled = await verifyK3kIsInstalled(this.$store, currentCluster.id);
+      } catch (e) {
+      }
 
-    if ((appSchema && k3kApp ) || (!appSchema && k3kClusterSchema)) {
-      this.$router.replace({
-        name:   'c-cluster-product-resource',
-        params: {
-          ...this.$router.currentRoute.params,
-          resource: K3K.POLICY,
-          product:  PRODUCT_NAME
-        }
-      });
+      if (k3kIsAlreadyInstalled) {
+        this.$router.replace({
+          name:   'c-cluster-product-resource',
+          params: {
+            ...this.$router.currentRoute.params,
+            resource: K3K.POLICY,
+            product:  PRODUCT_NAME
+          }
+        });
+      }
     }
   },
 
   data() {
     return {
+      isLocal:            false,
+      isPrime:            false,
       chartName:          K3K_CHART_NAME,
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
@@ -83,43 +79,52 @@ export default {
         </h3>
       </div>
     </div>
-
-    <div class="mb-20">
-      {{ t('k3k.landingPage.description') }}
+    <div v-if="!isPrime">
+      {{ t('k3k.landingPage.prime') }}
     </div>
-
-    <div class="steps">
-      <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
-      <ol>
-        <li class="mb-20">
-          <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
-          <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
-          <InstallK3k
-            v-if="currentProvCluster"
-            v-model:k3k-installed="k3kInstalled"
-            :parent-cluster="currentProvCluster"
-            :show-button-only="true"
-          />
-        </li>
-        <li class="mb-20">
-          <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
-          <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
-        </li>
-        <li class="mb-20">
-          <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
-          <ol class="provisioning-steps">
-            <li>
-              {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
-            </li>
-            <li>
-              {{ t('k3k.landingPage.steps.step3.substep2') }}
-            </li>
-            <li>
-              {{ t('k3k.landingPage.steps.step3.substep3') }}
-            </li>
-          </ol>
-        </li>
-      </ol>
+    <div v-else-if="isLocal">
+      <t
+        k="k3k.landingPage.local"
+        raw
+      />
+    </div>
+    <div v-else>
+      <div class="mb-20">
+        {{ t('k3k.landingPage.description') }}
+      </div>
+      <div class="steps">
+        <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
+        <ol>
+          <li class="mb-20">
+            <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
+            <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
+            <InstallK3k
+              v-if="currentProvCluster"
+              v-model:k3k-installed="k3kInstalled"
+              :parent-cluster="currentProvCluster"
+              :show-button-only="true"
+            />
+          </li>
+          <li class="mb-20">
+            <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
+            <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
+          </li>
+          <li class="mb-20">
+            <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
+            <ol class="provisioning-steps">
+              <li>
+                {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
+              </li>
+              <li>
+                {{ t('k3k.landingPage.steps.step3.substep2') }}
+              </li>
+              <li>
+                {{ t('k3k.landingPage.steps.step3.substep3') }}
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </div>
     </div>
   </div>
 </template>
@@ -138,7 +143,7 @@ export default {
         align-items: center;
 
         & img {
-            padding-right: 10px;
+           margin-right: 10px;
         }
     }
 

@@ -3,12 +3,37 @@ import SteveModel from '@shell/plugins/steve/steve-class';
 import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 
 import { ANNOTATIONS, LABELS, K3K } from '../types';
+import { isRancherPrime } from '@shell/config/version';
 
 export const getProjectIds = (policy) => {
   return (policy.metadata?.annotations?.[ANNOTATIONS.POLICY_ASSIGNED_TO] || '').split(',').map((p) => p.trim()).filter((p) => !!p);
 };
 
 export default class VirtualClusterPolicy extends SteveModel {
+  get canEdit() {
+    return super.canEdit && isRancherPrime();
+  }
+
+  get canDelete() {
+    return super.canDelete && isRancherPrime();
+  }
+
+  get canClone() {
+    return super.canClone && isRancherPrime();
+  }
+
+  get canUpdate() {
+    return super.canUpdate && isRancherPrime();
+  }
+
+  get canCustomEdit() {
+    return super.canCustomEdit && isRancherPrime();
+  }
+
+  get canCreate() {
+    return super.canCreate && isRancherPrime();
+  }
+
   get projectIds() {
     return getProjectIds(this);
   }

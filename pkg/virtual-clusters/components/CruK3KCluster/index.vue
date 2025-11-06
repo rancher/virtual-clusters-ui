@@ -455,7 +455,7 @@ export default {
     :mode="mode"
     :resource="value"
     :errors="fvUnreportedValidationErrors"
-    :validation-passed="fvFormIsValid && k3kInstalled"
+    :validation-passed="fvFormIsValid"
     component-testid="cluster-manager-virtual-cluster"
     :cancel-event="true"
     @finish="saveOverride"

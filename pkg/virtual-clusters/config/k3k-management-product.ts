@@ -1,23 +1,24 @@
-import { K3K } from "../types";
+import { isRancherPrime } from '@shell/config/version';
+import versions from '@shell/utils/versions';
 
-export function init($plugin:any, store:any) {
+export async function init($plugin:any, store:any) {
   const {
-    product,
     configureType,
-    virtualType,
-    basicType
   } = $plugin.DSL(store, 'manager');
-  
-  configureType('provisioning.cattle.io.cluster', {
-    listGroups: [  
-      {
-        icon:          'icon-folder',
-        field:         'groupByParent',
-        value:         'groupByParent',
-        groupLabelKey: 'groupByParent',
-        tooltipKey:    'k3k.hostCluster.label'
-      }
-    ],
-  });
+    await versions.fetch({ store: store });
+
+    if(isRancherPrime()){
+        configureType('provisioning.cattle.io.cluster', {
+          listGroups: [  
+            {
+              icon:          'icon-folder',
+              field:         'groupByParent',
+              value:         'groupByParent',
+              groupLabelKey: 'groupByParent',
+              tooltipKey:    'k3k.hostCluster.label'
+            }
+          ],
+        });
+    }
 
   }

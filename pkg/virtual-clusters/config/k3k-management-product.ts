@@ -1,11 +1,9 @@
 import { isRancherPrime } from '@shell/config/version';
-import versions from '@shell/utils/versions';
 
 export async function init($plugin:any, store:any) {
   const {
     configureType,
   } = $plugin.DSL(store, 'manager');
-    await versions.fetch({ store: store });
 
     if(isRancherPrime()){
         configureType('provisioning.cattle.io.cluster', {

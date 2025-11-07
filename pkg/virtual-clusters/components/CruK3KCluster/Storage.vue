@@ -149,7 +149,7 @@ export default {
 
 <template>
   <div>
-    <h4>{{ t('k3k.storage.title') }}</h4>
+    <h3>{{ t('k3k.storage.title') }}</h3>
     <Banner
       v-if="storageClassErrors.length"
       color="error"

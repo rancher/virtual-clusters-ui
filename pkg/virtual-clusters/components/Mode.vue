@@ -56,7 +56,7 @@ export default {
         @update:value="e=>$emit('update:k3kMode', e)"
       >
         <template #label>
-          <h4>{{ t('k3k.mode.label') }}</h4>
+          <h3>{{ t('k3k.mode.label') }}</h3>
           <h5 class="text-muted">
             {{ t('k3k.mode.tooltip') }}
           </h5>

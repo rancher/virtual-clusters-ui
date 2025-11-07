@@ -31,6 +31,7 @@ import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
+import Sync from '../Sync.vue';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
@@ -49,7 +50,8 @@ const defaultCluster = {
       type:               'dynamic',
     },
     servers:      1,
-    nodeSelector: {}
+    nodeSelector: {},
+    sync:         {}
   }
 };
 
@@ -89,7 +91,8 @@ export default {
     Storage,
     ArrayList,
     ClusterPolicy,
-    Mode
+    Mode,
+    Sync
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -204,9 +207,11 @@ export default {
         if (neu?.spec) {
           this.k3kCluster.spec.mode = neu.spec.allowedMode;
           this.k3kCluster.spec.nodeSelector = neu.spec.defaultNodeSelector || defaultCluster.spec.nodeSelector;
+          this.k3kCluster.spec.sync = neu.spec.sync || defaultCluster.spec.sync;
         } else {
           this.k3kCluster.spec.mode = defaultCluster.spec.mode;
           this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;
+          this.k3kCluster.spec.sync = defaultCluster.spec.sync;
         }
       },
       deep: true
@@ -528,6 +533,10 @@ export default {
             v-model:k3k-mode="k3kCluster.spec.mode"
             :mode="mode"
           />
+          <Sync
+            v-model:sync="k3kCluster.spec.sync"
+            :mode="mode"
+          />
         </template>
         <Storage
           v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
@@ -565,9 +574,9 @@ export default {
               :add-label="t('k3k.agents.envVars.addLabel')"
             >
               <template #title>
-                <h4 class="mb-0">
+                <h3 class="mb-0">
                   {{ t('k3k.servers.envVars.title') }}
-                </h4>
+                </h3>
               </template>
             </KeyValue>
           </div>
@@ -583,7 +592,7 @@ export default {
               :add-label="t('k3k.servers.serverArgs.addLabel')"
             >
               <template #title>
-                <h4>{{ t('k3k.servers.serverArgs.label') }}</h4>
+                <h3>{{ t('k3k.servers.serverArgs.label') }}</h3>
               </template>
             </ArrayList>
           </div>
@@ -612,9 +621,9 @@ export default {
               :add-label="t('k3k.agents.envVars.addLabel')"
             >
               <template #title>
-                <h4 class="mb-0">
+                <h3 class="mb-0">
                   {{ t('k3k.agents.envVars.title') }}
-                </h4>
+                </h3>
               </template>
             </KeyValue>
           </div>
@@ -633,7 +642,7 @@ export default {
               :add-label="t('k3k.nodeSelector.addLabel')"
             >
               <template #title>
-                <h4>{{ t('k3k.nodeSelector.label') }}</h4>
+                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
                 <t
                   raw
                   k="k3k.nodeSelector.tooltip"

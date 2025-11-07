@@ -5,6 +5,7 @@ import { VClusterModelExtension } from './model-extension/provisioning.cattle.io
 import virtualClusterRouting from './routes'
 
 
+
 // Init the package
 export default function(plugin: IPlugin): void {
   // Auto-import model, detail, edit from the folders
@@ -28,5 +29,5 @@ export default function(plugin: IPlugin): void {
 
   // Built-in icon
   plugin.metadata.icon = require('./assets/icon-k3k.svg');
-
+  
 }

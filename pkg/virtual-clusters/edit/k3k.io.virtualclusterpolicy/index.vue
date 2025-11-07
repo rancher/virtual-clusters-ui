@@ -2,7 +2,6 @@
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
 import Labels from '@shell/components/form/Labels';
-import Mode from '../../components/Mode.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import Tab from '@shell/components/Tabbed/Tab';
@@ -14,12 +13,15 @@ import KeyValue from '@shell/components/form/KeyValue.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
-import Quota from './Quota.vue';
 import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
 
 import Projects from './Projects.vue';
 import { ANNOTATIONS } from '../../types';
+import Mode from '../../components/Mode.vue';
+import Sync from '../../components/Sync.vue';
+import Quota from './Quota.vue';
+import isEmpty from 'lodash/isEmpty';
 
 const CONTAINER_LIMIT_TYPE = 'container';
 
@@ -42,7 +44,8 @@ export default {
     LabeledSelect,
     Projects,
     Checkbox,
-    Banner
+    Banner,
+    Sync
   },
 
   async fetch() {
@@ -140,6 +143,19 @@ export default {
           delete this.value.spec.podSecurityAdmissionLevel;
         } else {
           this.value.spec.podSecurityAdmissionLevel = neu;
+        }
+      }
+    },
+
+    sync: {
+      get() {
+        return this.value?.spec?.sync || {};
+      },
+      set(neu) {
+        if (neu && !isEmpty(neu)) {
+          this.value.spec.sync = neu;
+        } else {
+          delete this.value.spec.sync;
         }
       }
     },
@@ -303,7 +319,7 @@ export default {
               :add-label="t('k3k.nodeSelector.addLabel')"
             >
               <template #title>
-                <h4>{{ t('k3k.nodeSelector.label') }}</h4>
+                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
                 <t
                   class="text-muted"
                   raw
@@ -365,33 +381,10 @@ export default {
             />
           </div>
         </div>
-
-        <div class="row mb-10">
-          <div class="col span-12">
-            <h3>{{ t('k3k.policy.synchronization.label') }}</h3>
-            <t
-              class="text-muted"
-              k="k3k.policy.synchronization.tooltip"
-              raw
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6 vertical-checkboxes">
-            <Checkbox
-              :value="value?.spec?.sync?.ingresses?.enabled"
-              :mode="mode"
-              :label="t('k3k.policy.synchronization.ingressCheckbox')"
-              @update:value="e=>updateSync('ingresses', e)"
-            />
-            <Checkbox
-              :value="value?.spec?.sync?.priorityClasses?.enabled"
-              :mode="mode"
-              :label="t('k3k.policy.synchronization.priorityClassCheckbox')"
-              @update:value="e=>updateSync('priorityClasses', e)"
-            />
-          </div>
-        </div>
+        <Sync
+          v-model:sync="sync"
+          :mode="mode"
+        />
       </Tab>
       <Tab
         :weight="1"

@@ -1,10 +1,10 @@
 import { CATALOG } from '@shell/config/types';
 
-export const K3K_CHART_NAME = 'k3k';
+export const K3K_CHART_NAME = 'suse-virtual-cluster-engine';
 export const K3K_CHART_NAMESPACE = 'k3k-system';
 
-export const K3K_REPO_NAME = 'k3k';
-export const K3K_REPO_URL = 'https://rancher.github.io/k3k';
+export const K3K_REPO_NAME = 'suse-virtual-cluster-engine';
+export const K3K_REPO_URL = 'oci://registry.suse.com/rancher/charts/appco-suse-virtual-cluster-engine';
 
 /**
  * This function retrieves the count resource for the target cluster and returns true if there is at least one catalog.cattle.io.app in the k3k-system namespace

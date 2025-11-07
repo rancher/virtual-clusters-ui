@@ -6,10 +6,29 @@ import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
-import { verifyK3kIsInstalled, K3K_REPO_NAME, K3K_REPO_URL } from '../utils/k3kInstalled';
+import {
+  verifyK3kIsInstalled, K3K_REPO_NAME, K3K_REPO_URL, K3K_CHART_NAME, K3K_CHART_NAMESPACE
+} from '../utils/k3kInstalled';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
+const K3K_VALUES = {
+  agent: {
+    shared: {
+      image: {
+        registry:   'registry.suse.com',
+        repository: 'rancher/appco-k3k-kubelet'
+      }
+    }
+  },
+  controller: {
+    image: {
+      registry:   'registry.suse.com',
+      repository: 'rancher/appco-k3k'
+    }
+  }
+};
+
 const INCLUDE_LOCAL = process.env.dev;
 
 export default {
@@ -131,7 +150,7 @@ export default {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
         metadata:   { name: K3K_REPO_NAME },
-        spec:       { url: K3K_REPO_URL }
+        spec:       { url: K3K_REPO_URL, insecurePlainHttp:	false }
       };
 
       const cluster = this.parentCluster;
@@ -140,7 +159,7 @@ export default {
 
       await cluster.waitForMgmt();
       const mgmtCluster = cluster.mgmt;
-      const k3kRepoUrl = `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.ClusterRepo/k3k`;
+      const k3kRepoUrl = `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.ClusterRepo/${ K3K_REPO_NAME }`;
       let k3kRepo;
 
       try {
@@ -160,7 +179,7 @@ export default {
             url:    k3kRepoUrl,
             method: 'GET',
           });
-          const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'Downloaded');
+          const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'OCIDownloaded');
 
           const downloaded = downloadedCondition?.status === 'True';
 
@@ -172,8 +191,8 @@ export default {
               method: 'GET',
             });
 
-            if (repoReq?.entries?.k3k && repoReq?.entries?.k3k.length) {
-              latestK3kChartVersion = (repoReq?.entries?.k3k || [])[0]?.version;
+            if (repoReq?.entries?.[K3K_CHART_NAME] && repoReq?.entries?.[K3K_CHART_NAME].length) {
+              latestK3kChartVersion = (repoReq?.entries?.[K3K_CHART_NAME] || [])[0]?.version;
               console.log('Installing k3k version...', latestK3kChartVersion);
               fetched = true;
             } else {
@@ -196,16 +215,17 @@ export default {
           charts: [
             {
               annotations: {
-                'catalog.cattle.io/ui-source-repo':      'k3k',
+                'catalog.cattle.io/ui-source-repo':      K3K_REPO_NAME,
                 'catalog.cattle.io/ui-source-repo-type': 'cluster'
               },
-              chartName:   'k3k',
-              releaseName: 'k3k',
-              version:     latestK3kChartVersion || '0.1.5-r1'
+              chartName:   K3K_CHART_NAME,
+              releaseName: K3K_CHART_NAME,
+              version:     latestK3kChartVersion || '1.0.0',
+              values:      K3K_VALUES
             }
           ],
           disableOpenAPIValidation: false,
-          namespace:                'k3k-system',
+          namespace:                K3K_CHART_NAMESPACE,
           noHooks:                  false,
           skipCRDs:                 false,
           timeout:                  '600s',

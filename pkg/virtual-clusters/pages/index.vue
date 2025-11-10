@@ -6,6 +6,7 @@ import InstallK3k from '../components/InstallK3k.vue';
 import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
+import { NAME } from '@shell/config/product/manager';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -53,7 +54,14 @@ export default {
       chartName:          K3K_CHART_NAME,
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
-      k3kInstalled:       false // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
+      k3kInstalled:       false, // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
+      managerUrl:                      this.$router.resolve({
+        name:   'c-cluster-product-resource',
+        params: {
+          product:  NAME,
+          resource: CAPI.RANCHER_CLUSTER
+        }
+      }).href,
     };
   },
 
@@ -82,12 +90,10 @@ export default {
     <div v-if="!isPrime">
       {{ t('k3k.landingPage.prime') }}
     </div>
-    <div v-else-if="isLocal">
-      <t
-        k="k3k.landingPage.local"
-        raw
-      />
-    </div>
+    <div
+      v-else-if="isLocal"
+      v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
+    />
     <div v-else>
       <div class="mb-20">
         {{ t('k3k.landingPage.description') }}

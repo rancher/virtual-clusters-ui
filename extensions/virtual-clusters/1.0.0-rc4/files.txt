@@ -1,0 +1,16 @@
+plugin/img/generic-catalog.1842a50e.svg
+plugin/img/harvester.20240f8a.png
+plugin/img/icon-k3k.d12d289c.svg
+plugin/package.json
+plugin/virtual-clusters-1.0.0-rc4.umd.min.37.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.37.js.map
+plugin/virtual-clusters-1.0.0-rc4.umd.min.60.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.60.js.map
+plugin/virtual-clusters-1.0.0-rc4.umd.min.edit.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.edit.js.map
+plugin/virtual-clusters-1.0.0-rc4.umd.min.formatters.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.formatters.js.map
+plugin/virtual-clusters-1.0.0-rc4.umd.min.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.js.map
+plugin/virtual-clusters-1.0.0-rc4.umd.min.promptRemove.js
+plugin/virtual-clusters-1.0.0-rc4.umd.min.promptRemove.js.map

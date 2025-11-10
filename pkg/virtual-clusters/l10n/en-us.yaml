@@ -204,7 +204,7 @@ k3k:
     subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster
     description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes environments without the overhead of managing full clusters.
     prime: The virtual clusters UI extension is only available in Rancher Prime.
-    local: Installing k3k in the local Rancher cluster is not recommended. Navigate to <a href='/c/_/manager' >Cluster Management</a> to import and existing cluster or provision a new one.
+    local: Installing k3k in the local Rancher cluster is not recommended. Navigate to <a href="{managerUrl}">Cluster Management</a> to import and existing cluster or provision a new one.
     steps:
       title: 'Quick guide:'
       step1:

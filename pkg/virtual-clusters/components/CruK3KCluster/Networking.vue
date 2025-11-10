@@ -179,9 +179,9 @@ export default {
           :val="exposeModes.NONE"
         >
           <template #label>
-            <h4>
+            <h3>
               {{ t('k3k.expose.notExposed.label') }}
-            </h4>
+            </h3>
           </template>
         </RadioButton>
       </div>
@@ -194,9 +194,9 @@ export default {
           :val="exposeModes.INGRESS"
         >
           <template #label>
-            <h4>
+            <h3>
               {{ t('k3k.expose.ingress.label') }}
-            </h4>
+            </h3>
           </template>
         </RadioButton>
       </div>
@@ -232,9 +232,9 @@ export default {
           :read-allowed="false"
         >
           <template #title>
-            <h4 class="mb-0">
+            <h3 class="mb-0">
               {{ t('k3k.expose.ingress.annotations.label') }}
-            </h4>
+            </h3>
           </template>
         </KeyValue>
       </div>
@@ -248,9 +248,9 @@ export default {
           :val="exposeModes.LOAD_BALANCER"
         >
           <template #label>
-            <h4 class="mb-5">
+            <h3 class="mb-5">
               {{ t('k3k.expose.loadbalancer.label') }}
-            </h4>
+            </h3>
             <t
               class="text-label"
               raw
@@ -292,9 +292,9 @@ export default {
           :val="exposeModes.NODE_PORT"
         >
           <template #label>
-            <h4 class="mb-5">
+            <h3 class="mb-5">
               {{ t('k3k.expose.nodePort.label') }}
-            </h4>
+            </h3>
             <t
               class="text-label"
               raw

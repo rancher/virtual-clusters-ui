@@ -385,32 +385,6 @@ export default {
           v-model:sync="sync"
           :mode="mode"
         />
-        <!-- <div class="row mb-10">
-          <div class="col span-12">
-            <h3>{{ t('k3k.policy.synchronization.label') }}</h3>
-            <t
-              class="text-muted"
-              k="k3k.policy.synchronization.tooltip"
-              raw
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6 vertical-checkboxes">
-            <Checkbox
-              :value="value?.spec?.sync?.ingresses?.enabled"
-              :mode="mode"
-              :label="t('k3k.policy.synchronization.ingressCheckbox')"
-              @update:value="e=>updateSync('ingresses', e)"
-            />
-            <Checkbox
-              :value="value?.spec?.sync?.priorityClasses?.enabled"
-              :mode="mode"
-              :label="t('k3k.policy.synchronization.priorityClassCheckbox')"
-              @update:value="e=>updateSync('priorityClasses', e)"
-            />
-          </div>
-        </div> -->
       </Tab>
       <Tab
         :weight="1"

@@ -8,9 +8,17 @@ import virtualClusterPolicyAdminRole from './resources/virtual-cluster-policy-ad
 import { MANAGEMENT, SCHEMA } from '@shell/config/types';
 import versions from '@shell/utils/versions';
 import { isRancherPrime } from '@shell/config/version';
+import { NotificationLevel } from '@shell/types/notifications';
 
 const createRoleIfNotFound = async (roleTemplate: any, store:any)=>{
-  const rolesMatching = await store.dispatch('management/findLabelSelector', {type: MANAGEMENT.ROLE_TEMPLATE, matching:  {labelSelector: {matchLabels:roleTemplate.metadata.labels }}}) || []
+  const rolesMatching = await store.dispatch('management/findLabelSelector', {
+    type: MANAGEMENT.ROLE_TEMPLATE,
+    matching: {
+      labelSelector: {
+        matchLabels:roleTemplate.metadata.labels
+      }
+    }
+  }) || []
 
   if(!rolesMatching.length){
     const newRole = await store.dispatch('management/create', {type: MANAGEMENT.ROLE_TEMPLATE, ...roleTemplate})
@@ -51,8 +59,7 @@ export default function(plugin: IPlugin): void {
       await versions.fetch({ store: store });
 
       if(isRancherPrime()){
-        await store.dispatch('management/loadSchemas')
-        await store.dispatch('rancher/loadSchemas')
+        await Promise.all([store.dispatch('management/loadSchemas'), store.dispatch('rancher/loadSchemas')])
         const roleSchema = store.getters['management/byId'](SCHEMA, MANAGEMENT.ROLE_TEMPLATE )
 
 
@@ -63,7 +70,12 @@ export default function(plugin: IPlugin): void {
         }
       }
     } catch(e) {
-      console.error(e)
+      const t = store.getters['i18n/t']
+      store.dispatch('notifications/add', {
+        level:         NotificationLevel.Error,
+        title:         t('k3k.errors.creatingRoles'),
+        message:       e,
+      })
     }
   })
 }

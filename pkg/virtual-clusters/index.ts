@@ -3,8 +3,8 @@ import { IPlugin, ModelExtensionConstructor, PanelLocation } from '@shell/core/t
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
 import virtualClusterRouting from './routes'
-import virtualClusterAdminRole from './resources/virtual-cluster-admin-role.json'
-import virtualClusterPolicyAdminRole from './resources/virtual-cluster-policy-admin-role.json'
+import virtualClusterAdminRole from './resources/virtual-cluster-admin-role.js'
+import virtualClusterPolicyAdminRole from './resources/virtual-cluster-policy-admin-role.js'
 import { MANAGEMENT, SCHEMA } from '@shell/config/types';
 import versions from '@shell/utils/versions';
 import { isRancherPrime } from '@shell/config/version';

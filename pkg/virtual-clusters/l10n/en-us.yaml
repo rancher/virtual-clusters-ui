@@ -199,6 +199,7 @@ k3k:
     importingCluster: Error importing virtual cluster
     loadingPolicies: Error fetching virtual cluster policies from {cluster}
     loadingNamespaces: Error fetching namespaces from {cluster}
+    creatingRoles: 'Error creating virtual cluster roles'
   landingPage:
     title: Virtual Clusters
     subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster

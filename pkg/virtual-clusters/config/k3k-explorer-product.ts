@@ -12,7 +12,7 @@ export async function init($plugin:any, store:any) {
     basicType,
     headers
   } = $plugin.DSL(store, NAME);
-
+  
     if(isRancherPrime()){
         product({
           inStore:             'cluster',

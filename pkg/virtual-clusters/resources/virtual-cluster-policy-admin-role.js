@@ -16,7 +16,9 @@ export default {
         'VirtualClusterPolicies'
       ],
       verbs: [
-        '*'
+        'get',
+        'list',
+        'watch'
       ]
     },
     {

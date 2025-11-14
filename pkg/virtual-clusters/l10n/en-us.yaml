@@ -206,6 +206,10 @@ k3k:
     description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes environments without the overhead of managing full clusters.
     prime: The virtual clusters UI extension is only available in Rancher Prime.
     local: Installing k3k in the local Rancher cluster is not recommended. Navigate to <a href="{managerUrl}">Cluster Management</a> to import and existing cluster or provision a new one.
+    permission: K3K may not be installed in this cluster. To install K3K through the UI, you will need permission to create namespaces and catalog.cattle.io.app resources. To provision virtual clusters, you will need at minimum the permissions defined in the Virtual Cluster Policy Read cluster role and the Virtual Cluster Admin project role. Contact your cluster administrator for further assistance. 
+    virtual: 
+      description: Installing K3K in virtual clusters provisioned using K3K is not recommended. 
+      manageHost: Manage K3K custom resources underpinning this cluster in the <a href="{hostClusterUrl}">host cluster</a>. 
     steps:
       title: 'Quick guide:'
       step1:

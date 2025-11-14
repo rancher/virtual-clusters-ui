@@ -1,12 +1,12 @@
 <script>
 import { K3K } from '../types';
-import { CAPI } from '@shell/config/types';
+import { CAPI, MANAGEMENT } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k from '../components/InstallK3k.vue';
-import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled } from '../utils/k3kInstalled';
+import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCanInstallK3k } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
-import { NAME } from '@shell/config/product/manager';
+import { NAME as MGMT_NAME } from '@shell/config/product/manager';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -27,6 +27,29 @@ export default {
         });
       } catch {}
 
+      const hostClusterId = this.currentProvCluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
+
+      this.isVirtual = !!hostClusterId;
+
+      if (hostClusterId) {
+        try {
+          const hostMgmtCluster = await this.$store.dispatch('management/find', { type: MANAGEMENT.CLUSTER, id: hostClusterId });
+
+          if (hostMgmtCluster.isReady) {
+            this.hostClusterUrl = this.$router.resolve({
+              name:   'c-cluster-product-resource',
+              params: {
+                product:  PRODUCT_NAME,
+                cluster:  hostClusterId,
+                resource: K3K.POLICY
+              }
+            }).href;
+          }
+        } catch {
+          // user probably don't have permission to view/explore the host cluster; fail silently and dont show them a link to it
+        }
+      }
+
       let k3kIsAlreadyInstalled;
 
       try {
@@ -43,6 +66,8 @@ export default {
             product:  PRODUCT_NAME
           }
         });
+      } else {
+        this.canInstallK3k = await verifyUserCanInstallK3k(this.$store, currentCluster.id);
       }
     }
   },
@@ -51,6 +76,8 @@ export default {
     return {
       isLocal:            false,
       isPrime:            false,
+      isVirtual:          false,
+      canInstallK3k:      false,
       chartName:          K3K_CHART_NAME,
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
@@ -58,10 +85,11 @@ export default {
       managerUrl:                      this.$router.resolve({
         name:   'c-cluster-product-resource',
         params: {
-          product:  NAME,
+          product:  MGMT_NAME,
           resource: CAPI.RANCHER_CLUSTER
         }
       }).href,
+      hostClusterUrl: null
     };
   },
 
@@ -87,12 +115,28 @@ export default {
         </h3>
       </div>
     </div>
-    <div v-if="!isPrime">
-      {{ t('k3k.landingPage.prime') }}
-    </div>
+    <div
+      v-if="!isPrime"
+      v-clean-html="t('k3k.landingPage.prime')"
+    />
     <div
       v-else-if="isLocal"
       v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
+    />
+    <div
+      v-else-if="isVirtual"
+    >
+      <span
+        v-clean-html="t('k3k.landingPage.virtual.description')"
+      />
+      <span
+        v-if="hostClusterUrl"
+        v-clean-html="t('k3k.landingPage.virtual.manageHost', {hostClusterUrl}, true)"
+      />
+    </div>
+    <div
+      v-else-if="!canInstallK3k"
+      v-clean-html="t('k3k.landingPage.permission')"
     />
     <div v-else>
       <div class="mb-20">

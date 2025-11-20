@@ -41,7 +41,7 @@ export default {
               params: {
                 product:  PRODUCT_NAME,
                 cluster:  hostClusterId,
-                resource: K3K.POLICY
+                resource: K3K.CLUSTER
               }
             }).href;
           }

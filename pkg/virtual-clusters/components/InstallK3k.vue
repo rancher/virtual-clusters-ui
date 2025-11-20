@@ -149,8 +149,8 @@ export default {
 
   methods: {
     isEmpty,
-
-    // installk3k function will update k3kInstalled and canCreateK3kCluster properties when it successfully installs k3k
+    // track which clusters already have k3k and the user has permission to create k3k clusters in,
+    // and which clusters the user has permission to install k3k in
     async getParentClusterInstallationStatus() {
       this.loadingClusters = true;
       const out = [];
@@ -158,6 +158,7 @@ export default {
       for (const pCluster of this.clusters) {
         const mgmt = pCluster.mgmt;
 
+        // installk3k function will update k3kInstalled and canCreateK3kCluster properties when it successfully installs k3k
         const [k3kInstalled, canInstallK3k, canCreateK3kClusters] = await Promise.all([
           verifyK3kIsInstalled(this.$store, mgmt.id),
           verifyUserCanInstallK3k(this.$store, mgmt.id),

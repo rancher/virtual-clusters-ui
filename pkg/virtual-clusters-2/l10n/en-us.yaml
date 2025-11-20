@@ -1,0 +1,236 @@
+k3k:
+  group: Create a Virtual Cluster
+  label: K3K
+  policy:
+    label: Virtual Cluster Policy
+    noneWarning: Clusters created without a policy should only be used for testing purposes.
+    tabs:
+      config: Config
+      resourceAllocation: Resource Allocation
+      advanced: Advanced
+    headers:
+      quotas: Quotas
+      resourceLimits: Container Default Resource Limits
+      projectsAndNamespaces: Projects and Namespaces
+    projects:
+      subheader: This policy will be assigned to all namespaces in the selected projects.
+      label: Rancher projects
+      notification:
+        primaryAction: Edit Policy
+        addingNamespaces: 
+          success:
+            title: Policy assignment completed
+            message: |-
+              { namespaceCount, plural,
+                =1 {{policyName} successfully assigned to the namespace.}
+                other {{policyName} successfully assigned to {namespaceCount} namespaces.}
+              }
+          error:
+            title: Policy assignment failed
+            message: There were errors assigning some namespaces to {policyName}. Edit the policy to try again.
+        removingNamespaces:
+          success:
+            title: Policy unassignment completed
+            message: |-
+              { namespaceCount, plural,
+                =1 {{policyName} successfully unassigned from the namespace.}
+                other {{policyName} successfully unassigned from {namespaceCount} namespaces.}
+              }
+          error:
+            title: Policy unassignment failed
+            message: There were errors unassigning some namespaces from {policyName}. Edit the policy to try again.
+        addingAndRemovingNamespaces: 
+          success:
+            title: Policy assignment/unassignment completed
+            message: '{policyName} successfully assigned to {namespaceCount} namespaces and unassigned from {removeCount} namespaces.'
+          error:
+            title: Policy assignment failed
+            message: There were errors assigning some namespaces to {policyName}. Edit the policy to try again.
+        savingProjects: 
+            title: Failed to save some projects
+            message: There were errors updating some projects assigned to {policyName}. Edit the policy to try again.
+      table:
+        projects: Projects
+        namespaces: Namespaces Assigned
+        status: Action
+        errorBannerInline: Policy assignment has failed in some projects. Click save to re-attempt assigning the policy to the selected projects.
+        errorBannerModal: Policy assignment has failed in some projects. Edit the policy to remove projects or re-attempt assignment.
+        successBanner: '{policyName} has been assigned to all namespaces in all selected projects.'
+        errorTooltip: Policy assignment can be re-attempted by re-saving the virtual cluster policy.
+        deselectedTooltip: Policy will be unassigned from all namespaces in the project.
+        selectedTooltip: Policy will be assigned to all namespaces in the project.
+        selectedTooltipDone: Policy has been assigned to all namespaces in the project.
+        deselectedTooltipDone: Policy has been unassigned from all namespaces in the project.
+        errors:
+          permission: You dont have permission to edit namespaces in this project
+          server: There were connection errors while editing some namespaces in this project
+      savingNamespaces: 'Saving namespaces ({progress}%) &mdash; please do not close or refresh the window.'
+      editPolicy: Edit Policy
+    security:
+      label: Security
+      tooltip: Pod Security Standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
+      learnMore: Learn more about virtual cluster network policies
+    isolation:
+      label: Cluster Isolation
+      tooltip: 'Virtual clusters are isolated by default, able to communicate only with other virtual clusters within the same policy. This isolation is enforced by a default network policy. You can disable this cluster isolation, which allows the virtual cluster to communicate with virtual clusters outside of its policy. '
+      learnMore: Learn more about virtual cluster network policies
+      checkbox: Disable cluster isolation
+    synchronization:
+      label: Resource Synchronization
+      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync Ingresses and PriorityClasses.
+      ingressCheckbox: Ingresses
+      priorityClassCheckbox: PriorityClasses
+    quota: 
+      headers:
+        resourceType: Resource Type
+        clusterSetLimit: Cluster Set Limit
+        vcSetLimit: Virtual Cluster Set Limit
+    listView:
+      modeHeader: Mode
+      projectHeader: Assigned Projects
+      plusMore: |- 
+        {n, plural,
+          one { + one other}
+          other { + {n} others}
+        }
+      hasPartiallyAssigned: Policy couldn't be applied to some namespaces.
+    promptRemove:
+      onePolicy: |-
+        { count, plural,
+          one {This policy is currently applied to one virtual cluster. Deleting the policy now will remove resource constraints from that cluster.}
+          other {This policy is currently applied to {count} virtual clusters. Deleting the policy now will remove resource constraints from those clusters.}
+        }
+      multiplePolicies: |-
+        { count, plural,
+          one {The selected policies are collectively applied to one virtual cluster. Deleting the policies now will remove resource constraints from that cluster.}
+          other {The selected policies are currently applied to {count} virtual clusters. Deleting the policies now will remove resource constraints from those clusters.}
+        }
+  targetNamespace:
+    label: Target Namespace
+  hostCluster:
+    label: Host cluster
+    placeholder: The cluster that will host this virtual cluster
+    tooltip: The host must have the K3K helm chart installed
+    notInstalled: The K3K controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the K3K github repository' href='https://github.com/rancher/K3K/tree/main?tab=readme-ov-file#install-the-K3K-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the K3K chart with default values.
+    installK3k: Install K3K
+    didInstall: K3K installed
+  mode:
+    label: Virtual cluster mode
+    shared: Shared
+    virtual: Virtual
+    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
+  agents:
+    number:
+      label: Number of Agent Pods
+    envVars:
+      title: Agent Pod Environment Variables
+      addLabel: Add Env Var
+  servers:
+    title: Server and Agents
+    number:
+      label: Number of Server Pods
+    envVars:
+      title: Server Pod Environment Variables
+      keyLabel: Environment Variable
+    serverArgs:
+      label:  Additional Server Arguments
+      addLabel: Add Arg
+  nodeSelector:
+    label: Node Selector
+    tooltip: Add a node selector to all server and agent pods. In <code>shared</code> mode, the node selector will also be applied to workloads.
+    addLabel: Add Label
+  clusterCIDR:
+    label: Cluster CIDR
+    placeholder: 10.42.0.0/16
+  serviceCIDR:
+    label: Service CIDR
+    placeholder: 10.43.0.0/16
+    tooltip: In shared mode the service CIDR needs to be the same as the host cluster.
+  clusterDNS:
+    label: Cluster DNS
+    placeholder: "10.43.0.10"
+  tlsSANs:
+    label: TLS Alternate Names
+  k3sVersion:
+    label: K3s Version
+  expose:
+    label: Direct API Server Exposure
+    description: Expose the virtual cluster's API server. By default, the API server is only exposed as a ClusterIP, which is relatively secure but difficult to access from outside the cluster.
+    notExposed:
+      label: Not Exposed
+    ingress:
+      label: Ingress
+      annotations: 
+        label: Ingress Annotations
+        add: Add Annotation
+      ingressClassName:
+        label: Ingress Class Name
+        description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
+    loadbalancer:
+      label: Load Balancer
+      description: Set 0 or a negative value if you don't want to expose a port
+      serverPort:
+        label: Server Port
+        placeholder: 'Default: 443'
+      etcdPort:
+        label: etcd Port
+        placeholder: 'Default: 2379'
+    nodePort:
+      label: Node Port
+      description: Set a value out of range if you don't want to expose a port
+      serverPort:
+        placeholder: 'Default: random value between 30000-32767'
+  storage:
+    noneOption: Ephemeral
+    title: Storage
+    storageRequestSize:
+      label: Storage Request Size
+    storageClass:
+      label: Storage Class
+      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+  sections:
+    basics: Basics
+    networking: Networking
+    serverAndAgents: Server and Agents
+  errors:
+    loadingStorageClasses: 'Error loading storage classes from {cluster}: '
+    storageClassSchema: 'you may not have permission to view them.'
+    installingK3k: Error installing K3K
+    importingCluster: Error importing virtual cluster
+    loadingPolicies: Error fetching virtual cluster policies from {cluster}
+    loadingNamespaces: Error fetching namespaces from {cluster}
+  landingPage:
+    title: Virtual Clusters
+    subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster
+    description: Virtual clusters (powered by K3k) let you create self-service, isolated Kubernetes environments without the overhead of managing full clusters.
+    prime: The virtual clusters UI extension is only available in Rancher Prime.
+    local: Installing k3k in the local Rancher cluster is not recommended. Navigate to <a href="{managerUrl}">Cluster Management</a> to import and existing cluster or provision a new one.
+    steps:
+      title: 'Quick guide:'
+      step1:
+        title: Install K3k
+        description: This will turn your downstream cluster into a host cluster.
+      step2:
+        title: Create a policy
+        description: 'Go to Virtual Cluster Policy and create your first policy. Policies define guardrails: modes, resource quotas, syncing, RBAC rules, etc'
+      step3:
+        title: Create a virtual cluster
+        substep1: Go to Cluster Management > Create > Create a Virtual Cluster (K3K).
+        substep2: Select a host cluster with K3k installed and at least one virtual cluster policy.
+        substep3: Deploy your virtual cluster.
+
+resourceTable:
+  groupBy:
+    hostCluster: Host Cluster
+    displayName: Display Name
+
+
+product:
+  virtualclusters: Virtual Clusters
+
+typeLabel:
+  k3k.io.virtualclusterpolicy: |-
+    {count, plural,
+      one { Virtual Cluster Policy }
+      other { Virtual Cluster Policies }
+    }

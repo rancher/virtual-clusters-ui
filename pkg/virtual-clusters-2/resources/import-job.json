@@ -1,0 +1,62 @@
+{
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "namespace": "",
+      "name": "import-K3K_NAME"
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "import",
+              "image": "rancher/shell:head",
+              "command": [
+                "sh",
+                "/scripts/import.sh"
+              ],
+              "env": [
+                {
+                  "name": "RANCHER_IMPORT_URL",
+                  "value": "__url"
+                }
+              ],
+              "volumeMounts": [
+                {
+                  "mountPath": "/scripts",
+                  "name": "scripts",
+                  "readOnly": true
+                },
+                {
+                  "mountPath": "/kubeconfig",
+                  "name": "kubeconfig",
+                  "readOnly": true
+                }
+              ]
+            }
+          ],
+          "restartPolicy": "Never",
+          "securityContext": {
+            "runAsUser": 0,
+            "allowPrivilegeEscalation": false
+          },
+          "volumes": [
+            {
+              "name": "scripts",
+              "configMap": {
+                "name": "import-K3K_NAME"
+              }
+            },
+            {
+              "name": "kubeconfig",
+              "secret": {
+                "secretName": "k3k-K3K_NAME-kubeconfig"
+              }
+            }
+          ]
+        }
+      },
+      "backoffLimit": 4
+    }
+  }

@@ -30,4 +30,7 @@ export default function(plugin: IPlugin): void {
   // Built-in icon
   plugin.metadata.icon = require('./assets/icon-k3k.svg');
   
+
+
+  this breaks the extension
 }

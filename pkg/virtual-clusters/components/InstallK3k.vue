@@ -159,11 +159,11 @@ export default {
         const mgmt = pCluster.mgmt;
 
         // installk3k function will update k3kInstalled and canCreateK3kCluster properties when it successfully installs k3k
-        const [k3kInstalled, canInstallK3k, canCreateK3kClusters] = await Promise.all([
+        const [k3kInstalled, canInstallK3k, canCreateK3kClusters] = mgmt.isReady ? await Promise.all([
           verifyK3kIsInstalled(this.$store, mgmt.id),
           verifyUserCanInstallK3k(this.$store, mgmt.id),
           verifyUserCanCreateK3kClusters(this.$store, mgmt.id)
-        ]);
+        ]) : [false, false, false];
 
         out.push({
           isVirtual:            !!pCluster.metadata?.annotations?.['ui.rancher/parent-cluster'],

@@ -11,6 +11,6 @@ defaults:
 
 jobs:
   build-extension-charts:
-    uses: ./build-extensions-test.yaml
+    uses: rancher/dashboard/.github/workflows/extensions-build-test.yaml@reusab-workflow-test
     with:
        disable_exts_build: virtual-clusters-2

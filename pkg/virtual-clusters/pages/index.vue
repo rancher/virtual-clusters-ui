@@ -31,25 +31,6 @@ export default {
 
       this.isVirtual = !!hostClusterId;
 
-      if (hostClusterId) {
-        try {
-          const hostMgmtCluster = await this.$store.dispatch('management/find', { type: MANAGEMENT.CLUSTER, id: hostClusterId });
-
-          if (hostMgmtCluster.isReady) {
-            this.hostClusterUrl = this.$router.resolve({
-              name:   'c-cluster-product-resource',
-              params: {
-                product:  PRODUCT_NAME,
-                cluster:  hostClusterId,
-                resource: K3K.CLUSTER
-              }
-            }).href;
-          }
-        } catch {
-          // user probably don't have permission to view/explore the host cluster; fail silently and dont show them a link to it
-        }
-      }
-
       let k3kIsAlreadyInstalled;
 
       try {
@@ -89,7 +70,6 @@ export default {
           resource: CAPI.RANCHER_CLUSTER
         }
       }).href,
-      hostClusterUrl: null
     };
   },
 
@@ -127,16 +107,12 @@ export default {
       v-else-if="isVirtual"
     >
       <span
-        v-clean-html="t('k3k.landingPage.virtual.description')"
-      />
-      <span
-        v-if="hostClusterUrl"
-        v-clean-html="t('k3k.landingPage.virtual.manageHost', {hostClusterUrl}, true)"
+        v-clean-html="t('k3k.landingPage.virtual.description', {managerUrl}, true)"
       />
     </div>
     <div
       v-else-if="!canInstallK3k"
-      v-clean-html="t('k3k.landingPage.permission')"
+      v-clean-html="t('k3k.landingPage.permission', null, true)"
     />
     <div v-else>
       <div class="mb-20">

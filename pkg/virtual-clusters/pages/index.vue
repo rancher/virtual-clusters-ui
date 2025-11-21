@@ -70,6 +70,14 @@ export default {
           resource: CAPI.RANCHER_CLUSTER
         }
       }).href,
+      managerUrlFiltered:                      this.$router.resolve({
+        name:   'c-cluster-product-resource',
+        params: {
+          product:  MGMT_NAME,
+          resource: CAPI.RANCHER_CLUSTER
+        },
+        query: { q: '!virtual' }
+      }).href,
     };
   },
 
@@ -107,7 +115,7 @@ export default {
       v-else-if="isVirtual"
     >
       <span
-        v-clean-html="t('k3k.landingPage.virtual.description', {managerUrl}, true)"
+        v-clean-html="t('k3k.landingPage.virtual.description', {managerUrlFiltered}, true)"
       />
     </div>
     <div

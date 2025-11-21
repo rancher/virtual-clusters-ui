@@ -3,6 +3,7 @@ export default {
   kind:        'RoleTemplate',
   context:     'project',
   displayName: 'Virtual Cluster Admin',
+  description: 'Create and manage virtual clusters.',
   metadata:    {
     name:   'virtual-cluster-admin',
     labels: { 'management.cattle.io/ui-role-name': 'virtual-cluster-admin' }

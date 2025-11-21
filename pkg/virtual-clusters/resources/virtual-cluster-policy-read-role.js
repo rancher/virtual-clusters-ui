@@ -2,10 +2,11 @@ export default {
   apiVersion:  'management.cattle.io/v3',
   kind:        'RoleTemplate',
   context:     'cluster',
-  displayName: 'Virtual Cluster Policy Admin',
+  displayName: 'Virtual Cluster Policy Read',
+  description: 'View virtual cluster policies.',
   metadata:    {
-    name:   'virtual-cluster-policy-admin',
-    labels: { 'management.cattle.io/ui-role-name': 'virtual-cluster-policy-admin' }
+    name:   'virtual-cluster-policy-read',
+    labels: { 'management.cattle.io/ui-role-name': 'virtual-cluster-policy-read' }
   },
   rules: [
     {

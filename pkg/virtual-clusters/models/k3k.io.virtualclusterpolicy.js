@@ -5,33 +5,35 @@ import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 import { ANNOTATIONS, LABELS, K3K } from '../types';
 import { isRancherPrime } from '@shell/config/version';
 
+const communityBuild = !!process.env.community;
+
 export const getProjectIds = (policy) => {
   return (policy.metadata?.annotations?.[ANNOTATIONS.POLICY_ASSIGNED_TO] || '').split(',').map((p) => p.trim()).filter((p) => !!p);
 };
 
 export default class VirtualClusterPolicy extends SteveModel {
   get canEdit() {
-    return super.canEdit && isRancherPrime();
+    return super.canEdit && (isRancherPrime() || communityBuild);
   }
 
   get canDelete() {
-    return super.canDelete && isRancherPrime();
+    return super.canDelete && (isRancherPrime() || communityBuild);
   }
 
   get canClone() {
-    return super.canClone && isRancherPrime();
+    return super.canClone && (isRancherPrime() || communityBuild);
   }
 
   get canUpdate() {
-    return super.canUpdate && isRancherPrime();
+    return super.canUpdate && (isRancherPrime() || communityBuild);
   }
 
   get canCustomEdit() {
-    return super.canCustomEdit && isRancherPrime();
+    return super.canCustomEdit && (isRancherPrime() || communityBuild);
   }
 
   get canCreate() {
-    return super.canCreate && isRancherPrime();
+    return super.canCreate && (isRancherPrime() || communityBuild);
   }
 
   get projectIds() {

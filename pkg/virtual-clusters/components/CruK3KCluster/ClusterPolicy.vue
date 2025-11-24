@@ -76,11 +76,11 @@ export default {
     hostClusterId(neu) {
       this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
-
     },
 
     policyOptions(neu = []) {
       const policyOpt = neu.find((p) => !!p?.value ) ;
+
       if (this.mode === _CREATE) {
         this.$emit('update:policy', policyOpt?.value || null);
         this.$emit('update:targetNamespace', '');
@@ -93,9 +93,9 @@ export default {
       }
     },
 
-    clusterReady(neu){
+    clusterReady(neu) {
       if (neu) {
-      console.log('*** cluster ready and current cluster and id are ', this.currentCluster, this.clusterId)
+        console.log('*** cluster ready and current cluster and id are ', this.currentCluster, this.clusterId);
 
         this.fetchPolicies();
       }
@@ -286,10 +286,12 @@ export default {
         @update:value="e=>$emit('update:policy', e)"
       />
       <div
-      class="text-muted mt-5"
         v-if="policy && !isEmpty(policy)"
+        class="text-muted mt-5"
         @click="()=>policy.showConfiguration(null, true)"
-      >View policy details</div>
+      >
+        View policy details
+      </div>
       <span
         v-if="!policy && !showLoadingSpinner"
         class="nonepolicy-warning text-muted"

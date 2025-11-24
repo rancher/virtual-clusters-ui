@@ -3,6 +3,8 @@ import { mapDriver } from '@shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster/index.vue';
 import { isRancherPrime } from '@shell/config/version';
 
+const communityBuild = process.env.community
+
 
 export class k3kProvisioner implements IClusterProvisioner {
   static ID = 'k3k'
@@ -48,6 +50,6 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get hidden(){
-    return !isRancherPrime()
+    return !isRancherPrime() && !communityBuild
   }
 }

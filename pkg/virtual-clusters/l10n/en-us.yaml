@@ -226,7 +226,7 @@ k3k:
         </ul>
         Contact your cluster administrator for further assistance. 
     virtual: 
-      description: <strong>Installing virtual clusters within virutal clusters in not currently supported via the UI.</strong> <br/> Select a <a href="{managerUrlFiltered}">non-virtualised host cluster</a> for your Virtual Cluster.
+      description: <strong>Installing virtual clusters within virutal clusters in not currently supported via the UI.</strong><br/><br/> Select a <a href="{managerUrlFiltered}">non-virtualised host cluster</a> for your Virtual Cluster.
     steps:
       title: 'Quick guide:'
       step1:

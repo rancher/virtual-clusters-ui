@@ -103,61 +103,63 @@ export default {
         </h3>
       </div>
     </div>
-    <div
-      v-if="!isPrime"
-      v-clean-html="t('k3k.landingPage.prime')"
-    />
-    <div
-      v-else-if="isLocal"
-      v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
-    />
-    <div
-      v-else-if="isVirtual"
-    >
-      <span
-        v-clean-html="t('k3k.landingPage.virtual.description', {managerUrlFiltered}, true)"
+    <div class="description-container">
+      <div
+        v-if="!isPrime"
+        v-clean-html="t('k3k.landingPage.prime')"
       />
-    </div>
-    <div
-      v-else-if="!canInstallK3k"
-      v-clean-html="t('k3k.landingPage.permission', null, true)"
-    />
-    <div v-else>
-      <div class="mb-20">
-        {{ t('k3k.landingPage.description') }}
+      <div
+        v-else-if="isLocal"
+        v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
+      />
+      <div
+        v-else-if="isVirtual"
+      >
+        <span
+          v-clean-html="t('k3k.landingPage.virtual.description', {managerUrlFiltered}, true)"
+        />
       </div>
-      <div class="steps">
-        <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
-        <ol>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
-            <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
-            <InstallK3k
-              v-if="currentProvCluster"
-              v-model:k3k-installed="k3kInstalled"
-              :parent-cluster="currentProvCluster"
-              :show-button-only="true"
-            />
-          </li>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
-            <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
-          </li>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
-            <ol class="provisioning-steps">
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
-              </li>
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep2') }}
-              </li>
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep3') }}
-              </li>
-            </ol>
-          </li>
-        </ol>
+      <div
+        v-else-if="!canInstallK3k"
+        v-clean-html="t('k3k.landingPage.permission', null, true)"
+      />
+      <div v-else>
+        <div class="mb-20">
+          {{ t('k3k.landingPage.description') }}
+        </div>
+        <div class="steps">
+          <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
+          <ol>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
+              <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
+              <InstallK3k
+                v-if="currentProvCluster"
+                v-model:k3k-installed="k3kInstalled"
+                :parent-cluster="currentProvCluster"
+                :show-button-only="true"
+              />
+            </li>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
+              <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
+            </li>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
+              <ol class="provisioning-steps">
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
+                </li>
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep2') }}
+                </li>
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep3') }}
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
       </div>
     </div>
   </div>
@@ -185,5 +187,9 @@ export default {
         list-style-type: step3decimal;
         list-style-position: inside;
         padding-left: 0px;
+    }
+
+    .description-container {
+      margin-left: 110px;
     }
 </style>

@@ -9,6 +9,7 @@ import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
 
 import isEmpty from 'lodash/isEmpty';
 import { PROJECT } from '@shell/config/labels-annotations';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'K3kPolicySelector',
@@ -75,9 +76,6 @@ export default {
     hostClusterId(neu) {
       this.$emit('update:policy', {});
       this.$emit('update:targetNamespace', '');
-      if (neu) {
-        this.fetchPolicies();
-      }
     },
 
     policyOptions(neu = []) {
@@ -95,6 +93,14 @@ export default {
       }
     },
 
+    clusterReady(neu) {
+      if (neu) {
+        this.fetchPolicies();
+      } else {
+        this.loadingPoliciesAndNamespaces = true;
+      }
+    }
+
   },
 
   methods: {
@@ -106,32 +112,23 @@ export default {
           this.loadingPoliciesAndNamespaces = true;
 
           try {
-            const res = await this.$store.dispatch('management/request', {
-              url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
-              method: 'GET'
-            });
-
-            this.policies = res.data || [];
+            this.policies = await this.$store.dispatch('cluster/findAll', { type: K3K.POLICY });
           } catch (err) {
             this.policies = [];
             this.policyError = true;
           }
         }
 
-        return await this.fetchNamespaces();
+        await this.fetchNamespaces();
+      } else {
+        this.loadingPoliciesAndNamespaces = false;
       }
     },
 
     async fetchNamespaces() {
       this.namespaceError = false;
-      this.namespaces = [];
       try {
-        const res = await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
-          method: 'GET'
-        });
-
-        this.namespaces = res.data || [];
+        this.namespaces = await this.$store.dispatch('cluster/findAll', { type: NAMESPACE });
       } catch (e) {
         this.namespaces = [];
         this.namespaceError = true;
@@ -164,6 +161,8 @@ export default {
   },
 
   computed: {
+    ...mapGetters(['clusterReady', 'currentCluster', 'clusterId']),
+
     isCreate() {
       return this.mode === _CREATE;
     },
@@ -258,6 +257,13 @@ export default {
         :hover-tooltip="false"
         @update:value="e=>$emit('update:policy', e)"
       />
+      <div
+        v-if="policy && !isEmpty(policy)"
+        class="text-muted mt-5"
+        @click="()=>policy.showConfiguration(null, true)"
+      >
+        View policy details
+      </div>
       <span
         v-if="!policy && !showLoadingSpinner"
         class="nonepolicy-warning text-muted"
@@ -271,7 +277,7 @@ export default {
         :disabled="!isCreate"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
-        :rules="rules.namespace"
+        :rules="showLoadingSpinner ? [] : rules.namespace"
         :require-dirty="false"
         @update:value="e=>$emit('update:targetNamespace', e)"
       />

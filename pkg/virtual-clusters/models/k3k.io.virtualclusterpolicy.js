@@ -5,33 +5,35 @@ import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 import { ANNOTATIONS, LABELS, K3K } from '../types';
 import { isRancherPrime } from '@shell/config/version';
 
+const communityBuild = !!process.env.VUE_APP_COMMUNITY;
+
 export const getProjectIds = (policy) => {
   return (policy.metadata?.annotations?.[ANNOTATIONS.POLICY_ASSIGNED_TO] || '').split(',').map((p) => p.trim()).filter((p) => !!p);
 };
 
 export default class VirtualClusterPolicy extends SteveModel {
   get canEdit() {
-    return super.canEdit && isRancherPrime();
+    return super.canEdit && (isRancherPrime() || communityBuild);
   }
 
   get canDelete() {
-    return super.canDelete && isRancherPrime();
+    return super.canDelete && (isRancherPrime() || communityBuild);
   }
 
   get canClone() {
-    return super.canClone && isRancherPrime();
+    return super.canClone && (isRancherPrime() || communityBuild);
   }
 
   get canUpdate() {
-    return super.canUpdate && isRancherPrime();
+    return super.canUpdate && (isRancherPrime() || communityBuild);
   }
 
   get canCustomEdit() {
-    return super.canCustomEdit && isRancherPrime();
+    return super.canCustomEdit && (isRancherPrime() || communityBuild);
   }
 
   get canCreate() {
-    return super.canCreate && isRancherPrime();
+    return super.canCreate && (isRancherPrime() || communityBuild);
   }
 
   get projectIds() {
@@ -86,6 +88,13 @@ export default class VirtualClusterPolicy extends SteveModel {
       super.stateObj?.error, // don't want to use a red background on the state badge just because the policy has partially assigned projects
       this.stateObj?.transitioning
     );
+  }
+
+  get detailLocation() {
+    console.log('*** getting detail location ', this._detailLocation);
+    const params = { ...this._detailLocation.params, product: 'explorer' };
+
+    return { ...this._detailLocation, params };
   }
 
   async fetchAssignedClusterCount() {

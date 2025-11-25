@@ -8,6 +8,8 @@ import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
 import { NAME } from '@shell/config/product/manager';
 
+const communityBuild = !!process.env.VUE_APP_COMMUNITY;
+
 export default {
   name: 'K3kExplorerLandingPage',
 
@@ -15,7 +17,7 @@ export default {
 
   async fetch() {
     this.isPrime = isRancherPrime();
-    if (this.isPrime) {
+    if (this.isPrime || communityBuild) {
       const currentCluster = this.$store.getters['currentCluster'];
       const provClusterId = currentCluster.provClusterId;
 

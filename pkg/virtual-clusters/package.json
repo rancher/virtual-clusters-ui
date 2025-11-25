@@ -1,6 +1,6 @@
 {
   "name": "virtual-clusters",
-  "description": "Virtual cluster provisioning using K3K (Prime only)",
+  "description": "Virtual cluster provisioning using K3K",
   "version": "1.0.0",
   "private": false,
   "rancher": {

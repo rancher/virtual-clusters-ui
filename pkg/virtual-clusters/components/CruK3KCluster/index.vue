@@ -18,7 +18,7 @@ import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
-import { CAPI, MANAGEMENT } from '@shell/config/types';
+import { CAPI, MANAGEMENT, CONFIG_MAP, WORKLOAD_TYPES } from '@shell/config/types';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
@@ -215,6 +215,10 @@ export default {
         }
       },
       deep: true
+    },
+
+    'parentCluster.id'() {
+      this.loadHostCluster();
     }
   },
 
@@ -285,6 +289,26 @@ export default {
   },
 
   methods: {
+    // connect to host cluster steve api
+    // used to retrieve resources from host cluster and populate form, as well as create vcp
+    async loadHostCluster() {
+      this.connectingToHost = true;
+
+      const norman = await this.findNormanCluster();
+      const id = norman.id;
+
+      try {
+        await this.$store.dispatch('loadCluster', {
+          id, oldProduct: 'old', product: 'new'
+        });
+      } catch (e) {
+        this.connectingToHost = false;
+        console.error(e);
+      }
+
+      this.connectingToHost = false;
+    },
+
     onMembershipUpdate(update) {
       this['membershipUpdate'] = update;
     },
@@ -307,17 +331,10 @@ export default {
       }
     },
 
-    // create the k3k cluster crd
-    async createCluster() {
-      const normanCluster = await this.findNormanCluster();
-
-      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
-
-      const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
-
-      await this.$store.dispatch('management/request', {
-        url: k3kUrl, method: 'POST', data: this.k3kCluster
-      });
+    // make sure the k3k cluster cr is classified with the right host cluster context and save it
+    async saveK3kCluster() {
+      this.k3kCluster = await this.$store.dispatch('cluster/create', { type: K3K.CLUSTER, ...this.k3kCluster });
+      await this.k3kCluster.save();
     },
 
     // create import cluster command from new prov cluster
@@ -345,21 +362,10 @@ export default {
       importJob.metadata.namespace = this.k3kCluster?.metadata?.namespace;
       configMap.metadata.namespace = this.k3kCluster?.metadata?.namespace;
 
-      const normanCluster = await this.findNormanCluster();
-
-      const baseUrl = `/k8s/clusters/${ normanCluster?.id }/v1`;
-
-      const cmUrl = `${ baseUrl }/configmaps`;
-      const jobUrl = `${ baseUrl }/batch.jobs`;
-
       try {
-        await this.$store.dispatch('management/request', {
-          url: cmUrl, method: 'POST', data: configMap
-        });
+        const [configmapProxy, jobProxy] = await Promise.all([this.$store.dispatch('cluster/create', { type: CONFIG_MAP, ...configMap }), this.$store.dispatch('cluster/create', { type: WORKLOAD_TYPES.JOB, ...importJob })]);
 
-        await this.$store.dispatch('management/request', {
-          url: jobUrl, method: 'POST', data: importJob
-        });
+        await Promise.all([configmapProxy.save(), jobProxy.save()]);
       } catch (e) {
         this.errors.push(e);
       }
@@ -371,7 +377,7 @@ export default {
       try {
         if (this.mode === _CREATE) {
           // create the k3k cluster crd
-          await this.createCluster();
+          await this.saveK3kCluster();
 
           // Add annotations so the ui knows the imported cluster is a virtual cluster, and which is its parent cluster
           // annotate both the mgmt id, used to make requests to the host cluster, and the prov cluster name, which is the human-readable name
@@ -384,11 +390,7 @@ export default {
           this.value.metadata.annotations['ui.rancher/k3k-namespace'] = this.k3kCluster.metadata.namespace;
         } else {
           // save existing k3kCluster
-          await cluster.$dispatch('request', {
-            url:    `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ this.k3kCluster.id }`,
-            method: 'PUT',
-            data:   this.k3kCluster
-          });
+          this.saveK3kCluster();
         }
 
         // this.save is a method defined in the create edit view mixin
@@ -409,17 +411,9 @@ export default {
     },
 
     async deleteK3kCluster() {
-      const cluster = await this.findNormanCluster();
-      const { name, namespace } = this.k3kCluster.metadata || {};
-
-      if (name && namespace) {
+      if (this.k3kCluster.id) {
         try {
-          const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
-
-          await this.$store.dispatch('management/request', {
-            url,
-            method: 'DELETE'
-          });
+          this.k3kCluster.remove();
         } catch (e) {
           this.errors.push(e);
         }
@@ -503,6 +497,7 @@ export default {
           v-model:k3k-installed="k3kInstalled"
           :mode="mode"
           :clusters="provClusters"
+          :connecting-to-host="connectingToHost"
           @error="handleInstallationError"
         />
 

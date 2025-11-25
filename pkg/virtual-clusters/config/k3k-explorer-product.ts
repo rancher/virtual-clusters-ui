@@ -4,7 +4,7 @@ import { isRancherPrime } from '@shell/config/version';
 import versions from '@shell/utils/versions';
 
 export const  NAME = 'virtualclusters'
-const communityBuild = process.env.community
+const communityBuild = process.env.VUE_APP_COMMUNITY
 
 export async function init($plugin:any, store:any) {
   const {

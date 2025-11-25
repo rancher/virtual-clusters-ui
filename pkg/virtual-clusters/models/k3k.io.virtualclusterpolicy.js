@@ -5,7 +5,7 @@ import { colorForState } from '@shell/plugins/dashboard-store/resource-class';
 import { ANNOTATIONS, LABELS, K3K } from '../types';
 import { isRancherPrime } from '@shell/config/version';
 
-const communityBuild = !!process.env.community;
+const communityBuild = !!process.env.VUE_APP_COMMUNITY;
 
 export const getProjectIds = (policy) => {
   return (policy.metadata?.annotations?.[ANNOTATIONS.POLICY_ASSIGNED_TO] || '').split(',').map((p) => p.trim()).filter((p) => !!p);

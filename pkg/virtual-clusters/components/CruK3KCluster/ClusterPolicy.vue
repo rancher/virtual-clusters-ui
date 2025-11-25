@@ -95,39 +95,15 @@ export default {
 
     clusterReady(neu) {
       if (neu) {
-        console.log('*** cluster ready and current cluster and id are ', this.currentCluster, this.clusterId);
-
         this.fetchPolicies();
+      } else {
+        this.loadingPoliciesAndNamespaces = true;
       }
     }
 
   },
 
   methods: {
-    // async fetchPolicies() {
-    //   this.policyError = false;
-    //   this.policies = [];
-    //   if (this.hostClusterId) {
-    //     if (this.k3kInstalled) {
-    //       this.loadingPoliciesAndNamespaces = true;
-
-    //       try {
-    //         const res = await this.$store.dispatch('management/request', {
-    //           url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ K3K.POLICY }`,
-    //           method: 'GET'
-    //         });
-
-    //         this.policies = res.data || [];
-    //       } catch (err) {
-    //         this.policies = [];
-    //         this.policyError = true;
-    //       }
-    //     }
-
-    //     return await this.fetchNamespaces();
-    //   }
-    // },
-
     async fetchPolicies() {
       this.policyError = false;
       this.policies = [];
@@ -143,20 +119,16 @@ export default {
           }
         }
 
-        return await this.fetchNamespaces();
+        await this.fetchNamespaces();
+      } else {
+        this.loadingPoliciesAndNamespaces = false;
       }
     },
 
     async fetchNamespaces() {
       this.namespaceError = false;
-      this.namespaces = [];
       try {
-        const res = await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
-          method: 'GET'
-        });
-
-        this.namespaces = res.data || [];
+        this.namespaces = await this.$store.dispatch('cluster/findAll', { type: NAMESPACE });
       } catch (e) {
         this.namespaces = [];
         this.namespaceError = true;
@@ -305,7 +277,7 @@ export default {
         :disabled="!isCreate"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
-        :rules="rules.namespace"
+        :rules="showLoadingSpinner ? [] : rules.namespace"
         :require-dirty="false"
         @update:value="e=>$emit('update:targetNamespace', e)"
       />

@@ -3,7 +3,7 @@ import { mapDriver } from '@shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster/index.vue';
 import { isRancherPrime } from '@shell/config/version';
 
-const communityBuild = process.env.community
+const communityBuild = process.env.VUE_APP_COMMUNITY
 
 
 export class k3kProvisioner implements IClusterProvisioner {

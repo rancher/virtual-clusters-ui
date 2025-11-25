@@ -8,7 +8,7 @@ import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
 import { NAME } from '@shell/config/product/manager';
 
-const communityBuild = !!process.env.community;
+const communityBuild = !!process.env.VUE_APP_COMMUNITY;
 
 export default {
   name: 'K3kExplorerLandingPage',

@@ -9,6 +9,7 @@ import isEmpty from 'lodash/isEmpty';
 import {
   verifyK3kIsInstalled, K3K_REPO_NAME, K3K_REPO_URL, K3K_CHART_NAME, K3K_CHART_NAMESPACE
 } from '../utils/k3kInstalled';
+import { CATALOG } from '@shell/config/types';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
@@ -66,7 +67,12 @@ export default {
     showButtonOnly: {
       type:    Boolean,
       default: false
-    }
+    },
+
+    connectingToHost: {
+      type:    Boolean,
+      default: false
+    },
   },
 
   created() {
@@ -87,7 +93,7 @@ export default {
         }
       },
       immediate: true
-    },
+    }
   },
 
   computed: {
@@ -146,27 +152,23 @@ export default {
       // tell the parent component to remove any installation error messages from the error array
       this.$emit('error', false);
 
-      const repo = {
-        apiVersion: 'catalog.cattle.io/v1',
-        kind:       'ClusterRepo',
-        metadata:   { name: K3K_REPO_NAME },
-        spec:       { url: K3K_REPO_URL, insecurePlainHttp:	false }
-      };
-
-      const cluster = this.parentCluster;
-
-      const normanCluster = await cluster.findNormanCluster();
-
-      await cluster.waitForMgmt();
-      const mgmtCluster = cluster.mgmt;
-      const k3kRepoUrl = `/k8s/clusters/${ mgmtCluster.id }/v1/catalog.cattle.io.ClusterRepo/${ K3K_REPO_NAME }`;
-      let k3kRepo;
-
       try {
-        // create k3k repo crd
-        const repoYaml = saferDump(repo);
+        // check if repo already exists
+        let repo;
 
-        await normanCluster.doAction('importYaml', { yaml: repoYaml });
+        try {
+          repo = await this.$store.dispatch('cluster/find', { type: CATALOG.CLUSTER_REPO, id: K3K_REPO_NAME });
+        } catch {
+          const repoConfig = {
+            apiVersion: 'catalog.cattle.io/v1',
+            kind:       'ClusterRepo',
+            metadata:   { name: K3K_REPO_NAME },
+            spec:       { url: K3K_REPO_URL, insecurePlainHttp:	false }
+          };
+
+          repo = await this.$store.dispatch('cluster/create', { type: CATALOG.CLUSTER_REPO, ...repoConfig });
+          await repo.save();
+        }
 
         // wait for the repo to be downloaded
         let fetched = false;
@@ -175,17 +177,14 @@ export default {
         let latestK3kChartVersion = '';
 
         while (!fetched) {
-          k3kRepo = await this.$store.dispatch('management/request', {
-            url:    k3kRepoUrl,
-            method: 'GET',
-          });
-          const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'OCIDownloaded');
+          const downloadedCondition = repo.status.conditions.find((s) => s.type === 'OCIDownloaded');
 
           const downloaded = downloadedCondition?.status === 'True';
 
           if (downloaded) {
             // get the latest version of the chart
-            const indexUrl = k3kRepo?.links?.index;
+            const indexUrl = repo?.links?.index;
+
             const repoReq = await this.$store.dispatch('management/request', {
               url:    `${ indexUrl }`,
               method: 'GET',
@@ -238,11 +237,7 @@ export default {
         while (!this.didInstallK3k && installTries <= INSTALL_MAX_TRIES) {
           installTries++;
           try {
-            const res = await this.$store.dispatch('management/request', {
-              url:    `${ k3kRepoUrl }?action=install`,
-              method: 'POST',
-              data:   installRequest
-            });
+            const res = await repo.doAction('install', installRequest);
 
             if (res._status === 201) {
               this.$emit('update:k3kInstalled', true);
@@ -287,7 +282,7 @@ export default {
       />
     </div>
     <div
-      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
+      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate && !connectingToHost"
       class="col span-6 centered text-label"
     >
       <t

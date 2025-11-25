@@ -155,7 +155,6 @@ export default {
       this.displayProjects = [...selectedButInError, ...this.deselectedProjects];
 
       if(this.mode === _VIEW && !this.selectedProjects.length){
-        console.log('**** setting selected to ids')
         this.selectedProjects = ids;
       }
     },

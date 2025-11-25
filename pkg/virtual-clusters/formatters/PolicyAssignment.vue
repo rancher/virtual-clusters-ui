@@ -1,6 +1,7 @@
 <script>
 import Shortened from '@shell/components/formatter/Shortened';
 import { MANAGEMENT } from '@shell/config/types';
+import { getProjectIds } from '../models/k3k.io.virtualclusterpolicy';
 
 const MAX_CHARS = 35; // maximum characters to show before using + n more and a tooltip to show the full list
 
@@ -26,7 +27,7 @@ export default {
 
   computed: {
     projectIds() {
-      return this.row?.projectIds || [];
+      return this.row?.projectIds || getProjectIds(this.row) || [];
     },
 
     projectFullDisplayValue() {

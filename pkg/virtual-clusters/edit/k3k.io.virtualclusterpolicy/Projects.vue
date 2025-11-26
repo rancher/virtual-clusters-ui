@@ -1,6 +1,6 @@
 <script>
 import {
-  _CREATE, _EDIT, _UNFLAG, AS, MODE
+  _CREATE, _EDIT, _UNFLAG, AS, MODE, _VIEW
 } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { randomStr } from '@shell/utils/string';
@@ -153,6 +153,10 @@ export default {
       });
 
       this.displayProjects = [...selectedButInError, ...this.deselectedProjects];
+
+      if(this.mode === _VIEW && !this.selectedProjects.length){
+        this.selectedProjects = ids;
+      }
     },
 
     // filter out projects without namespaces and projects assigned to other policies

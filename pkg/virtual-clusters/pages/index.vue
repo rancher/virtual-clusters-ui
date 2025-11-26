@@ -1,12 +1,12 @@
 <script>
 import { K3K } from '../types';
-import { CAPI } from '@shell/config/types';
+import { CAPI, MANAGEMENT } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k from '../components/InstallK3k.vue';
-import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled } from '../utils/k3kInstalled';
+import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCanInstallK3k } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
-import { NAME } from '@shell/config/product/manager';
+import { NAME as MGMT_NAME } from '@shell/config/product/manager';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -27,6 +27,10 @@ export default {
         });
       } catch {}
 
+      const hostClusterId = this.currentProvCluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
+
+      this.isVirtual = !!hostClusterId;
+
       let k3kIsAlreadyInstalled;
 
       try {
@@ -43,6 +47,8 @@ export default {
             product:  PRODUCT_NAME
           }
         });
+      } else {
+        this.canInstallK3k = await verifyUserCanInstallK3k(this.$store, currentCluster.id);
       }
     }
   },
@@ -51,6 +57,8 @@ export default {
     return {
       isLocal:            false,
       isPrime:            false,
+      isVirtual:          false,
+      canInstallK3k:      false,
       chartName:          K3K_CHART_NAME,
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
@@ -58,9 +66,17 @@ export default {
       managerUrl:                      this.$router.resolve({
         name:   'c-cluster-product-resource',
         params: {
-          product:  NAME,
+          product:  MGMT_NAME,
           resource: CAPI.RANCHER_CLUSTER
         }
+      }).href,
+      managerUrlFiltered:                      this.$router.resolve({
+        name:   'c-cluster-product-resource',
+        params: {
+          product:  MGMT_NAME,
+          resource: CAPI.RANCHER_CLUSTER
+        },
+        query: { q: '!virtual' }
       }).href,
     };
   },
@@ -87,49 +103,63 @@ export default {
         </h3>
       </div>
     </div>
-    <div v-if="!isPrime">
-      {{ t('k3k.landingPage.prime') }}
-    </div>
-    <div
-      v-else-if="isLocal"
-      v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
-    />
-    <div v-else>
-      <div class="mb-20">
-        {{ t('k3k.landingPage.description') }}
+    <div class="description-container">
+      <div
+        v-if="!isPrime"
+        v-clean-html="t('k3k.landingPage.prime')"
+      />
+      <div
+        v-else-if="isLocal"
+        v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
+      />
+      <div
+        v-else-if="isVirtual"
+      >
+        <span
+          v-clean-html="t('k3k.landingPage.virtual.description', {managerUrlFiltered}, true)"
+        />
       </div>
-      <div class="steps">
-        <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
-        <ol>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
-            <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
-            <InstallK3k
-              v-if="currentProvCluster"
-              v-model:k3k-installed="k3kInstalled"
-              :parent-cluster="currentProvCluster"
-              :show-button-only="true"
-            />
-          </li>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
-            <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
-          </li>
-          <li class="mb-20">
-            <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
-            <ol class="provisioning-steps">
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
-              </li>
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep2') }}
-              </li>
-              <li>
-                {{ t('k3k.landingPage.steps.step3.substep3') }}
-              </li>
-            </ol>
-          </li>
-        </ol>
+      <div
+        v-else-if="!canInstallK3k"
+        v-clean-html="t('k3k.landingPage.permission', null, true)"
+      />
+      <div v-else>
+        <div class="mb-20">
+          {{ t('k3k.landingPage.description') }}
+        </div>
+        <div class="steps">
+          <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
+          <ol>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
+              <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
+              <InstallK3k
+                v-if="currentProvCluster"
+                v-model:k3k-installed="k3kInstalled"
+                :parent-cluster="currentProvCluster"
+                :show-button-only="true"
+              />
+            </li>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
+              <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
+            </li>
+            <li class="mb-20">
+              <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
+              <ol class="provisioning-steps">
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep1', null, true) }}
+                </li>
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep2') }}
+                </li>
+                <li>
+                  {{ t('k3k.landingPage.steps.step3.substep3') }}
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
       </div>
     </div>
   </div>
@@ -157,5 +187,9 @@ export default {
         list-style-type: step3decimal;
         list-style-position: inside;
         padding-left: 0px;
+    }
+
+    .description-container {
+      margin-left: 110px;
     }
 </style>

@@ -343,6 +343,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
+              :mode="mode"
               v-model:value="podSecurityAdmissionLevel"
               :options="[noneOption,'privileged', 'baseline', 'restricted']"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"

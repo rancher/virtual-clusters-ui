@@ -14,7 +14,7 @@ export async function init($plugin:any, store:any) {
     headers
   } = $plugin.DSL(store, NAME);
     await versions.fetch({ store: store });
-
+  
     if(isRancherPrime()){
         product({
           inStore:             'cluster',
@@ -48,8 +48,8 @@ export async function init($plugin:any, store:any) {
             sort:          ['spec.allowedMode'],
             value:         'spec.allowedMode',
           },
-              {
-            name:          'vcmode',
+          {
+            name:          'projects',
             labelKey:      'k3k.policy.listView.projectHeader',
             formatter:     'PolicyAssignment'
           },

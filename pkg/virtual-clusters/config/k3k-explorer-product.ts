@@ -13,8 +13,7 @@ export async function init($plugin:any, store:any) {
     basicType,
     headers
   } = $plugin.DSL(store, NAME);
-    await versions.fetch({ store: store });
-  
+
     if(isRancherPrime()){
         product({
           inStore:             'cluster',

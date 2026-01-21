@@ -54,10 +54,14 @@ export default function(plugin: IPlugin): void {
   // Built-in icon
   plugin.metadata.icon = require('./assets/icon-k3k.svg');
 
-  plugin.addNavHooks(undefined, undefined, undefined, async(store: any)=>{
-    try{
-      await versions.fetch({ store: store });
+  // used to compute isRancherPrime
+  // this is used in onEnter to ensure prime data is loaded before isRancherPrime is called in product config
+  // the rest of the role-creation logic runs on login instead of on enter to minimize performance impact
+  const fetchVersionData = async (store: any)=>await versions.fetch({ store: store });
 
+  plugin.addNavHooks(fetchVersionData, undefined, undefined, async(store: any)=>{
+    try{
+      await fetchVersionData(store)
       if(isRancherPrime()){
         await Promise.all([store.dispatch('management/loadSchemas'), store.dispatch('rancher/loadSchemas')])
         const roleSchema = store.getters['management/byId'](SCHEMA, MANAGEMENT.ROLE_TEMPLATE )

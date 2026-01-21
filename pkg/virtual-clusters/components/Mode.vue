@@ -11,7 +11,7 @@ export const MODES = {
 export default {
   name: 'CRUK3KMode',
 
-  emits: ['update:k3kMode'],
+  emits: ['update:k3k-mode'],
 
   props: {
     mode: {
@@ -53,7 +53,7 @@ export default {
         :row="true"
         :mode="mode"
         :options="[{label: t('k3k.mode.shared'), value: modes.SHARED},{label: t('k3k.mode.virtual'), value: modes.VIRTUAL} ]"
-        @update:value="e=>$emit('update:k3kMode', e)"
+        @update:value="e=>$emit('update:k3k-mode', e)"
       >
         <template #label>
           <h3>{{ t('k3k.mode.label') }}</h3>

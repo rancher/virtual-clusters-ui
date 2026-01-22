@@ -75,8 +75,12 @@ export default class VirtualClusterPolicy extends SteveModel {
 
   get stateObj() {
     const defaultStateObj = super.stateObj;
+    const partialError = !this.hasPartiallyAssignedProjects ? {} : {
+      error:   true,
+      message: this.stateDescription
+    };
 
-    return { ...defaultStateObj, error: this.hasPartiallyAssignedProjects || defaultStateObj?.error };
+    return { ...defaultStateObj, ...partialError };
   }
 
   get stateColor() {

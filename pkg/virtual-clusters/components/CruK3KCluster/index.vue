@@ -32,6 +32,7 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
+import { MODES } from '../../utils/shared';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
@@ -43,7 +44,7 @@ const defaultCluster = {
   kind:       'Cluster',
   metadata:   { name: '', namespace: '' },
   spec:       {
-    mode:        'shared',
+    mode:        MODES.SHARED,
     agents:      0,
     persistence: {
       storageRequestSize: '5Gi',
@@ -228,7 +229,7 @@ export default {
       provClusters:               [],
       parentCluster:              {},
       k3kCluster:                 {},
-      modeOptions:                [{ label: t('k3k.mode.shared'), value: 'shared' }, { label: t('k3k.mode.virtual'), value: 'virtual' }],
+      modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
       fvFormRuleSets:             [
         {
@@ -281,6 +282,10 @@ export default {
       set(newValue) {
         this.$emit('update:value', newValue);
       }
+    },
+
+    isSharedMode() {
+      return this.k3kCluster?.spec?.mode === MODES.SHARED;
     },
   },
 
@@ -532,8 +537,10 @@ export default {
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
             :mode="mode"
+            @update:k3k-mode="k3kCluster.spec.sync = {}"
           />
           <Sync
+            v-if="isSharedMode"
             v-model:sync="k3kCluster.spec.sync"
             :mode="mode"
           />

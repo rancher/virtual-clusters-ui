@@ -7,7 +7,6 @@ import FormValidation from '@shell/mixins/form-validation';
 import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 import NameNsDescription from '@shell/components/form/NameNsDescription';
-import { RANCHER_TYPES } from '@shell/components/form/ResourceQuota/shared';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
@@ -65,10 +64,6 @@ export default {
   },
 
   computed: {
-    quotaTypes() {
-      return RANCHER_TYPES;
-    },
-
     noneOption() {
       return this.t('generic.none');
     },
@@ -291,7 +286,6 @@ export default {
         <Quota
           v-model:value="quota"
           :mode="mode"
-          :types="quotaTypes"
           class="mb-20"
         />
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
@@ -343,8 +337,8 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              :mode="mode"
               v-model:value="podSecurityAdmissionLevel"
+              :mode="mode"
               :options="[noneOption,'privileged', 'baseline', 'restricted']"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
             />

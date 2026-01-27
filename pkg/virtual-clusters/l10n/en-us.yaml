@@ -256,3 +256,14 @@ typeLabel:
       one { Virtual Cluster Policy }
       other { Virtual Cluster Policies }
     }
+
+resourceQuota:
+  generic:
+    countPersistentVolumeClaims: Persistent Volume Claim Count
+    countPods: Pod Count
+    countReplicationControllers: Replication Controller Count
+    requestsNvidiaComGpu: GPU Requests
+    countSecrets: Secret Count
+    countServices: Service Count
+    servicesLoadBalancers: Load Balancer Count
+    countServicesNodePorts: NodePort Count

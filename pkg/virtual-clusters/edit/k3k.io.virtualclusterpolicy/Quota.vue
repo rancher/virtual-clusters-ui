@@ -2,6 +2,7 @@
 import ArrayList from '@rancher/shell/components/form/ArrayList';
 import Row from './QuotaRow';
 import { QUOTA_COMPUTED } from '@rancher/shell/components/form/ResourceQuota/shared';
+import { GENERIC_QUOTA_TYPES } from '../../utils/quota.js';
 
 export default {
   emits: ['remove', 'update:value'],
@@ -21,12 +22,6 @@ export default {
       default: () => {
         return {};
       }
-    },
-    types: {
-      type:    Array,
-      default: () => {
-        return [];
-      }
     }
   },
 
@@ -38,7 +33,13 @@ export default {
     this.typeValues = Object.keys(this.value);
   },
 
-  computed: { ...QUOTA_COMPUTED },
+  computed: {
+    ...QUOTA_COMPUTED,
+
+    types() {
+      return GENERIC_QUOTA_TYPES;
+    },
+  },
 
   methods: {
     updateType(i, type) {

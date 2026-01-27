@@ -1,5 +1,5 @@
 <script>
-import CruResource from '@shell/components/CruResource';
+import CruResource, { CONTEXT_HOOK_EDIT_YAML } from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
 import Labels from '@shell/components/form/Labels';
 import CreateEditView from '@shell/mixins/create-edit-view';
@@ -52,6 +52,10 @@ export default {
     if (!this.value.spec) {
       this.value.spec = {};
     }
+  },
+
+  created() {
+    this.registerBeforeHook(this.beforeYamlHook, 'assign-ns-before-edit-yaml');
   },
 
   data() {
@@ -223,6 +227,37 @@ export default {
       }
     },
 
+    async beforeYamlHook(hookContext) {
+      const projectComponent = this.$refs['project-selector'];
+
+      const { annotateAndSaveNamespaces, hasErrors } = projectComponent || {};
+
+      if (hookContext === CONTEXT_HOOK_EDIT_YAML && annotateAndSaveNamespaces) {
+        await new Promise((resolve, reject) => {
+          this.$store.dispatch('cluster/promptModal', {
+            component:      'GenericPrompt',
+            componentProps: {
+              title:     this.t('k3k.policy.editYamlModal.title'),
+              body:      this.t('k3k.policy.editYamlModal.body'),
+              applyMode: 'editAndContinue',
+              confirm:   async(confirmed) => {
+                if (confirmed) {
+                  await annotateAndSaveNamespaces();
+                  if (hasErrors) {
+                    reject(new Error('failed to annotate namespaces'));
+                  } else {
+                    resolve();
+                  }
+                } else {
+                  reject(new Error('User Cancelled'));
+                }
+              }
+            },
+          });
+        });
+      }
+    },
+
     closeError(index) {
       this.errors = this.errors.filter((_, i) => i !== index);
     }
@@ -239,6 +274,7 @@ export default {
     :resource="value"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
+    :apply-hooks="applyHooks"
     @finish="saveOverride"
     @cancel="cancel"
     @error="e=>errors=e"
@@ -343,8 +379,8 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              :mode="mode"
               v-model:value="podSecurityAdmissionLevel"
+              :mode="mode"
               :options="[noneOption,'privileged', 'baseline', 'restricted']"
               :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
             />

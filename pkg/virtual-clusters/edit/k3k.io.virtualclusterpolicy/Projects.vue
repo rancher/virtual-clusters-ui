@@ -154,7 +154,7 @@ export default {
 
       this.displayProjects = [...selectedButInError, ...this.deselectedProjects];
 
-      if(this.mode === _VIEW && !this.selectedProjects.length){
+      if (this.mode === _VIEW && !this.selectedProjects.length) {
         this.selectedProjects = ids;
       }
     },
@@ -284,7 +284,7 @@ export default {
 
       const policyName = `${ this.policy?.metadata?.name }`;
       const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
-      const editPath = this.$router.resolve(editRoute)?.fullPath; // edit path is used to add a 'go to edit' button to failure notifications
+      const editPath = this.policy?.id ? this.$router.resolve(editRoute)?.fullPath : ''; // edit path is used to add a 'go to edit' button to failure notifications
 
       this.selectedProjects.forEach((p) => {
         const namespaces = p.namespaces || [];
@@ -410,7 +410,7 @@ export default {
         title = this.t(`${ translationKeyPath }.error.title`);
         message = this.t(`${ translationKeyPath }.error.message`, { policyName, removeCount: toBeUnAssssignedCount });
 
-        if (nsErrored.length) {
+        if (nsErrored.length && editPath) {
           primaryAction = {
             label:  this.t('k3k.policy.projects.notification.primaryAction'),
             route: editPath,
@@ -438,17 +438,40 @@ export default {
     // notification if annotating projects fails
     addProjectNotification({ editPath }) {
       const policyName = this.policy?.metadata?.name;
+      const primaryAction = editPath ? {
+        label:  this.t('k3k.policy.projects.notification.primaryAction'),
+        route: editPath,
+      } : null;
 
       this.$store.dispatch('notifications/add', {
         level:         NotificationLevel.Error,
         title:         this.t('k3k.policy.projects.notification.savingProjects.title'),
         message:       this.t('k3k.policy.projects.notification.savingProjects.message', { policyName }),
-        primaryAction:            {
-          label:  this.t('k3k.policy.projects.notification.primaryAction'),
-          route: editPath,
-        },
-        id: randomStr()
+        primaryAction,
+        id:      randomStr()
       });
+    },
+
+    /**
+     * close modal and reload the edit view for the policy if the policy has been created
+     * @returns {void}
+     */
+    goToEdit() {
+      if (this.policy?.id) {
+        this.policy.goToEdit();
+      }
+      this.showModal = false;
+    },
+
+    /**
+     * close modal and return to the policy list view if the policy has been created
+     * @returns {void}
+     */
+    done() {
+      if (this.policy?.id) {
+        this.$emit('finish');
+      }
+      this.showModal = false;
     }
   },
 
@@ -550,13 +573,13 @@ export default {
             <button
               v-if="hasErrors"
               class="btn role-secondary mr-5"
-              @click="policy.goToEdit()"
+              @click="goToEdit"
             >
               {{ t('k3k.policy.projects.editPolicy') }}
             </button>
             <button
               class="btn role-primary"
-              @click="$emit('finish')"
+              @click="done"
             >
               {{ t('generic.done') }}
             </button>

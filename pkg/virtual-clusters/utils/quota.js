@@ -1,9 +1,9 @@
 export const GENERIC_QUOTA_TYPES = [
   {
-    value:          'configmaps',
+    value:          'count/configmaps',
     inputExponent:  0,
     baseUnit:       '',
-    labelKey:       'resourceQuota.configMaps',
+    labelKey:       'resourceQuota.generic.countConfigMaps',
     placeholderKey: 'resourceQuota.projectLimit.unitlessPlaceholder'
   },
   {
@@ -100,7 +100,7 @@ export const GENERIC_QUOTA_TYPES = [
     units:          'unitless',
     inputExponent:  0,
     baseUnit:       '',
-    labelKey:       'resourceQuota.generic.countServicesNodePorts',
+    labelKey:       'resourceQuota.generic.servicesNodePorts',
     placeholderKey: 'resourceQuota.projectLimit.unitlessPlaceholder'
   },
 ];

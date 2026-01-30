@@ -259,11 +259,12 @@ typeLabel:
 
 resourceQuota:
   generic:
-    countPersistentVolumeClaims: Persistent Volume Claim Count
+    countPersistentVolumeClaims: PersistentVolumeClaim Count
     countPods: Pod Count
-    countReplicationControllers: Replication Controller Count
+    countReplicationControllers: ReplicationController Count
     requestsNvidiaComGpu: GPU Requests
     countSecrets: Secret Count
     countServices: Service Count
-    servicesLoadBalancers: Load Balancer Count
-    countServicesNodePorts: NodePort Count
+    countConfigMaps: ConfigMap Count
+    servicesLoadBalancers: LoadBalancer Count
+    servicesNodePorts: NodePort Count

@@ -13,6 +13,28 @@ entries:
       catalog.cattle.io/ui-component: plugins
       catalog.cattle.io/ui-extensions-version: '>= 3.0.5-rc.6'
     apiVersion: v2
+    appVersion: 1.0.2-rc1
+    created: "2026-02-05T19:17:25.133619496Z"
+    description: Virtual cluster provisioning using K3K (Prime only)
+    digest: 3feccb9f4ce1bb9fcd48588c614313c78c63ebb2dc9ce533f9ad098f31d9025f
+    icon: https://raw.githubusercontent.com/rancher/virtual-clusters-ui/refs/heads/main/pkg/virtual-clusters/assets/icon-k3k.svg
+    name: virtual-clusters
+    type: application
+    urls:
+    - assets/virtual-clusters/virtual-clusters-1.0.2-rc1.tgz
+    version: 1.0.2-rc1
+  - annotations:
+      catalog.cattle.io/certified: rancher
+      catalog.cattle.io/display-name: Virtual Clusters
+      catalog.cattle.io/namespace: cattle-ui-plugin-system
+      catalog.cattle.io/os: linux
+      catalog.cattle.io/permits-os: linux, windows
+      catalog.cattle.io/prime-only: "true"
+      catalog.cattle.io/rancher-version: '>=2.12.0'
+      catalog.cattle.io/scope: management
+      catalog.cattle.io/ui-component: plugins
+      catalog.cattle.io/ui-extensions-version: '>= 3.0.5-rc.6'
+    apiVersion: v2
     appVersion: 1.0.1
     created: "2026-01-21T21:03:24.175721555Z"
     description: Virtual cluster provisioning using K3K (Prime only)
@@ -289,4 +311,4 @@ entries:
     urls:
     - assets/virtual-clusters/virtual-clusters-0.1.0-rc1.tgz
     version: 0.1.0-rc1
-generated: "2026-01-21T21:03:24.175074622Z"
+generated: "2026-02-05T19:17:25.13322772Z"

@@ -77,7 +77,7 @@ export default {
         const { max = {}, defaultRequest = {} } = limit;
 
         return {
-          limitsCpu: max.cpu, limitsMemory: max.memory, limitsGpu: max.gpu, requestsCpu: defaultRequest.cpu, requestsMemory: defaultRequest.memory
+          limitsCpu: max.cpu, limitsMemory: max.memory, limitsGpu: max['nvidia.com/gpu'], requestsCpu: defaultRequest.cpu, requestsMemory: defaultRequest.memory
         };
       },
 
@@ -112,7 +112,7 @@ export default {
           neu.defaultRequest.memory = requestsMemory;
         }
         if (limitsGpu !== undefined) {
-          neu.max.gpu = limitsGpu;
+          neu.max['nvidia.com/gpu'] = limitsGpu;
         }
         this.value.spec.limit.limits = [neu];
       }

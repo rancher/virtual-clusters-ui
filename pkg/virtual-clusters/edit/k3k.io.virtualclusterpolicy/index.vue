@@ -23,7 +23,7 @@ import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
 
-const CONTAINER_LIMIT_TYPE = 'container';
+const CONTAINER_LIMIT_TYPE = 'Container';
 
 export default {
   name: 'CRUClusterPolicy',

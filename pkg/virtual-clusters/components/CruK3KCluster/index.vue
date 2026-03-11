@@ -328,10 +328,26 @@ export default {
     // create import cluster command from new prov cluster
     // run a job to generate kubeconfig and run the import command on the virtual cluster
     async importCluster() {
-      const clusterToken = await this.value.getOrCreateToken();
+      let clusterToken;
 
-      while (!clusterToken.command) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
+      try {
+        clusterToken = await this.value.getOrCreateToken();
+
+        let attempts = 0;
+        const maxAttempts = 240; // 60-second wait before timing out
+
+        while (!clusterToken.command && attempts < maxAttempts) {
+          attempts++;
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+
+        if (!clusterToken.command) {
+          throw new Error('');
+        }
+      } catch {
+        this.errors.push(this.t('k3k.errors.timeoutGettingToken'));
+
+        return;
       }
 
       const command = clusterToken.command.split(' ');

@@ -200,7 +200,7 @@ k3k:
     loadingPolicies: Error fetching virtual cluster policies from {cluster}
     loadingNamespaces: Error fetching namespaces from {cluster}
     creatingRoles: 'Error creating virtual cluster roles'
-    timeoutGettingToken: 'Timed out waiting for the cluster registration command. The virtual cluster has begun provisioning, but will not be automatically registered with Rancher. Delete the cluster from the cluster list view and try again.'
+    timeoutGettingToken: 'Timed out waiting for the cluster registration command. Click save to try again.'
   landingPage:
     title: Virtual Clusters
     subtitle: Lightweight, fully isolated Kubernetes environments running inside your cluster

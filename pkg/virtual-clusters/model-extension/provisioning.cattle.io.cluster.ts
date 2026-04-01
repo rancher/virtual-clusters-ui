@@ -41,13 +41,9 @@ export class VClusterModelExtension implements IClusterModelExtension {
     const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];
     const name =  cluster.metadata.name
 
-    // Should probably show a growl
+
     if (parentClusterId && namespace) {
-      try {
-        await cluster.$dispatch('request', {
-          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
-          method: 'DELETE',
-        });
+    try {
           await cluster.$dispatch('request', {
           url:    `/k8s/clusters/${ parentClusterId }/v1/batch.jobs/${ namespace }/import-${ name }`,
           method: 'DELETE',
@@ -56,12 +52,26 @@ export class VClusterModelExtension implements IClusterModelExtension {
           url:    `/k8s/clusters/${ parentClusterId }/v1/configmaps/${ namespace }/import-${ name }`,
           method: 'DELETE',
         });
-      } catch (e) {
+      } catch (e: any) {
+        // silently fail if deleting job/configmap fails on "not found" 
+        // may have been deleted elsewhere or the cluster may be being deleted because configmap/job were not created successfully
+        if(e?.status !== 404){
+          cluster.$dispatch('growl/error', {
+          title: 'Error deleting cluster',
+          message: e
+          }, {root: true})
+        }
+      }
+      try {
+        await cluster.$dispatch('request', {
+          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
+          method: 'DELETE',
+        });
+      } catch (e: any) {
         cluster.$dispatch('growl/error', {
           title: 'Error deleting cluster',
           message: e
         }, {root: true})
-        console.error(e); // eslint-disable-line no-console
       }
     }
   }

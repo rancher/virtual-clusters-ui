@@ -227,7 +227,7 @@ export default {
       policy:                     null,
       connectingToHost:           false,
       provClusters:               [],
-      parentCluster:              {},
+      parentCluster:              {}, // provisioning cluster representing the "host cluster"
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
@@ -242,7 +242,15 @@ export default {
           rules:      ['namespaceRequired']
         },
       ],
-      VIEW: _VIEW
+      VIEW:                  _VIEW,
+      /**
+       * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
+       * if saving/importing goes wrong, we want to be able to delete the clusters and let the user try again
+       * the objects will be altered by saving the first time (eg annotations added)
+       * so we need to track their pre-save state to offer a proper do-over
+       */
+      provClusterBeforeSave:      null,
+      k3kClusterBeforeSave:  null,
     };
   },
 
@@ -334,20 +342,21 @@ export default {
         clusterToken = await this.value.getOrCreateToken();
 
         let attempts = 0;
-        const maxAttempts = 240; // 60-second wait before timing out
+        const maxAttempts = 2; // 60-second wait before timing out //TODO nb revert to 240
 
-        while (!clusterToken.command && attempts < maxAttempts) {
+        while (!clusterToken.bad && attempts < maxAttempts) {
           attempts++;
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
 
-        if (!clusterToken.command) {
+        if (!clusterToken.bad) {
           throw new Error('');
         }
+        // throw the same error for both cases of getOrCreateToken failure or timeout, to simplify error handling in the UI
       } catch {
-        this.errors.push(this.t('k3k.errors.timeoutGettingToken'));
-
-        return;
+        await this.deleteK3kCluster();
+        await this.deleteProvCluster();
+        throw new Error(this.t('k3k.errors.timeoutGettingToken'));
       }
 
       const command = clusterToken.command.split(' ');
@@ -387,6 +396,9 @@ export default {
     },
 
     async saveOverride(btnCb) {
+      this.provClusterBeforeSave = cloneDeep(this.value);
+      this.k3kClusterBeforeSave = cloneDeep(this.k3kCluster);
+
       const cluster = await this.findNormanCluster();
 
       try {
@@ -430,20 +442,42 @@ export default {
     },
 
     async deleteK3kCluster() {
-      const cluster = await this.findNormanCluster();
-      const { name, namespace } = this.k3kCluster.metadata || {};
+      try {
+        if (this.k3kCluster?.id) {
+          const revertedK3kCluster = await this.$store.dispatch('management/clone', { resource: this.k3kClusterBeforeSave });
 
-      if (name && namespace) {
-        try {
-          const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
+          const cluster = await this.findNormanCluster();
+          const { name, namespace } = this.k3kCluster.metadata || {};
 
-          await this.$store.dispatch('management/request', {
-            url,
-            method: 'DELETE'
-          });
-        } catch (e) {
-          this.errors.push(e);
+          if (name && namespace) {
+            try {
+              const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
+
+              await this.$store.dispatch('management/request', {
+                url,
+                method: 'DELETE'
+              });
+            } catch (e) {
+              this.errors.push(e);
+            }
+            this.k3kCluster = revertedK3kCluster;
+          }
         }
+      } catch (e) {
+        // TODO nb what the hell do we do at this point
+      }
+    },
+
+    async deleteProvCluster() {
+      try {
+        if (this.value?.id) {
+          const revertedProvCluster = await this.$store.dispatch('management/clone', { resource: this.provClusterBeforeSave });
+
+          await this.value.remove();
+          this.localValue = revertedProvCluster;
+        }
+      } catch (e) {
+        // TODO nb what the hell do we do at this point
       }
     },
 

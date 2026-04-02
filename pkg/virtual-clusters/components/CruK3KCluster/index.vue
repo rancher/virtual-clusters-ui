@@ -37,6 +37,7 @@ import { MODES } from '../../utils/shared';
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
 import merge from 'lodash/merge';
+import { set } from '@shell/utils/object';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -328,9 +329,15 @@ export default {
 
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
-      await this.$store.dispatch('management/request', {
+      const res = await this.$store.dispatch('management/request', {
         url: k3kUrl, method: 'POST', data: this.k3kCluster
       });
+
+      for (const key in res) {
+        if (!key.startsWith('_')) {
+          set(this.k3kCluster, key, res[key]);
+        }
+      }
     },
 
     // create import cluster command from new prov cluster
@@ -340,23 +347,19 @@ export default {
 
       try {
         clusterToken = await this.value.getOrCreateToken();
-
         let attempts = 0;
-        const maxAttempts = 2; // 60-second wait before timing out //TODO nb revert to 240
+        const maxAttempts = 240; // 60-second wait before timing out
 
-        while (!clusterToken.bad && attempts < maxAttempts) {
+        while (!clusterToken.command && attempts < maxAttempts) {
           attempts++;
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
 
-        if (!clusterToken.bad) {
-          throw new Error('');
+        if (!clusterToken.command) {
+          throw new Error(this.t('k3k.errors.gettingToken'));
         }
-        // throw the same error for both cases of getOrCreateToken failure or timeout, to simplify error handling in the UI
-      } catch {
-        await this.deleteK3kCluster();
-        await this.deleteProvCluster();
-        throw new Error(this.t('k3k.errors.timeoutGettingToken'));
+      } catch (e) {
+        throw new Error(`${ this.t('k3k.errors.creatingAndRegisteringCluster') } ${ e?.message || e }`);
       }
 
       const command = clusterToken.command.split(' ');
@@ -425,10 +428,17 @@ export default {
         }
 
         // this.save is a method defined in the create edit view mixin
-        // it handles errors returned when POSTing the new provisioning cluster - we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
-        const cb = (passed) => {
+        // it handles errors returned when POSTing the new provisioning cluster
+        // we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
+        const cb = async(passed) => {
           if (!passed && this.mode === _CREATE) {
-            this.deleteK3kCluster();
+            try {
+              await this.deleteResourcesForRedo();
+            } catch (e) {
+              this.errors.push(e);
+
+              return btnCb(false);
+            }
           }
 
           return btnCb(passed);
@@ -438,6 +448,32 @@ export default {
       } catch (err) {
         this.errors.push(err);
         btnCb(false);
+      }
+    },
+
+    // if created, delete the k3k cluster and provisioning cluster and reset this.k3kCluster and this.localValue (prov cluster) so that the user can retry clicking save
+    // only used during create, never edit
+    async deleteResourcesForRedo() {
+      const errors = [];
+
+      try {
+        await this.deleteK3kCluster();
+      } catch (e) {
+        errors.push(e);
+      }
+
+      try {
+        await this.deleteProvCluster();
+      } catch (e) {
+        errors.push(e);
+      }
+
+      // If any errors occurred, throw them
+      if (errors.length > 0) {
+        if (errors.length === 1) {
+          throw errors[0];
+        }
+        throw new Error(errors.map((e) => e?.message || String(e)).join('\n'));
       }
     },
 
@@ -464,7 +500,8 @@ export default {
           }
         }
       } catch (e) {
-        // TODO nb what the hell do we do at this point
+        // warn users the k3k cluster might still exist
+        throw new Error(`${ this.t('k3k.errors.deletingK3kCluster') }\n${ e?.message || e }`);
       }
     },
 
@@ -477,7 +514,8 @@ export default {
           this.localValue = revertedProvCluster;
         }
       } catch (e) {
-        // TODO nb what the hell do we do at this point
+        // warn users the prov cluster might still exist
+        throw new Error(`${ this.t('k3k.errors.deletingProvCluster') }\n${ e?.message || e }`);
       }
     },
 

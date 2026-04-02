@@ -52,26 +52,19 @@ export class VClusterModelExtension implements IClusterModelExtension {
           url:    `/k8s/clusters/${ parentClusterId }/v1/configmaps/${ namespace }/import-${ name }`,
           method: 'DELETE',
         });
+          await cluster.$dispatch('request', {
+          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
+          method: 'DELETE',
+        });
       } catch (e: any) {
-        // silently fail if deleting job/configmap fails on "not found" 
-        // may have been deleted elsewhere or the cluster may be being deleted because configmap/job were not created successfully
+        // silently fail if deleting fails on "not found" 
+        // may have been deleted elsewhere or the cluster may be being deleted because configmap/job/k3kCluster were not created successfully
         if(e?.status !== 404){
           cluster.$dispatch('growl/error', {
           title: 'Error deleting cluster',
           message: e
           }, {root: true})
         }
-      }
-      try {
-        await cluster.$dispatch('request', {
-          url:    `/k8s/clusters/${ parentClusterId }/v1/k3k.io.clusters/${ namespace }/${ name }`,
-          method: 'DELETE',
-        });
-      } catch (e: any) {
-        cluster.$dispatch('growl/error', {
-          title: 'Error deleting cluster',
-          message: e
-        }, {root: true})
       }
     }
   }

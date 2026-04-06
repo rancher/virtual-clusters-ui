@@ -164,12 +164,6 @@ export default {
   },
 
   watch: {
-    k3sVersionOptions(neu = []) {
-      if (this.mode === _CREATE && neu.length && !this.k3kCluster.spec.version) {
-        this.k3kCluster.spec.version = neu[0];
-      }
-    },
-
     'k3kCluster.spec.expose'(neu) {
       if (neu.ingress) {
         this.fvFormRuleSets.push({
@@ -281,7 +275,9 @@ export default {
     },
 
     k3sVersionOptions() {
-      return (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
+      const out =  (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
+      out.unshift({label: this.t('k3k.k3sVersion.default'), value: null})
+      return out
     },
 
     localValue: {
@@ -611,7 +607,8 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model:value="k3kCluster.spec.version"
+              :value="k3kCluster.spec.version || t('k3k.k3sVersion.default')"
+              @update:value="e=>k3kCluster.spec.version=e"
               label-key="k3k.k3sVersion.label"
               :options="k3sVersionOptions"
               :mode="mode"

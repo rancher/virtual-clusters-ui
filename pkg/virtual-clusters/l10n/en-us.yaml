@@ -105,6 +105,7 @@ k3k:
           one {The selected policies are collectively applied to one virtual cluster. Deleting the policies now will remove resource constraints from that cluster.}
           other {The selected policies are currently applied to {count} virtual clusters. Deleting the policies now will remove resource constraints from those clusters.}
         }
+    viewPolicy: View Policy Configuration
   targetNamespace:
     label: Target Namespace
   hostCluster:
@@ -153,6 +154,7 @@ k3k:
     label: TLS Alternate Names
   k3sVersion:
     label: K3s Version
+    default: Default (use host cluster version)
   expose:
     label: Direct API Server Exposure
     description: Expose the virtual cluster's API server. By default, the API server is only exposed as a ClusterIP, which is relatively secure but difficult to access from outside the cluster.

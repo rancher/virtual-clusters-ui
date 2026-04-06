@@ -263,6 +263,7 @@ export default {
 
     <Tabbed
       :side-tabs="true"
+      :use-hash="false"
     >
       <Tab
         :weight="4"

@@ -8,7 +8,6 @@ import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 import NameNsDescription from '@shell/components/form/NameNsDescription';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
-import KeyValue from '@shell/components/form/KeyValue.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
@@ -16,6 +15,7 @@ import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
 
 import Projects from './Projects.vue';
+import Affinity from './Affinity.vue';
 import { ANNOTATIONS } from '../../types';
 import Mode from '../../components/Mode.vue';
 import Sync from '../../components/Sync.vue';
@@ -40,9 +40,9 @@ export default {
     Labels,
     ContainerResourceLimit,
     Quota,
-    KeyValue,
     LabeledSelect,
     Projects,
+    Affinity,
     Checkbox,
     Banner,
     Sync
@@ -266,7 +266,7 @@ export default {
       :use-hash="false"
     >
       <Tab
-        :weight="4"
+        :weight="5"
         name="config"
         label-key="k3k.policy.tabs.config"
       >
@@ -285,6 +285,17 @@ export default {
         <Sync
           v-if="isSharedMode"
           v-model:sync="sync"
+          :mode="mode"
+        />
+      </Tab>
+      <Tab
+        :weight="4"
+        name="affinity"
+        label-key="k3k.policy.tabs.scheduling"
+      >
+        <Affinity
+          v-model:server-affinity="value.spec.defaultServerAffinity"
+          v-model:agent-affinity="value.spec.defaultAgentAffinity"
           :mode="mode"
         />
       </Tab>
@@ -311,30 +322,6 @@ export default {
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
       >
-        <div
-          class="row mb-20"
-        >
-          <div class="col span-12">
-            <KeyValue
-              v-model:value="value.spec.defaultNodeSelector"
-              :initial-empty-row="true"
-              :mode="mode"
-              :read-allowed="false"
-              :title="t('k3k.nodeSelector.label')"
-              :add-label="t('k3k.nodeSelector.addLabel')"
-            >
-              <template #title>
-                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
-                <t
-                  class="text-muted"
-                  raw
-                  k="k3k.nodeSelector.tooltip"
-                />
-              </template>
-            </KeyValue>
-          </div>
-        </div>
-
         <div class="row mb-10">
           <div class="col span-12">
             <h3>{{ t('k3k.policy.security.label') }}</h3>
@@ -388,6 +375,7 @@ export default {
           </div>
         </div>
       </Tab>
+
       <Tab
         :weight="1"
         name="labels"

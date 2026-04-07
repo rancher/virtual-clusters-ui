@@ -35,7 +35,8 @@ const K3K_VALUES = {
   }
 };
 
-const INCLUDE_LOCAL = process.env.dev;
+// const INCLUDE_LOCAL = process.env.dev;
+const INCLUDE_LOCAL = true; // TODO nb remove
 
 export default {
   name: 'K3kHostClusterAndInstallk3k',

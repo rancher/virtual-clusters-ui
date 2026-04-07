@@ -8,6 +8,7 @@ k3k:
       config: Config
       resourceAllocation: Resource Allocation
       advanced: Advanced
+      scheduling: Scheduling
     headers:
       quotas: Quotas
       resourceLimits: Container Default Resource Limits
@@ -85,6 +86,9 @@ k3k:
         resourceType: Resource Type
         clusterSetLimit: Cluster Set Limit
         vcSetLimit: Virtual Cluster Set Limit
+    affinity:
+      serverNodeScheduling: Server Pod Scheduling
+      agentNodeScheduling: Agent Pod Scheduling
     listView:
       modeHeader: Mode
       projectHeader: Assigned Projects

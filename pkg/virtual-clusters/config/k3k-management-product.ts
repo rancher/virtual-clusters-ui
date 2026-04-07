@@ -6,7 +6,7 @@ export async function init($plugin:any, store:any) {
     configureType,
   } = $plugin.DSL(store, 'manager');
 
-    if(isRancherPrime()){
+    if(true /* //TODO NB revert */){
         configureType('provisioning.cattle.io.cluster', {
           listGroups: [  
             {

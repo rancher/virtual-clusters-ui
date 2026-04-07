@@ -14,7 +14,7 @@ export async function init($plugin:any, store:any) {
     headers
   } = $plugin.DSL(store, NAME);
 
-    if(isRancherPrime()){
+    if(true /* //TODO NB revert */){
         product({
           inStore:             'cluster',
           inExplorer:          true,

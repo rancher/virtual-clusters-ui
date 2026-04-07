@@ -48,6 +48,6 @@ export class k3kProvisioner implements IClusterProvisioner {
   }
 
   get hidden(){
-    return !isRancherPrime()
+    return !true /* //TODO NB revert */
   }
 }

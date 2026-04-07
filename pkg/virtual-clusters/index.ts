@@ -62,7 +62,7 @@ export default function(plugin: IPlugin): void {
   plugin.addNavHooks(fetchVersionData, undefined, undefined, async(store: any)=>{
     try{
       await fetchVersionData(store)
-      if(isRancherPrime()){
+      if(true /* //TODO NB revert */){
         await Promise.all([store.dispatch('management/loadSchemas'), store.dispatch('rancher/loadSchemas')])
         const roleSchema = store.getters['management/byId'](SCHEMA, MANAGEMENT.ROLE_TEMPLATE )
 

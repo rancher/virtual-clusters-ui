@@ -32,6 +32,8 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
+import Affinity from '../../edit/k3k.io.virtualclusterpolicy/Affinity.vue';
+
 import { MODES } from '../../utils/shared';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
@@ -94,7 +96,8 @@ export default {
     ArrayList,
     ClusterPolicy,
     Mode,
-    Sync
+    Sync,
+    Affinity
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -275,9 +278,11 @@ export default {
     },
 
     k3sVersionOptions() {
-      const out =  (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
-      out.unshift({label: this.t('k3k.k3sVersion.default'), value: null})
-      return out
+      const out = (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
+
+      out.unshift({ label: this.t('k3k.k3sVersion.default'), value: null });
+
+      return out;
     },
 
     localValue: {
@@ -585,7 +590,7 @@ export default {
       <Tab
         name="virtual-cluster"
         label-key="k3k.sections.basics"
-        :weight="10"
+        :weight="11"
       >
         <InstallK3k
           v-model:parent-cluster="parentCluster"
@@ -608,10 +613,10 @@ export default {
           <div class="col span-6">
             <LabeledSelect
               :value="k3kCluster.spec.version || t('k3k.k3sVersion.default')"
-              @update:value="e=>k3kCluster.spec.version=e"
               label-key="k3k.k3sVersion.label"
               :options="k3sVersionOptions"
               :mode="mode"
+              @update:value="e=>k3kCluster.spec.version=e"
             />
           </div>
         </div>
@@ -642,7 +647,7 @@ export default {
       <Tab
         name="server-agents"
         label-key="k3k.sections.serverAndAgents"
-        :weight="9"
+        :weight="10"
       >
         <div class="row mb-20">
           <div class="col span-3">
@@ -743,6 +748,18 @@ export default {
             </KeyValue>
           </div>
         </div>
+      </Tab>
+      <Tab
+        v-if="!policy"
+        name="affinity"
+        label-key="k3k.policy.tabs.scheduling"
+        :weight="9"
+      >
+        <Affinity
+          v-model:server-affinity="k3kCluster.spec.serverAffinity"
+          v-model:agent-affinity="k3kCluster.spec.agentAffinity"
+          :mode="mode"
+        />
       </Tab>
       <Tab
         name="Networking"

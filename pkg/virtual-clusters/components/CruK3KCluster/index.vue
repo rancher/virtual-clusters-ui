@@ -201,32 +201,30 @@ export default {
       }
     },
 
-    // when users select a policy, populate the k3k cluster object with configuration from the policy
+    /**
+   * When users select a policy the k3k cluster spec is updated to match it
+   * if a particular field is undefined in the new policy the k3k cluster is updated to match defaultCluster
+   */
     policy: {
       handler(neu) {
-        // policy and cluster keys do not all match up: map from cluster:policy
+        const policyOverrides = {
+          mode:           'allowedMode',
+          nodeSelector:   'defaultNodeSelector',
+          sync:           'sync',
+          agentAffinity:  'defaultAgentAffinity',
+          serverAffinity: 'defaultServerAffinity'
+        };
 
-        // const policyOverrides = {
-        //   mode:           'allowedMode',
-        //   nodeSelector:   'defaultNodeSelector',
-        //   sync:           'sync',
-        //   agentAffinity:  'defaultAgentAffinity',
-        //   serverAffinity: 'defaultServerAffinity'
-        // };
+        const applyPolicyOverrides = (policySpec = {}) => {
+          for (const [clusterKey, policyKey] of Object.entries(policyOverrides)) {
+            const policyValue = policySpec[policyKey];
+            const fallbackValue = defaultCluster.spec[clusterKey];
 
-        if (neu?.spec) {
-          this.k3kCluster.spec.mode = neu.spec.allowedMode;
-          this.k3kCluster.spec.nodeSelector = neu.spec.defaultNodeSelector || defaultCluster.spec.nodeSelector;
-          this.k3kCluster.spec.sync = neu.spec.sync || defaultCluster.spec.sync;
-          this.k3kCluster.spec.agentAffinity = neu.spec.defaultServerAffinity || defaultCluster.spec.agentAffinity;
-          this.k3kCluster.spec.serverAffinity = neu.spec.defaultServerAffinity || defaultCluster.spec.serverAffinity;
-        } else {
-          this.k3kCluster.spec.mode = defaultCluster.spec.mode;
-          this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;
-          this.k3kCluster.spec.sync = defaultCluster.spec.sync;
-          this.k3kCluster.spec.serverAffinity = defaultCluster.spec.serverAffinity;
-          this.k3kCluster.spec.agentAffinity = defaultCluster.spec.agentAffinity;
-        }
+            this.k3kCluster.spec[clusterKey] = policyValue !== undefined ? cloneDeep(policyValue) : cloneDeep(fallbackValue);
+          }
+        };
+
+        applyPolicyOverrides(neu?.spec);
       },
       deep: true
     }

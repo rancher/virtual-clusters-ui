@@ -1,3 +1,4 @@
+<!-- eslint-disable node/no-callback-literal -->
 <script>
 import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
@@ -35,8 +36,7 @@ const K3K_VALUES = {
   }
 };
 
-// const INCLUDE_LOCAL = process.env.dev;
-const INCLUDE_LOCAL = true; // TODO nb remove
+const INCLUDE_LOCAL = process.env.dev;
 
 export default {
   name: 'K3kHostClusterAndInstallk3k',
@@ -207,7 +207,7 @@ export default {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
         metadata:   { name: K3K_REPO_NAME },
-        spec:       { url: K3K_REPO_URL, insecurePlainHttp:	false }
+        spec:       { url: K3K_REPO_URL, insecurePlainHttp: false }
       };
 
       const cluster = this.parentCluster;
@@ -250,6 +250,7 @@ export default {
 
             if (repoReq?.entries?.[K3K_CHART_NAME] && repoReq?.entries?.[K3K_CHART_NAME].length) {
               latestK3kChartVersion = (repoReq?.entries?.[K3K_CHART_NAME] || [])[0]?.version;
+              // eslint-disable-next-line no-console
               console.log('Installing k3k version...', latestK3kChartVersion);
               fetched = true;
             } else {

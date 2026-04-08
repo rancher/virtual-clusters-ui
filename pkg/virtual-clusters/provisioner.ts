@@ -3,7 +3,6 @@ import { mapDriver } from '@shell/store/plugins';
 import CruK3KCluster from './components/CruK3KCluster/index.vue';
 import { isRancherPrime } from '@shell/config/version';
 
-
 export class k3kProvisioner implements IClusterProvisioner {
   static ID = 'k3k'
 
@@ -43,11 +42,11 @@ export class k3kProvisioner implements IClusterProvisioner {
     };
   }
 
-  get showImport(){
-    return false
+  get showImport() {
+    return false;
   }
 
-  get hidden(){
-    return !true /* //TODO NB revert */
+  get hidden() {
+    return !isRancherPrime();
   }
 }

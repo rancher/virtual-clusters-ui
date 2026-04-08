@@ -14,7 +14,7 @@ export default {
   components: { InstallK3k, Loading },
 
   async fetch() {
-    this.isPrime = true; // TODO nb revert;
+    this.isPrime = isRancherPrime();
     if (this.isPrime) {
       const currentCluster = this.$store.getters['currentCluster'];
       const provClusterId = currentCluster.provClusterId;

@@ -2,7 +2,7 @@ import { importTypes } from '@rancher/auto-import';
 import { IPlugin, ModelExtensionConstructor, PanelLocation } from '@shell/core/types';
 import { k3kProvisioner } from './provisioner';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
-import virtualClusterRouting from './routes'
+import virtualClusterRouting  from './routes.js'
 import virtualClusterAdminRole from './resources/virtual-cluster-admin-role.js'
 import virtualClusterPolicyAdminRole from './resources/virtual-cluster-policy-read-role.js'
 import { MANAGEMENT, SCHEMA } from '@shell/config/types';

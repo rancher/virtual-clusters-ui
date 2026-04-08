@@ -1,11 +1,13 @@
 <script>
+import { computed, defineComponent } from 'vue';
+import { useStore } from 'vuex';
 import Drawer from '@shell/components/Drawer/Chrome.vue';
 import { _VIEW } from '@shell/config/query-params';
 import { useDrawer } from '@shell/composables/drawer';
 
 import PolicyEditor from '../edit/k3k.io.virtualclusterpolicy/index.vue';
 
-export default {
+export default defineComponent({
   name: 'PolicyDrawer',
 
   components: {
@@ -22,22 +24,21 @@ export default {
     }
   },
 
-  setup() {
+  setup(props) {
+    const store = useStore();
     const { close } = useDrawer();
 
-    return { closeDrawer: close };
-  },
+    const title = computed(() => {
+      return props.policy?.metadata?.name || store.getters['i18n/t']('k3k.policy.label');
+    });
 
-  data() {
-    return { VIEW: _VIEW };
+    return {
+      VIEW:        _VIEW,
+      closeDrawer: close,
+      title,
+    };
   },
-
-  computed: {
-    title() {
-      return this.policy?.metadata?.name || this.$store.getters['i18n/t']('k3k.policy.label');
-    }
-  }
-};
+});
 </script>
 
 <template>

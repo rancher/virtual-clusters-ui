@@ -1,5 +1,12 @@
 module.exports = {
-  root: true,
+  root:          true,
+  parser:        'vue-eslint-parser',
+  parserOptions: {
+    parser:              '@typescript-eslint/parser',
+    ecmaVersion:         'latest',
+    sourceType:          'module',
+    extraFileExtensions: ['.vue']
+  },
   env:  {
     browser: true,
     node:    true

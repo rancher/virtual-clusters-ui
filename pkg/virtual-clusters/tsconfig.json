@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "rootDir": ".",
-    "allowJs": true,
+    // "allowJs": true,
     "target": "esnext",
     "module": "esnext",
     "strict": true,
@@ -18,13 +18,10 @@
     "typeRoots": [
       "../../node_modules",
       "../../node_modules/@rancher/shell/types",
+      "../../node_modules/@types",
     ],
     "types": [
       "node",
-      "webpack-env",
-      "@types/node",
-      "@types/jest",
-      "@types/lodash",
       "rancher",
       "shell"
     ],
@@ -39,7 +36,7 @@
         "../../node_modules/@rancher/shell/*"
       ],
       "@components/*": [
-        "../../node_modules/@rancher/components/*"
+        "@rancher/components/*"
       ]
     }
   },
@@ -48,10 +45,10 @@
     "**/*.d.ts",
     "**/*.tsx",
     "**/*.vue",
-    "./index.d.ts"
   ],
   "exclude": [
     "../../node_modules",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "**/index.ts"
   ]
 }

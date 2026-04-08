@@ -15,7 +15,7 @@ import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
 
 import Projects from './Projects.vue';
-import Affinity from './Affinity.vue';
+import PolicyAffinity from './PolicyAffinity.vue';
 import { ANNOTATIONS } from '../../types';
 import Mode from '../../components/Mode.vue';
 import Sync from '../../components/Sync.vue';
@@ -42,7 +42,7 @@ export default {
     Quota,
     LabeledSelect,
     Projects,
-    Affinity,
+    PolicyAffinity,
     Checkbox,
     Banner,
     Sync
@@ -311,7 +311,7 @@ export default {
         name="affinity"
         label-key="k3k.policy.tabs.topology"
       >
-        <Affinity
+        <PolicyAffinity
           v-model:server-affinity="value.spec.defaultServerAffinity"
           v-model:agent-affinity="value.spec.defaultAgentAffinity"
           :mode="mode"

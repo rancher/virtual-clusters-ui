@@ -32,7 +32,7 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
-import Affinity from '../../edit/k3k.io.virtualclusterpolicy/Affinity.vue';
+import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
 
 import { MODES } from '../../utils/shared';
 
@@ -97,7 +97,7 @@ export default {
     ClusterPolicy,
     Mode,
     Sync,
-    Affinity
+    PolicyAffinity
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -201,16 +201,32 @@ export default {
       }
     },
 
+    // when users select a policy, populate the k3k cluster object with configuration from the policy
     policy: {
       handler(neu) {
+        // policy and cluster keys do not all match up: map from cluster:policy
+
+        const policyOverrides = {
+          mode:          'allowedMode',
+          nodeSelector:  'defaultNodeSelector',
+          sync:          'sync',
+          agentAffinity:
+        'defaultAgentAffinity',
+          serverAffinity: 'defaultServerAffinity'
+        };
+
         if (neu?.spec) {
           this.k3kCluster.spec.mode = neu.spec.allowedMode;
           this.k3kCluster.spec.nodeSelector = neu.spec.defaultNodeSelector || defaultCluster.spec.nodeSelector;
           this.k3kCluster.spec.sync = neu.spec.sync || defaultCluster.spec.sync;
+          this.k3kCluster.spec.agentAffinity = neu.spec.defaultServerAffinity || defaultCluster.spec.agentAffinity;
+          this.k3kCluster.spec.serverAffinity = neu.spec.defaultServerAffinity || defaultCluster.spec.serverAffinity;
         } else {
           this.k3kCluster.spec.mode = defaultCluster.spec.mode;
           this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;
           this.k3kCluster.spec.sync = defaultCluster.spec.sync;
+          this.k3kCluster.spec.serverAffinity = defaultCluster.spec.serverAffinity;
+          this.k3kCluster.spec.agentAffinity = defaultCluster.spec.agentAffinity;
         }
       },
       deep: true
@@ -755,7 +771,7 @@ export default {
         label-key="k3k.policy.tabs.topology"
         :weight="9"
       >
-        <Affinity
+        <PolicyAffinity
           v-model:server-affinity="k3kCluster.spec.serverAffinity"
           v-model:agent-affinity="k3kCluster.spec.agentAffinity"
           :mode="mode"

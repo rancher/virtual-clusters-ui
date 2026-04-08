@@ -2466,7 +2466,7 @@
   resolved "https://registry.npmjs.org/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
   integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
 
-"@rancher/components@^0.3.0-alpha.1":
+"@rancher/components@0.3.0-alpha.4":
   version "0.3.0-alpha.4"
   resolved "https://registry.npmjs.org/@rancher/components/-/components-0.3.0-alpha.4.tgz#36e9d40ae0d3a66af502173a287c2b79a5f92686"
   integrity sha512-MaeZod0qd7+v92TADEF/p6BJ+GPF5SmjU7Yj2pyJMq8s6RnsEVQj9ta5apHnywVwQ3mrTvQUxdYKX0KAagg9sQ==

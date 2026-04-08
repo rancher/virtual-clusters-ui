@@ -206,14 +206,13 @@ export default {
       handler(neu) {
         // policy and cluster keys do not all match up: map from cluster:policy
 
-        const policyOverrides = {
-          mode:          'allowedMode',
-          nodeSelector:  'defaultNodeSelector',
-          sync:          'sync',
-          agentAffinity:
-        'defaultAgentAffinity',
-          serverAffinity: 'defaultServerAffinity'
-        };
+        // const policyOverrides = {
+        //   mode:           'allowedMode',
+        //   nodeSelector:   'defaultNodeSelector',
+        //   sync:           'sync',
+        //   agentAffinity:  'defaultAgentAffinity',
+        //   serverAffinity: 'defaultServerAffinity'
+        // };
 
         if (neu?.spec) {
           this.k3kCluster.spec.mode = neu.spec.allowedMode;

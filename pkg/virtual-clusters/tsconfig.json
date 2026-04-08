@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "rootDir": ".",
-    // "allowJs": true,
+    "outDir": "./dist",
+    "allowJs": true,
     "target": "esnext",
     "module": "esnext",
     "strict": true,
@@ -44,11 +45,10 @@
     "**/*.ts",
     "**/*.d.ts",
     "**/*.tsx",
-    "**/*.vue",
+    "**/*.vue"
   ],
   "exclude": [
     "../../node_modules",
     "**/*.test.ts",
-    "**/index.ts"
   ]
 }

@@ -1,49 +1,29 @@
-<script>
-import { computed, defineComponent } from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 import Drawer from '@shell/components/Drawer/Chrome.vue';
 import { _VIEW } from '@shell/config/query-params';
 import { useDrawer } from '@shell/composables/drawer';
 
 import PolicyEditor from '../edit/k3k.io.virtualclusterpolicy/index.vue';
+import type { K3kPolicy } from '../types/k3k';
 
-export default defineComponent({
-  name: 'PolicyDrawer',
+const props = withDefaults(defineProps<{ policy?: K3kPolicy }>(), { policy: () => ({}) });
 
-  components: {
-    Drawer,
-    PolicyEditor,
-  },
+const VIEW = _VIEW;
+const store = useStore();
+const { close } = useDrawer();
 
-  props: {
-    policy: {
-      type:    Object,
-      default: () => {
-        return {};
-      }
-    }
-  },
-
-  setup(props) {
-    const store = useStore();
-    const { close } = useDrawer();
-
-    const title = computed(() => {
-      return props.policy?.metadata?.name || store.getters['i18n/t']('k3k.policy.label');
-    });
-
-    return {
-      VIEW:        _VIEW,
-      closeDrawer: close,
-      title,
-    };
-  },
+const title = computed(() => {
+  return props.policy?.metadata?.name || store.getters['i18n/t']('k3k.policy.label');
 });
+
+const closeDrawer = close;
 </script>
 
 <template>
   <Drawer
-    :aria-target="title"
+    v-bind="{ ariaTarget: title }"
     @close="closeDrawer"
   >
     <template #title>

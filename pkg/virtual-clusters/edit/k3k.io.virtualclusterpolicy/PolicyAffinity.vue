@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import NodeAffinity from '@shell/components/form/NodeAffinity';
 import PodAffinity from '@shell/components/form/PodAffinity';
-
-type AffinityValue = Record<string, unknown>;
+import type { AffinityValue } from '../../types/k3k';
 
 const props = defineProps<{
   serverAffinity: AffinityValue;
@@ -10,6 +9,7 @@ const props = defineProps<{
   mode: string;
 }>();
 
+// eslint-disable-next-line func-call-spacing
 const emit = defineEmits<{
   (e: 'update:serverAffinity', value: AffinityValue): void;
   (e: 'update:agentAffinity', value: AffinityValue): void;

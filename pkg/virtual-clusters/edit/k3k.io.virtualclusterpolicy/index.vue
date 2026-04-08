@@ -288,19 +288,9 @@ export default {
           :mode="mode"
         />
       </Tab>
+
       <Tab
         :weight="4"
-        name="affinity"
-        label-key="k3k.policy.tabs.scheduling"
-      >
-        <Affinity
-          v-model:server-affinity="value.spec.defaultServerAffinity"
-          v-model:agent-affinity="value.spec.defaultAgentAffinity"
-          :mode="mode"
-        />
-      </Tab>
-      <Tab
-        :weight="3"
         name="resources"
         label-key="k3k.policy.tabs.resourceAllocation"
       >
@@ -313,6 +303,17 @@ export default {
         <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
         <ContainerResourceLimit
           v-model:value="defaultLimits"
+          :mode="mode"
+        />
+      </Tab>
+      <Tab
+        :weight="3"
+        name="affinity"
+        label-key="k3k.policy.tabs.topology"
+      >
+        <Affinity
+          v-model:server-affinity="value.spec.defaultServerAffinity"
+          v-model:agent-affinity="value.spec.defaultAgentAffinity"
           :mode="mode"
         />
       </Tab>

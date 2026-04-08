@@ -8,7 +8,7 @@ k3k:
       config: Config
       resourceAllocation: Resource Allocation
       advanced: Advanced
-      scheduling: Scheduling
+      topology: Topology
     headers:
       quotas: Quotas
       resourceLimits: Container Default Resource Limits
@@ -87,8 +87,8 @@ k3k:
         clusterSetLimit: Cluster Set Limit
         vcSetLimit: Virtual Cluster Set Limit
     affinity:
-      serverNodeScheduling: Server Pod Scheduling
-      agentNodeScheduling: Agent Pod Scheduling
+      serverNodeScheduling: Server Scheduling
+      agentNodeScheduling: Agent Scheduling
     listView:
       modeHeader: Mode
       projectHeader: Assigned Projects
@@ -158,7 +158,7 @@ k3k:
     label: TLS Alternate Names
   k3sVersion:
     label: K3s Version
-    default: Default (use host cluster version)
+    default: Same k8s version as host
   expose:
     label: Direct API Server Exposure
     description: Expose the virtual cluster's API server. By default, the API server is only exposed as a ClusterIP, which is relatively secure but difficult to access from outside the cluster.

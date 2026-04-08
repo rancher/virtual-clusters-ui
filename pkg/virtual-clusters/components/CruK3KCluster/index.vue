@@ -752,7 +752,7 @@ export default {
       <Tab
         v-if="!policy"
         name="affinity"
-        label-key="k3k.policy.tabs.scheduling"
+        label-key="k3k.policy.tabs.topology"
         :weight="9"
       >
         <Affinity

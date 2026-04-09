@@ -253,15 +253,16 @@ export default {
           rules:      ['namespaceRequired']
         },
       ],
-      VIEW:                  _VIEW,
       /**
        * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
        * if saving/importing goes wrong, we want to be able to delete the clusters and let the user try again
        * the objects will be altered by saving the first time (eg annotations added)
        * so we need to track their pre-save state to offer a proper do-over
        */
-      provClusterBeforeSave:      null,
+      provClusterBeforeSave: null,
       k3kClusterBeforeSave:  null,
+      VIEW:                  _VIEW,
+      defaultVersionLabel:   this.t('k3k.k3sVersion.default')
     };
   },
 
@@ -293,7 +294,7 @@ export default {
     k3sVersionOptions() {
       const out = (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
 
-      out.unshift({ label: this.t('k3k.k3sVersion.default'), value: null });
+      out.unshift(this.defaultVersionLabel);
 
       return out;
     },
@@ -327,6 +328,14 @@ export default {
 
     updateName({ name }) {
       this.k3kCluster.metadata.name = name;
+    },
+
+    updateVersion(e) {
+      if (e && e !== this.defaultVersionLabel) {
+        this.k3kCluster.spec.version = e;
+      } else {
+        delete this.k3kCluster.spec.version;
+      }
     },
 
     async findNormanCluster() {
@@ -625,11 +634,11 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              :value="k3kCluster.spec.version || t('k3k.k3sVersion.default')"
+              :value="k3kCluster.spec.version || defaultVersionLabel"
               label-key="k3k.k3sVersion.label"
               :options="k3sVersionOptions"
               :mode="mode"
-              @update:value="e=>k3kCluster.spec.version=e"
+              @update:value="updateVersion"
             />
           </div>
         </div>

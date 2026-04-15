@@ -58,6 +58,15 @@ const defaultCluster = {
     sync:         {}
   }
 };
+  // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
+  const POLICY_OVERRIDES = {
+    mode:           'allowedMode',
+    nodeSelector:   'defaultNodeSelector',
+    sync:           'sync',
+    agentAffinity:  'defaultAgentAffinity',
+    serverAffinity: 'defaultServerAffinity'
+  };
+
 
 /**
  * provisioning.cattle.io.cluster default annotations
@@ -207,16 +216,8 @@ export default {
    */
     policy: {
       handler(neu) {
-        const policyOverrides = {
-          mode:           'allowedMode',
-          nodeSelector:   'defaultNodeSelector',
-          sync:           'sync',
-          agentAffinity:  'defaultAgentAffinity',
-          serverAffinity: 'defaultServerAffinity'
-        };
-
         const applyPolicyOverrides = (policySpec = {}) => {
-          for (const [clusterKey, policyKey] of Object.entries(policyOverrides)) {
+          for (const [clusterKey, policyKey] of Object.entries(POLICY_OVERRIDES)) {
             const policyValue = policySpec[policyKey];
             const fallbackValue = defaultCluster.spec[clusterKey];
 

@@ -239,7 +239,6 @@ export default {
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
     @finish="saveOverride"
-    @cancel="cancel"
     @error="e=>errors=e"
   >
     <Banner

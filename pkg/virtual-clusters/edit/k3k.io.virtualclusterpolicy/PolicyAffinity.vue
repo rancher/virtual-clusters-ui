@@ -4,8 +4,8 @@ import PodAffinity from '@shell/components/form/PodAffinity';
 import type { AffinityValue } from '../../types/k3k';
 
 const props = defineProps<{
-  serverAffinity: AffinityValue;
-  agentAffinity: AffinityValue;
+  serverAffinity?: AffinityValue;
+  agentAffinity?: AffinityValue;
   mode: string;
 }>();
 

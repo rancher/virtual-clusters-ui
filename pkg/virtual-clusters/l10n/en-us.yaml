@@ -201,6 +201,7 @@ k3k:
     loadingNamespaces: Error fetching namespaces from {cluster}
     creatingRoles: 'Error creating virtual cluster roles'
     gettingToken: 'Timed out waiting for the cluster registration command'
+    deletingClusterGeneric: Error deleting cluster
     deletingProvCluster: 'Cluster creation and registration has failed but a Rancher cluster resource may have been created. Check the cluster management list view before trying again.'
     deletingK3kCluster: 'Cluster creation and registration has failed but a K3K cluster resource may have been created. Check the host cluster before trying again.'
     creatingAndRegisteringCluster: 'There was an error creating the virtual cluster:'

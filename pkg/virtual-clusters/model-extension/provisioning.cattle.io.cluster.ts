@@ -61,7 +61,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
         // may have been deleted elsewhere or the cluster may be being deleted because configmap/job/k3kCluster were not created successfully
         if(e?.status !== 404){
           cluster.$dispatch('growl/error', {
-          title: 'Error deleting cluster',
+          title: this.context.t('k3k.errors.deletingClusterGeneric'),
           message: e
           }, {root: true})
         }

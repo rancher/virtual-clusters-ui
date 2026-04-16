@@ -84,7 +84,6 @@ k3k:
       headers:
         resourceType: Resource Type
         clusterSetLimit: Cluster Set Limit
-        vcSetLimit: Virtual Cluster Set Limit
     listView:
       modeHeader: Mode
       projectHeader: Assigned Projects
@@ -105,6 +104,9 @@ k3k:
           one {The selected policies are collectively applied to one virtual cluster. Deleting the policies now will remove resource constraints from that cluster.}
           other {The selected policies are currently applied to {count} virtual clusters. Deleting the policies now will remove resource constraints from those clusters.}
         }
+    editYamlModal:
+      title: Assign Projects to Virtual Cluster Policy
+      body: Virtual cluster polciies cannot be assigned to projects by modifying the policy YAML directly. Namespaces within the projects selected in the policy creation UI will be annotated to assign them to the policy before proceeding.
   targetNamespace:
     label: Target Namespace
   hostCluster:

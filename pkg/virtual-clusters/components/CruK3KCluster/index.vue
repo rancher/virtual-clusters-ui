@@ -37,6 +37,7 @@ import { MODES } from '../../utils/shared';
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
 import merge from 'lodash/merge';
+import { set } from '@shell/utils/object';
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -227,7 +228,7 @@ export default {
       policy:                     null,
       connectingToHost:           false,
       provClusters:               [],
-      parentCluster:              {},
+      parentCluster:              {}, // provisioning cluster representing the "host cluster"
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
@@ -242,7 +243,15 @@ export default {
           rules:      ['namespaceRequired']
         },
       ],
-      VIEW: _VIEW
+      VIEW:                  _VIEW,
+      /**
+       * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
+       * if saving/importing goes wrong, we want to be able to delete the clusters and let the user try again
+       * the objects will be altered by saving the first time (eg annotations added)
+       * so we need to track their pre-save state to offer a proper do-over
+       */
+      provClusterBeforeSave:      null,
+      k3kClusterBeforeSave:  null,
     };
   },
 
@@ -320,18 +329,37 @@ export default {
 
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
-      await this.$store.dispatch('management/request', {
+      const res = await this.$store.dispatch('management/request', {
         url: k3kUrl, method: 'POST', data: this.k3kCluster
       });
+
+      for (const key in res) {
+        if (!key.startsWith('_')) {
+          set(this.k3kCluster, key, res[key]);
+        }
+      }
     },
 
     // create import cluster command from new prov cluster
     // run a job to generate kubeconfig and run the import command on the virtual cluster
     async importCluster() {
-      const clusterToken = await this.value.getOrCreateToken();
+      let clusterToken;
 
-      while (!clusterToken.command) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
+      try {
+        clusterToken = await this.value.getOrCreateToken();
+        let attempts = 0;
+        const maxAttempts = 240; // 60-second wait before timing out
+
+        while (!clusterToken.command && attempts < maxAttempts) {
+          attempts++;
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+
+        if (!clusterToken.command) {
+          throw new Error(this.t('k3k.errors.gettingToken'));
+        }
+      } catch (e) {
+        throw new Error(`${ this.t('k3k.errors.creatingAndRegisteringCluster') } ${ e?.message || e }`);
       }
 
       const command = clusterToken.command.split(' ');
@@ -371,6 +399,9 @@ export default {
     },
 
     async saveOverride(btnCb) {
+      this.provClusterBeforeSave = cloneDeep(this.value);
+      this.k3kClusterBeforeSave = cloneDeep(this.k3kCluster);
+
       const cluster = await this.findNormanCluster();
 
       try {
@@ -397,10 +428,17 @@ export default {
         }
 
         // this.save is a method defined in the create edit view mixin
-        // it handles errors returned when POSTing the new provisioning cluster - we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
-        const cb = (passed) => {
+        // it handles errors returned when POSTing the new provisioning cluster
+        // we need to catch them in this context as well, to clean up other resources so the user can re-try creating the virtual cluster
+        const cb = async(passed) => {
           if (!passed && this.mode === _CREATE) {
-            this.deleteK3kCluster();
+            try {
+              await this.deleteResourcesForRedo();
+            } catch (e) {
+              this.errors.push(e);
+
+              return btnCb(false);
+            }
           }
 
           return btnCb(passed);
@@ -413,21 +451,71 @@ export default {
       }
     },
 
-    async deleteK3kCluster() {
-      const cluster = await this.findNormanCluster();
-      const { name, namespace } = this.k3kCluster.metadata || {};
+    // if created, delete the k3k cluster and provisioning cluster and reset this.k3kCluster and this.localValue (prov cluster) so that the user can retry clicking save
+    // only used during create, never edit
+    async deleteResourcesForRedo() {
+      const errors = [];
 
-      if (name && namespace) {
-        try {
-          const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
+      try {
+        await this.deleteK3kCluster();
+      } catch (e) {
+        errors.push(e);
+      }
 
-          await this.$store.dispatch('management/request', {
-            url,
-            method: 'DELETE'
-          });
-        } catch (e) {
-          this.errors.push(e);
+      try {
+        await this.deleteProvCluster();
+      } catch (e) {
+        errors.push(e);
+      }
+
+      // If any errors occurred, throw them
+      if (errors.length > 0) {
+        if (errors.length === 1) {
+          throw errors[0];
         }
+        throw new Error(errors.map((e) => e?.message || String(e)).join('\n'));
+      }
+    },
+
+    async deleteK3kCluster() {
+      try {
+        if (this.k3kCluster?.id) {
+          const revertedK3kCluster = await this.$store.dispatch('management/clone', { resource: this.k3kClusterBeforeSave });
+
+          const cluster = await this.findNormanCluster();
+          const { name, namespace } = this.k3kCluster.metadata || {};
+
+          if (name && namespace) {
+            try {
+              const url = `/k8s/clusters/${ cluster?.id }/v1/k3k.io.clusters/${ namespace }/${ name }`;
+
+              await this.$store.dispatch('management/request', {
+                url,
+                method: 'DELETE'
+              });
+            } catch (e) {
+              this.errors.push(e);
+            }
+            this.k3kCluster = revertedK3kCluster;
+          }
+        }
+      } catch (e) {
+        // warn users the k3k cluster might still exist
+        throw new Error(`${ this.t('k3k.errors.deletingK3kCluster') }\n${ e?.message || e }`);
+      }
+    },
+
+    async deleteProvCluster() {
+      try {
+        if (this.value?.id) {
+          const revertedProvCluster = await this.$store.dispatch('management/clone', { resource: this.provClusterBeforeSave });
+
+          await this.value.remove();
+          this.localValue = revertedProvCluster;
+        }
+      } catch (e) {
+        // warn users the prov cluster might still exist
+        throw new Error(`${ this.t('k3k.errors.deletingProvCluster') }\n${ e?.message || e }`);
       }
     },
 

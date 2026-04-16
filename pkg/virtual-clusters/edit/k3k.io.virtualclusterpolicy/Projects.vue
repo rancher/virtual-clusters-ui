@@ -55,7 +55,9 @@ export default {
 
   },
 
-  created() {
+  async created() {
+    await this.$store.dispatch('management/findAll', { type: MANAGEMENT.PROJECT });
+
     if (this.mode !== _CREATE) {
       this.findProjectsFromAnnotations();
     }
@@ -86,7 +88,9 @@ export default {
     // we dont want to include all projects that have been deselected from the dropdown because some may have been selected and deselected without hitting save
     // this would not error but would give us wrong totals in the notification
     selectedProjects(neu = [], old = []) {
-      this.$emit('update:selectedProjects', neu);
+      if (this.mode !== _VIEW) {
+        this.$emit('update:selectedProjects', neu);
+      }
 
       const removed = old.filter((oldP) => !neu.find((newP) => newP.id === oldP.id));
 
@@ -154,7 +158,7 @@ export default {
 
       this.displayProjects = [...selectedButInError, ...this.deselectedProjects];
 
-      if(this.mode === _VIEW && !this.selectedProjects.length){
+      if (this.mode === _VIEW && !this.selectedProjects.length) {
         this.selectedProjects = ids;
       }
     },
@@ -167,7 +171,7 @@ export default {
       for (const p of allProjects) {
         const ns = p.namespaces || [];
 
-        if (!ns.length) {
+        if (!ns.length && this.mode !== _VIEW) {
           continue;
         }
         const policyLabel = p?.metadata?.labels?.[LABELS.POLICY] || '';

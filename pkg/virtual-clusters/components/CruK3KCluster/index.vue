@@ -32,6 +32,8 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
+import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
+
 import { MODES } from '../../utils/shared';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
@@ -56,6 +58,15 @@ const defaultCluster = {
     sync:         {}
   }
 };
+  // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
+  const POLICY_OVERRIDES = {
+    mode:           'allowedMode',
+    nodeSelector:   'defaultNodeSelector',
+    sync:           'sync',
+    agentAffinity:  'defaultAgentAffinity',
+    serverAffinity: 'defaultServerAffinity'
+  };
+
 
 /**
  * provisioning.cattle.io.cluster default annotations
@@ -94,7 +105,8 @@ export default {
     ArrayList,
     ClusterPolicy,
     Mode,
-    Sync
+    Sync,
+    PolicyAffinity
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -164,12 +176,6 @@ export default {
   },
 
   watch: {
-    k3sVersionOptions(neu = []) {
-      if (this.mode === _CREATE && neu.length && !this.k3kCluster.spec.version) {
-        this.k3kCluster.spec.version = neu[0];
-      }
-    },
-
     'k3kCluster.spec.expose'(neu) {
       if (neu.ingress) {
         this.fvFormRuleSets.push({
@@ -204,17 +210,22 @@ export default {
       }
     },
 
+    /**
+   * When users select a policy the k3k cluster spec is updated to match it
+   * if a particular field is undefined in the new policy the k3k cluster is updated to match defaultCluster
+   */
     policy: {
       handler(neu) {
-        if (neu?.spec) {
-          this.k3kCluster.spec.mode = neu.spec.allowedMode;
-          this.k3kCluster.spec.nodeSelector = neu.spec.defaultNodeSelector || defaultCluster.spec.nodeSelector;
-          this.k3kCluster.spec.sync = neu.spec.sync || defaultCluster.spec.sync;
-        } else {
-          this.k3kCluster.spec.mode = defaultCluster.spec.mode;
-          this.k3kCluster.spec.nodeSelector = defaultCluster.spec.nodeSelector;
-          this.k3kCluster.spec.sync = defaultCluster.spec.sync;
-        }
+        const applyPolicyOverrides = (policySpec = {}) => {
+          for (const [clusterKey, policyKey] of Object.entries(POLICY_OVERRIDES)) {
+            const policyValue = policySpec[policyKey];
+            const fallbackValue = defaultCluster.spec[clusterKey];
+
+            this.k3kCluster.spec[clusterKey] = policyValue !== undefined ? cloneDeep(policyValue) : cloneDeep(fallbackValue);
+          }
+        };
+
+        applyPolicyOverrides(neu?.spec);
       },
       deep: true
     }
@@ -243,15 +254,16 @@ export default {
           rules:      ['namespaceRequired']
         },
       ],
-      VIEW:                  _VIEW,
       /**
        * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
        * if saving/importing goes wrong, we want to be able to delete the clusters and let the user try again
        * the objects will be altered by saving the first time (eg annotations added)
        * so we need to track their pre-save state to offer a proper do-over
        */
-      provClusterBeforeSave:      null,
+      provClusterBeforeSave: null,
       k3kClusterBeforeSave:  null,
+      VIEW:                  _VIEW,
+      defaultVersionLabel:   this.t('k3k.k3sVersion.default')
     };
   },
 
@@ -281,7 +293,11 @@ export default {
     },
 
     k3sVersionOptions() {
-      return (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
+      const out = (this.k3sVersions?.data || []).map((d) => d.version.replace('+', '-')).reverse();
+
+      out.unshift(this.defaultVersionLabel);
+
+      return out;
     },
 
     localValue: {
@@ -313,6 +329,14 @@ export default {
 
     updateName({ name }) {
       this.k3kCluster.metadata.name = name;
+    },
+
+    updateVersion(e) {
+      if (e && e !== this.defaultVersionLabel) {
+        this.k3kCluster.spec.version = e;
+      } else {
+        delete this.k3kCluster.spec.version;
+      }
     },
 
     async findNormanCluster() {
@@ -589,7 +613,7 @@ export default {
       <Tab
         name="virtual-cluster"
         label-key="k3k.sections.basics"
-        :weight="10"
+        :weight="11"
       >
         <InstallK3k
           v-model:parent-cluster="parentCluster"
@@ -611,10 +635,11 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model:value="k3kCluster.spec.version"
+              :value="k3kCluster.spec.version || defaultVersionLabel"
               label-key="k3k.k3sVersion.label"
               :options="k3sVersionOptions"
               :mode="mode"
+              @update:value="updateVersion"
             />
           </div>
         </div>
@@ -645,7 +670,7 @@ export default {
       <Tab
         name="server-agents"
         label-key="k3k.sections.serverAndAgents"
-        :weight="9"
+        :weight="10"
       >
         <div class="row mb-20">
           <div class="col span-3">
@@ -746,6 +771,18 @@ export default {
             </KeyValue>
           </div>
         </div>
+      </Tab>
+      <Tab
+        v-if="!policy"
+        name="affinity"
+        label-key="k3k.policy.tabs.topology"
+        :weight="9"
+      >
+        <PolicyAffinity
+          v-model:server-affinity="k3kCluster.spec.serverAffinity"
+          v-model:agent-affinity="k3kCluster.spec.agentAffinity"
+          :mode="mode"
+        />
       </Tab>
       <Tab
         name="Networking"

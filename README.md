@@ -7,7 +7,7 @@ Requires Rancher 2.12.x
 This is what you probably want to get started.
 ```bash
 # Install dependencies
-yarn install
+yarn install --frozen-lockfile
 
 # For development, serve with hot reload at https://localhost:8005
 # using the endpoint for your Rancher API

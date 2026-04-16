@@ -6,6 +6,8 @@ import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
 import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
+import PolicyDrawer from '../PolicyDrawer.vue';
+import { useDrawer } from '@shell/composables/drawer';
 
 import isEmpty from 'lodash/isEmpty';
 import { PROJECT } from '@shell/config/labels-annotations';
@@ -13,9 +15,18 @@ import { PROJECT } from '@shell/config/labels-annotations';
 export default {
   name: 'K3kPolicySelector',
 
+  setup() {
+    const { open } = useDrawer();
+
+    return { openDrawer: open };
+  },
+
   emits: ['update:policy', 'update:targetNamespace'],
 
-  components: { LabeledSelect, Banner },
+  components: {
+    LabeledSelect,
+    Banner
+  },
 
   props: {
 
@@ -98,6 +109,28 @@ export default {
   },
 
   methods: {
+    async openPolicyDrawer() {
+      if (!this.policy || isEmpty(this.policy)) {
+        return;
+      }
+
+      // classify the policy being shown in the drawer
+      // config form relies on functionality from the virtual cluster policy resource class
+      let drawerPolicy;
+
+      try {
+        drawerPolicy = await this.$store.dispatch('management/clone', { resource: this.policy });
+      } catch {
+        drawerPolicy = this.policy;
+      }
+
+      this.openDrawer(PolicyDrawer, '[data-testid="k3k-policy-open-drawer"]', {
+        policy:     drawerPolicy,
+        showHeader: false,
+        width:      '50%'
+      });
+    },
+
     async fetchPolicies() {
       this.policyError = false;
       this.policies = [];
@@ -262,6 +295,15 @@ export default {
         v-if="!policy && !showLoadingSpinner"
         class="nonepolicy-warning text-muted"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
+      <button
+        v-if="policy && !isEmpty(policy)"
+        type="button"
+        class="btn role-link show-policy"
+        data-testid="k3k-policy-open-drawer"
+        @click="openPolicyDrawer"
+      >
+        {{ t('k3k.policy.viewPolicy') }}
+      </button>
     </div>
     <div class="col span-6">
       <LabeledSelect
@@ -286,5 +328,9 @@ export default {
   & i {
     margin-right: 3px;
   }
+}
+
+.show-policy {
+  padding-left: 6px;
 }
 </style>

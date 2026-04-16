@@ -366,7 +366,7 @@ export default {
           </div>
         </div>
         <div class="row mb-20">
-          <div class="col span-6">
+          <div class="col span-12">
             <Checkbox
               v-model:value="value.spec.disableNetworkPolicy"
               :mode="mode"

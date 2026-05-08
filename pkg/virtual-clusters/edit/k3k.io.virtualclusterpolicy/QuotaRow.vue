@@ -1,7 +1,6 @@
 <script>
 import Select from '@shell/components/form/Select';
 import UnitInput from '@shell/components/form/UnitInput';
-import { ROW_COMPUTED } from '@shell/components/form/ResourceQuota/shared';
 
 export default {
   emits: ['type-change', 'update'],
@@ -32,7 +31,11 @@ export default {
     }
   },
 
-  computed: { ...ROW_COMPUTED },
+  computed: {
+    typeOption() {
+      return this.types.find((type) => type.value === this.type);
+    }
+  },
 
   methods: {
     // delete the old type key and tell the parent component to add a new one

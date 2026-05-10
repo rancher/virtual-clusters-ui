@@ -16,7 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const updateServerNodeAffinity = (nodeAffinity: AffinityValue) => {
-  emit('update:server-affinity', { ...props.serverAffinity, nodeAffinity });
+  emit('update:server-affinity', { ...(props.serverAffinity || {}), nodeAffinity });
 };
 
 const updateServerPodAffinity = (value: { affinity: AffinityValue }) => {
@@ -24,7 +24,7 @@ const updateServerPodAffinity = (value: { affinity: AffinityValue }) => {
 };
 
 const updateAgentNodeAffinity = (nodeAffinity: AffinityValue) => {
-  emit('update:agent-affinity', { ...props.agentAffinity, nodeAffinity });
+  emit('update:agent-affinity', { ...(props.agentAffinity || {}), nodeAffinity });
 };
 
 const updateAgentPodAffinity = (value: { affinity: AffinityValue }) => {

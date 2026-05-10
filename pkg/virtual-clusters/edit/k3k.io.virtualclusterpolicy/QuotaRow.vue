@@ -24,8 +24,8 @@ export default {
     },
 
     typeOption: {
-      type:    Object,
-      default: null
+      type:     Object,
+      required: true
     },
 
     value: {

@@ -23,17 +23,16 @@ export default {
       default: ''
     },
 
+    typeOption: {
+      type:    Object,
+      default: null
+    },
+
     value: {
       type:    Object,
       default: () => {
         return {};
       }
-    }
-  },
-
-  computed: {
-    typeOption() {
-      return this.types.find((type) => type.value === this.type);
     }
   },
 
@@ -56,7 +55,6 @@ export default {
 </script>
 <template>
   <div
-    v-if="typeOption"
     class="row"
   >
     <UnabeledSelect

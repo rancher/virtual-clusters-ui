@@ -30,7 +30,8 @@ export default {
   },
 
   created() {
-    this.typeValues = Object.keys(this.value);
+    this.typeValues = Object.keys(this.value)
+      .filter((type) => !!this.typeOption(type));
   },
 
   computed: {
@@ -45,6 +46,10 @@ export default {
     updateType(i, type) {
       this.typeValues[i] = type;
       this.$emit('update:value', this.value);
+    },
+
+    typeOption(type) {
+      return this.mappedTypes.find((mappedType) => mappedType.value === type);
     },
 
     remainingTypes(currentType) {
@@ -89,6 +94,7 @@ export default {
           :mode="mode"
           :types="remainingTypes(typeValues[props.i])"
           :type="typeValues[props.i]"
+          :type-option="typeOption(typeValues[props.i])"
           @update="$emit('update:value', value)"
           @type-change="updateType(props.i, $event)"
         />

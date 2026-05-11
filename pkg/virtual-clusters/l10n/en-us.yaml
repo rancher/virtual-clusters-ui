@@ -119,6 +119,7 @@ k3k:
     notInstalled: The K3K controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the K3K github repository' href='https://github.com/rancher/K3K/tree/main?tab=readme-ov-file#install-the-K3K-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the K3K chart with default values.
     installK3k: Install K3K
     didInstall: K3K installed
+    k3kVersionMismatch: There is a newer version of the K3K controller compatible with this Rancher installation. Navigate to the host cluster's <a target="_blank" rel="nofollow noopener noreferrer" href="{url}"> Apps page</a> to upgrade the SUSE Virtual Cluster Engine app.
   mode:
     label: Virtual cluster mode
     shared: Shared

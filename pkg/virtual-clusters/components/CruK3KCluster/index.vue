@@ -33,6 +33,7 @@ import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
+import K3kVersionBanner from '../K3kVersionBanner.vue';
 
 import { MODES } from '../../utils/shared';
 
@@ -59,14 +60,13 @@ const defaultCluster = {
   }
 };
   // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
-  const POLICY_OVERRIDES = {
-    mode:           'allowedMode',
-    nodeSelector:   'defaultNodeSelector',
-    sync:           'sync',
-    agentAffinity:  'defaultAgentAffinity',
-    serverAffinity: 'defaultServerAffinity'
-  };
-
+const POLICY_OVERRIDES = {
+  mode:           'allowedMode',
+  nodeSelector:   'defaultNodeSelector',
+  sync:           'sync',
+  agentAffinity:  'defaultAgentAffinity',
+  serverAffinity: 'defaultServerAffinity'
+};
 
 /**
  * provisioning.cattle.io.cluster default annotations
@@ -106,7 +106,8 @@ export default {
     ClusterPolicy,
     Mode,
     Sync,
-    PolicyAffinity
+    PolicyAffinity,
+    K3kVersionBanner
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -228,7 +229,8 @@ export default {
         applyPolicyOverrides(neu?.spec);
       },
       deep: true
-    }
+    },
+
   },
 
   data() {
@@ -312,6 +314,7 @@ export default {
     isSharedMode() {
       return this.k3kCluster?.spec?.mode === MODES.SHARED;
     },
+
   },
 
   methods: {
@@ -615,6 +618,7 @@ export default {
         label-key="k3k.sections.basics"
         :weight="11"
       >
+        <K3kVersionBanner :parent-cluster="parentCluster" />
         <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"

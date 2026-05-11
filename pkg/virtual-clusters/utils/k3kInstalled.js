@@ -1,8 +1,10 @@
-import { CATALOG, NAMESPACE } from '@shell/config/types';
+import semver from 'semver';
+import { CATALOG, MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import { K3K } from '../types';
+import pkgjson from '../package.json'
+
 export const K3K_CHART_NAME = 'suse-virtual-cluster-engine';
 export const K3K_CHART_NAMESPACE = 'k3k-system';
-
 export const K3K_REPO_NAME = 'suse-virtual-cluster-engine';
 export const K3K_REPO_URL = 'oci://registry.suse.com/rancher/charts/appco-suse-virtual-cluster-engine';
 
@@ -75,3 +77,45 @@ export const verifyUserCanCreateK3kClusters = async(store, mgmtId) => {
     return false;
   }
 };
+
+/**
+ * Compare the virtual clusters ui extension version to the k3k app version
+ * @returns bool | null - true if major/minor versions match; false if they do not; null if one or both versions can't be read (eg user lacks permission to see k3k app)
+ */
+export const verifyK3kVersionMatches = async (store, mgmtId)=>{
+  console.log('*** checking k3k and ui versions...')
+  try {
+    const extensionVersion = pkgjson?.version 
+
+
+    const appSchema =  await store.dispatch('management/request', {
+        url:    `/k8s/clusters/${ mgmtId }/v1/schemas/${ CATALOG.APP }`,
+        method: 'GET',
+      });
+      
+
+    if(!appSchema || !(appSchema.resourceMethods|| []).includes('GET')) {
+      return null
+    }
+
+    const k3kApp = await store.dispatch('management/request', {
+      url: `/k8s/clusters/${ mgmtId }/v1/${ CATALOG.APP }s/${K3K_CHART_NAMESPACE}/${K3K_CHART_NAME}`,
+      method: 'GET'
+    })
+
+    const k3kVersion = k3kApp?.spec?.chart?.metadata?.appVersion
+
+
+    if(!k3kApp || !k3kVersion){
+      return null
+    }
+
+    const coercedExtensionVersion = semver.coerce(extensionVersion);
+    const coercedK3kVersion = semver.coerce(k3kVersion);
+
+    return semver.major(coercedK3kVersion) === semver.major(coercedExtensionVersion) && semver.minor(coercedK3kVersion) === semver.minor(coercedExtensionVersion)
+  } catch (e) {
+    console.error(e)
+    return null
+  }
+}

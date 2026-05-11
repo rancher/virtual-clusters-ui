@@ -22,6 +22,7 @@ import Sync from '../../components/Sync.vue';
 import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
+import K3kVersionBanner from '../../components/K3kVersionBanner.vue';
 
 const CONTAINER_LIMIT_TYPE = 'Container';
 
@@ -45,7 +46,8 @@ export default {
     PolicyAffinity,
     Checkbox,
     Banner,
-    Sync
+    Sync,
+    K3kVersionBanner
   },
 
   async fetch() {
@@ -241,6 +243,7 @@ export default {
     @finish="saveOverride"
     @error="e=>errors=e"
   >
+    <K3kVersionBanner />
     <Banner
       v-for="(err, i) in errors"
       :key="i"

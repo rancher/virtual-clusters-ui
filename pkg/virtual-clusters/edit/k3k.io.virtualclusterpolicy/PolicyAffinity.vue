@@ -11,24 +11,24 @@ const props = defineProps<{
 
 // eslint-disable-next-line func-call-spacing
 const emit = defineEmits<{
-  (e: 'update:serverAffinity', value: AffinityValue): void;
-  (e: 'update:agentAffinity', value: AffinityValue): void;
+  (e: 'update:server-affinity', value: AffinityValue): void;
+  (e: 'update:agent-affinity', value: AffinityValue): void;
 }>();
 
 const updateServerNodeAffinity = (nodeAffinity: AffinityValue) => {
-  emit('update:serverAffinity', { ...props.serverAffinity, nodeAffinity });
+  emit('update:server-affinity', { ...(props.serverAffinity || {}), nodeAffinity });
 };
 
 const updateServerPodAffinity = (value: { affinity: AffinityValue }) => {
-  emit('update:serverAffinity', value.affinity);
+  emit('update:server-affinity', value.affinity);
 };
 
 const updateAgentNodeAffinity = (nodeAffinity: AffinityValue) => {
-  emit('update:agentAffinity', { ...props.agentAffinity, nodeAffinity });
+  emit('update:agent-affinity', { ...(props.agentAffinity || {}), nodeAffinity });
 };
 
 const updateAgentPodAffinity = (value: { affinity: AffinityValue }) => {
-  emit('update:agentAffinity', value.affinity);
+  emit('update:agent-affinity', value.affinity);
 };
 </script>
 

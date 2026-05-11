@@ -109,6 +109,10 @@ export const verifyK3kVersionMatches = async(store, mgmtId) => {
     const coercedExtensionVersion = semver.coerce(extensionVersion);
     const coercedK3kVersion = semver.coerce(k3kVersion);
 
+    if (!coercedExtensionVersion || !coercedK3kVersion) {
+      return null;
+    }
+
     return semver.major(coercedK3kVersion) === semver.major(coercedExtensionVersion) && semver.minor(coercedK3kVersion) === semver.minor(coercedExtensionVersion);
   } catch (e) {
     return null;

@@ -25,7 +25,7 @@ import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
-import { K3K } from '../../types/k8s-types';
+import { K3K } from '../../types';
 import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
@@ -236,16 +236,22 @@ export default {
       const mgmtId = neu?.mgmt?.id;
 
       if (!mgmtId) {
-        this.supportsTopography = false;
+        this.supportsTopology = false;
+
+        return;
       }
 
-      this.supportsTopography = await fieldIsSupported(this.$store, mgmtId, K3K.CLUSTER, 'spec.serverAffinity');
+      try {
+        this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.CLUSTER, 'spec.serverAffinity');
+      } catch {
+        this.supportsTopology = false;
+      }
     },
 
-    supportsTopography(neu) {
-      if (!neu) {
-        delete this.k3kCluster.agentAffinity;
-        delete this.k3kCluster.serverAffinity;
+    supportsTopology(neu) {
+      if (!neu && this.k3kCluster?.spec) {
+        delete this.k3kCluster.spec.agentAffinity;
+        delete this.k3kCluster.spec.serverAffinity;
       }
     }
   },
@@ -262,7 +268,7 @@ export default {
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
-      supportsTopography:         false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
+      supportsTopology:         false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
       fvFormRuleSets:             [
         {
           path:       'metadata.name',
@@ -795,7 +801,7 @@ export default {
         </div>
       </Tab>
       <Tab
-        v-if="!policy && supportsTopography"
+        v-if="!policy && supportsTopology"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
         :weight="9"

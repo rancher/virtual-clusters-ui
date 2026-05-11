@@ -9,7 +9,7 @@ import { MANAGEMENT, SCHEMA } from '@shell/config/types';
 import versions from '@shell/utils/versions';
 import { isRancherPrime } from '@shell/config/version';
 import { NotificationLevel } from '@shell/types/notifications';
-import { K3K } from './types/k8s-types';
+import { K3K } from './types';
 
 const createRoleIfNotFound = async(roleTemplate: any, store:any) => {
   const rolesMatching = await store.dispatch('management/findLabelSelector', {

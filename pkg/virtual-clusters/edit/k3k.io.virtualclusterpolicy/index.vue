@@ -16,7 +16,7 @@ import { Banner } from '@rancher/components';
 
 import Projects from './Projects.vue';
 import PolicyAffinity from './PolicyAffinity.vue';
-import { ANNOTATIONS } from '../../types';
+import { ANNOTATIONS, K3K } from '../../types';
 import Mode from '../../components/Mode.vue';
 import Sync from '../../components/Sync.vue';
 import Quota from './Quota.vue';
@@ -24,7 +24,6 @@ import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
 import K3kVersionBanner from '../../components/K3kVersionBanner.vue';
 import { fieldIsSupported } from '../../utils/k3kInstalled';
-import { K3K } from '../../types/k8s-types';
 
 const CONTAINER_LIMIT_TYPE = 'Container';
 
@@ -58,7 +57,11 @@ export default {
     }
     const mgmtId = this.$store.getters['currentCluster'].id;
 
-    this.supportsTopography = await fieldIsSupported(this.$store, mgmtId, K3K.POLICY, 'spec.defaultServerAffinity');
+    try {
+      this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.POLICY, 'spec.defaultServerAffinity');
+    } catch {
+      this.supportsTopology = false;
+    }
   },
 
   data() {
@@ -68,7 +71,7 @@ export default {
         path:  'name',
         rules: ['required'],
       }],
-      supportsTopography: false // Only k3k >= 1.1.0 supports the fields in the 'Topology' tab
+      supportsTopology: false // Only k3k >= 1.1.0 supports the fields in the 'Topology' tab
     };
   },
 
@@ -315,7 +318,7 @@ export default {
         />
       </Tab>
       <Tab
-        v-if="supportsTopography"
+        v-if="supportsTopology"
         :weight="3"
         name="affinity"
         label-key="k3k.policy.tabs.topology"

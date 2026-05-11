@@ -25,7 +25,7 @@ export default {
 
     typeOption: {
       type:     Object,
-      required: true
+      default:  () => ({})
     },
 
     value: {

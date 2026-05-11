@@ -7,6 +7,27 @@ export const GENERIC_QUOTA_TYPES = [
     placeholderKey: 'resourceQuota.projectLimit.unitlessPlaceholder'
   },
   {
+    value:          'cpu',
+    inputExponent:  -1,
+    baseUnitKey:    'suffix.cpus',
+    labelKey:       'resourceQuota.cpu',
+    placeholderKey: 'resourceQuota.cpuPlaceholder'
+  },
+  {
+    value:          'memory',
+    inputExponent:  2,
+    increment:      1024,
+    labelKey:       'resourceQuota.memory',
+    placeholderKey: 'resourceQuota.memoryPlaceholder'
+  },
+  {
+    value:          'pods',
+    inputExponent:  0,
+    baseUnit:       '',
+    labelKey:       'resourceQuota.pods',
+    placeholderKey: 'resourceQuota.podsPlaceholder'
+  },
+  {
     value:          'limits.cpu',
     inputExponent:  -1,
     baseUnitKey:    'suffix.cpus',

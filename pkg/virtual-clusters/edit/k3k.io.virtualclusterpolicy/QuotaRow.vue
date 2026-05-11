@@ -1,7 +1,6 @@
 <script>
 import Select from '@shell/components/form/Select';
 import UnitInput from '@shell/components/form/UnitInput';
-import { ROW_COMPUTED } from '@shell/components/form/ResourceQuota/shared';
 
 export default {
   emits: ['type-change', 'update'],
@@ -24,6 +23,11 @@ export default {
       default: ''
     },
 
+    typeOption: {
+      type:     Object,
+      default:  () => ({})
+    },
+
     value: {
       type:    Object,
       default: () => {
@@ -31,8 +35,6 @@ export default {
       }
     }
   },
-
-  computed: { ...ROW_COMPUTED },
 
   methods: {
     // delete the old type key and tell the parent component to add a new one
@@ -53,7 +55,6 @@ export default {
 </script>
 <template>
   <div
-    v-if="typeOption"
     class="row"
   >
     <UnabeledSelect

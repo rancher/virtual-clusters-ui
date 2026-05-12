@@ -4,14 +4,14 @@ import { useStore } from 'vuex';
 import { Banner } from '@rancher/components';
 import { verifyK3kVersionMatches } from '../utils/k3kInstalled';
 
-type ClusterLike = {
+type ParentClusterType = {
   id?: string
   mgmt?: {
     id?: string
   }
 } | null;
 
-const props = withDefaults(defineProps<{ parentCluster?: ClusterLike }>(), { parentCluster: null });
+const props = withDefaults(defineProps<{ parentCluster?: ParentClusterType }>(), { parentCluster: null });
 
 const store = useStore();
 const showK3kVersionBanner = ref(false);

@@ -13,6 +13,7 @@ import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
+import KeyValue from '@shell/components/form/KeyValue.vue';
 
 import Projects from './Projects.vue';
 import PolicyAffinity from './PolicyAffinity.vue';
@@ -48,7 +49,8 @@ export default {
     Checkbox,
     Banner,
     Sync,
-    K3kVersionBanner
+    K3kVersionBanner,
+    KeyValue
   },
 
   async fetch() {
@@ -335,6 +337,30 @@ export default {
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
       >
+        <div
+          v-if="!supportsTopology"
+          class="row mb-20"
+        >
+          <div class="col span-12">
+            <KeyValue
+              v-model:value="value.spec.defaultNodeSelector"
+              :initial-empty-row="true"
+              :mode="mode"
+              :read-allowed="false"
+              :title="t('k3k.nodeSelector.label')"
+              :add-label="t('k3k.nodeSelector.addLabel')"
+            >
+              <template #title>
+                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
+                <t
+                  class="text-muted"
+                  raw
+                  k="k3k.nodeSelector.tooltip"
+                />
+              </template>
+            </KeyValue>
+          </div>
+        </div>
         <div class="row mb-10">
           <div class="col span-12">
             <h3>{{ t('k3k.policy.security.label') }}</h3>

@@ -611,6 +611,7 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
+    <K3kVersionBanner :parent-cluster="parentCluster" />
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -642,7 +643,6 @@ export default {
         label-key="k3k.sections.basics"
         :weight="11"
       >
-        <K3kVersionBanner :parent-cluster="parentCluster" />
         <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"

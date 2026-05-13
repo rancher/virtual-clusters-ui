@@ -145,6 +145,7 @@ k3k:
     label: Node Selector
     tooltip: Add a node selector to all server and agent pods. In <code>shared</code> mode, the node selector will also be applied to workloads.
     addLabel: Add Label
+    warning: In SUSE Virtual Cluster Engine v1.1.0 and onwards, the 'Topology' tab is the recommended way to configure server and agent pod scheduling.
   clusterCIDR:
     label: Cluster CIDR
     placeholder: 10.42.0.0/16

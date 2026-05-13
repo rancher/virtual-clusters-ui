@@ -27,7 +27,7 @@ const MODAL_SHOW_THRESHOLD = 200;
 export default {
   name: 'K3kPolicyProjectSelect',
 
-  emits: ['update:errors', 'update:projectAnnotation', 'update:selectedProjects', 'finish'],
+  emits: ['update:errors', 'update:selectedProjects', 'finish'],
 
   components: {
     LabeledSelect,

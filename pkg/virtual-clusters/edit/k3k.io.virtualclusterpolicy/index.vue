@@ -50,7 +50,7 @@ export default {
     Banner,
     Sync,
     K3kVersionBanner,
-    KeyValue
+    KeyValue,
   },
 
   async fetch() {
@@ -168,8 +168,17 @@ export default {
         }
       }
     },
+
     isSharedMode() {
       return this.value?.spec?.allowedMode === MODES.SHARED;
+    },
+
+    hasNodeSelector() {
+      return !isEmpty(this.value?.spec?.defaultNodeSelector || {});
+    },
+
+    showNodeSelector() {
+      return !this.supportsTopology || this.hasNodeSelector;
     },
   },
 
@@ -337,8 +346,13 @@ export default {
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
       >
+        <Banner
+          v-if="supportsTopology && hasNodeSelector"
+          label-key="k3k.nodeSelector.warning"
+          color="warning"
+        />
         <div
-          v-if="!supportsTopology"
+          v-if="showNodeSelector"
           class="row mb-20"
         >
           <div class="col span-12">

@@ -33,8 +33,10 @@ import ClusterPolicy from './ClusterPolicy.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
+import K3kVersionBanner from '../K3kVersionBanner.vue';
 
 import { MODES } from '../../utils/shared';
+import { fieldIsSupported } from '../../utils/k3kInstalled';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
@@ -59,14 +61,13 @@ const defaultCluster = {
   }
 };
   // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
-  const POLICY_OVERRIDES = {
-    mode:           'allowedMode',
-    nodeSelector:   'defaultNodeSelector',
-    sync:           'sync',
-    agentAffinity:  'defaultAgentAffinity',
-    serverAffinity: 'defaultServerAffinity'
-  };
-
+const POLICY_OVERRIDES = {
+  mode:           'allowedMode',
+  nodeSelector:   'defaultNodeSelector',
+  sync:           'sync',
+  agentAffinity:  'defaultAgentAffinity',
+  serverAffinity: 'defaultServerAffinity'
+};
 
 /**
  * provisioning.cattle.io.cluster default annotations
@@ -106,7 +107,8 @@ export default {
     ClusterPolicy,
     Mode,
     Sync,
-    PolicyAffinity
+    PolicyAffinity,
+    K3kVersionBanner
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -228,6 +230,29 @@ export default {
         applyPolicyOverrides(neu?.spec);
       },
       deep: true
+    },
+
+    async parentCluster(neu) {
+      const mgmtId = neu?.mgmt?.id;
+
+      if (!mgmtId) {
+        this.supportsTopology = false;
+
+        return;
+      }
+
+      try {
+        this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.CLUSTER, 'spec.serverAffinity');
+      } catch {
+        this.supportsTopology = false;
+      }
+    },
+
+    supportsTopology(neu) {
+      if (!neu && this.k3kCluster?.spec) {
+        delete this.k3kCluster.spec.agentAffinity;
+        delete this.k3kCluster.spec.serverAffinity;
+      }
     }
   },
 
@@ -243,6 +268,7 @@ export default {
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
+      supportsTopology:         false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
       fvFormRuleSets:             [
         {
           path:       'metadata.name',
@@ -312,6 +338,7 @@ export default {
     isSharedMode() {
       return this.k3kCluster?.spec?.mode === MODES.SHARED;
     },
+
   },
 
   methods: {
@@ -584,6 +611,7 @@ export default {
     @error="e => errors = e"
     @cancel="cancel"
   >
+    <K3kVersionBanner :parent-cluster="parentCluster" />
     <NameNsDescription
       v-if="!isView"
       v-model:value="localValue"
@@ -773,7 +801,7 @@ export default {
         </div>
       </Tab>
       <Tab
-        v-if="!policy"
+        v-if="!policy && supportsTopology"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
         :weight="9"

@@ -13,15 +13,18 @@ import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
+import KeyValue from '@shell/components/form/KeyValue.vue';
 
 import Projects from './Projects.vue';
 import PolicyAffinity from './PolicyAffinity.vue';
-import { ANNOTATIONS } from '../../types';
+import { ANNOTATIONS, K3K } from '../../types';
 import Mode from '../../components/Mode.vue';
 import Sync from '../../components/Sync.vue';
 import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
+import K3kVersionBanner from '../../components/K3kVersionBanner.vue';
+import { fieldIsSupported } from '../../utils/k3kInstalled';
 
 const CONTAINER_LIMIT_TYPE = 'Container';
 
@@ -45,12 +48,21 @@ export default {
     PolicyAffinity,
     Checkbox,
     Banner,
-    Sync
+    Sync,
+    K3kVersionBanner,
+    KeyValue,
   },
 
   async fetch() {
     if (!this.value.spec) {
       this.value.spec = { allowedMode: MODES.SHARED };
+    }
+    const mgmtId = this.$store.getters['currentCluster'].id;
+
+    try {
+      this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.POLICY, 'spec.defaultServerAffinity');
+    } catch {
+      this.supportsTopology = false;
     }
   },
 
@@ -60,7 +72,8 @@ export default {
       fvFormRuleSets:          [{
         path:  'name',
         rules: ['required'],
-      }]
+      }],
+      supportsTopology: false // Only k3k >= 1.1.0 supports the fields in the 'Topology' tab
     };
   },
 
@@ -155,8 +168,17 @@ export default {
         }
       }
     },
+
     isSharedMode() {
       return this.value?.spec?.allowedMode === MODES.SHARED;
+    },
+
+    hasNodeSelector() {
+      return !isEmpty(this.value?.spec?.defaultNodeSelector || {});
+    },
+
+    showNodeSelector() {
+      return !this.supportsTopology || this.hasNodeSelector;
     },
   },
 
@@ -241,6 +263,7 @@ export default {
     @finish="saveOverride"
     @error="e=>errors=e"
   >
+    <K3kVersionBanner />
     <Banner
       v-for="(err, i) in errors"
       :key="i"
@@ -306,6 +329,7 @@ export default {
         />
       </Tab>
       <Tab
+        v-if="supportsTopology"
         :weight="3"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
@@ -322,6 +346,35 @@ export default {
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
       >
+        <Banner
+          v-if="supportsTopology && hasNodeSelector"
+          label-key="k3k.nodeSelector.warning"
+          color="warning"
+        />
+        <div
+          v-if="showNodeSelector"
+          class="row mb-20"
+        >
+          <div class="col span-12">
+            <KeyValue
+              v-model:value="value.spec.defaultNodeSelector"
+              :initial-empty-row="true"
+              :mode="mode"
+              :read-allowed="false"
+              :title="t('k3k.nodeSelector.label')"
+              :add-label="t('k3k.nodeSelector.addLabel')"
+            >
+              <template #title>
+                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
+                <t
+                  class="text-muted"
+                  raw
+                  k="k3k.nodeSelector.tooltip"
+                />
+              </template>
+            </KeyValue>
+          </div>
+        </div>
         <div class="row mb-10">
           <div class="col span-12">
             <h3>{{ t('k3k.policy.security.label') }}</h3>

@@ -3,13 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import { Banner } from '@rancher/components';
 import { verifyK3kVersionMatches } from '../utils/k3kInstalled';
-
-type ParentClusterType = {
-  id?: string
-  mgmt?: {
-    id?: string
-  }
-} | null;
+import type { ParentClusterType } from '../types/k3k';
 
 const props = withDefaults(defineProps<{ parentCluster?: ParentClusterType }>(), { parentCluster: null });
 
@@ -27,7 +21,12 @@ const chartsUrl = computed<string | null>(() => {
     return null;
   }
 
-  return `/c/${ targetMgmtId.value }/apps/charts`;
+  // can't rely on useRouter() and router.resolve because router isn't always available with how this component is dynamically imported into a drawer in cluster creation
+  const pathname = window.location.pathname;
+  const clusterPathIndex = pathname.indexOf('/c/');
+  const basePath = clusterPathIndex >= 0 ? pathname.slice(0, clusterPathIndex) : '';
+
+  return `${ basePath }/c/${ targetMgmtId.value }/apps/charts`;
 });
 
 watch(targetMgmtId, async(neu) => {

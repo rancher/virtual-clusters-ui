@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 import { Banner } from '@rancher/components';
 import { verifyK3kVersionMatches } from '../utils/k3kInstalled';
-
-type ParentClusterType = {
-  id?: string
-  mgmt?: {
-    id?: string
-  }
-} | null;
+import type { ParentClusterType } from '../types/k3k';
 
 const props = withDefaults(defineProps<{ parentCluster?: ParentClusterType }>(), { parentCluster: null });
 
 const store = useStore();
+const router = useRouter();
 const showK3kVersionBanner = ref(false);
 
 const targetMgmtId = computed<string | null>(() => {
@@ -27,7 +23,7 @@ const chartsUrl = computed<string | null>(() => {
     return null;
   }
 
-  return `/c/${ targetMgmtId.value }/apps/charts`;
+  return router.resolve({ path: `/c/${ targetMgmtId.value }/apps/charts` }).href;
 });
 
 watch(targetMgmtId, async(neu) => {

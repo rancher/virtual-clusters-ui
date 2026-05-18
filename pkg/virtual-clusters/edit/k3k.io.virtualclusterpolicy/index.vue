@@ -53,11 +53,26 @@ export default {
     KeyValue,
   },
 
+  // provisioning cluster object - needed when the policy form is shown in a drawer during cluster creation
+  props: {
+    parentCluster: {
+      type:    Object,
+      default: null
+    },
+  },
+
   async fetch() {
     if (!this.value.spec) {
       this.value.spec = { allowedMode: MODES.SHARED };
     }
-    const mgmtId = this.$store.getters['currentCluster'].id;
+    const selectedCluster = this.parentCluster || this.$store.getters['currentCluster'];
+    const mgmtId = selectedCluster?.mgmt?.id || selectedCluster?.id;
+
+    if (!mgmtId) {
+      this.supportsTopology = false;
+
+      return;
+    }
 
     try {
       this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.POLICY, 'spec.defaultServerAffinity');
@@ -263,7 +278,7 @@ export default {
     @finish="saveOverride"
     @error="e=>errors=e"
   >
-    <K3kVersionBanner />
+    <K3kVersionBanner :parent-cluster="parentCluster" />
     <Banner
       v-for="(err, i) in errors"
       :key="i"

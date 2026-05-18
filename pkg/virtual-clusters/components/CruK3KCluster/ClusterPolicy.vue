@@ -125,9 +125,10 @@ export default {
       }
 
       this.openDrawer(PolicyDrawer, '[data-testid="k3k-policy-open-drawer"]', {
-        policy:     drawerPolicy,
-        showHeader: false,
-        width:      '50%'
+        policy:        drawerPolicy,
+        parentCluster: this.hostCluster,
+        showHeader:    false,
+        width:         '50%'
       });
     },
 

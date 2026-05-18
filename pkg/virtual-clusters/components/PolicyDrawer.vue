@@ -6,9 +6,12 @@ import { _VIEW } from '@shell/config/query-params';
 import { useDrawer } from '@shell/composables/drawer';
 
 import PolicyEditor from '../edit/k3k.io.virtualclusterpolicy/index.vue';
-import type { K3kPolicy } from '../types/k3k';
+import type { K3kPolicy, ParentClusterType } from '../types/k3k';
 
-const props = withDefaults(defineProps<{ policy?: K3kPolicy }>(), { policy: () => ({}) });
+const props = withDefaults(defineProps<{ policy?: K3kPolicy, parentCluster?: ParentClusterType }>(), {
+  policy:        () => ({}),
+  parentCluster: null,
+});
 
 const VIEW = _VIEW;
 const store = useStore();
@@ -33,6 +36,7 @@ const closeDrawer = close;
       <PolicyEditor
         :value="policy"
         :mode="VIEW"
+        :parent-cluster="parentCluster"
       />
     </template>
   </Drawer>

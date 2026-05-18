@@ -35,3 +35,10 @@ export type K3kPolicy = {
   spec?: K3kPolicySpec;
   setAnnotation?: (keys: string[], value: string) => void; // setAnnotation is defined in resource-class
 } & Record<string, unknown>;
+
+export type ParentClusterType = {
+  id?: string;
+  mgmt?: {
+    id?: string;
+  };
+} | null;

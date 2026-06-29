@@ -6,6 +6,7 @@ k3k:
     noneWarning: Clusters created without a policy should only be used for testing purposes.
     tabs:
       config: Config
+      resourceSync: Resource Synchronization
       resourceAllocation: Resource Allocation
       advanced: Advanced
       topology: Topology
@@ -80,7 +81,18 @@ k3k:
       label: Resource Synchronization
       tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
       ingressCheckbox: Ingresses
-      priorityClassCheckbox: PriorityClasses
+      priorityClassCheckbox: Priority Classes
+      storageClass:
+        title: Storage Classes
+        tooltip: In <code>shared</code> mode, by default all StorageClasses are synchronized from the host to the virtual cluster. You can disable that. You can also use label selectors to sync only a subset of StorageClasses.
+        checkbox: Sync Storage Classes
+        allStorageClasses: All StorageClasses
+        manuallySelectStorageClasses: Manually Select StorageClasses
+        selectByLabel: Select by Label
+        selectorLabel: Label
+        addSelectorLabel: Add Selector
+        selectorKeyPlaceholder: e.g. csi-driver
+        selectorValuePlaceholder: e.g. aws-ebs
     quota: 
       headers:
         resourceType: Resource Type
@@ -190,7 +202,7 @@ k3k:
         placeholder: 'Default: random value between 30000-32767'
   storage:
     noneOption: Ephemeral
-    title: Storage
+    title: Server Persistence
     storageRequestSize:
       label: Storage Request Size
     storageClass:

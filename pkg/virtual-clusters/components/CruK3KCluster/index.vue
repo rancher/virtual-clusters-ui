@@ -744,11 +744,6 @@ export default {
             :mode="mode"
             @update:k3k-mode="k3kCluster.spec.sync = {}"
           />
-          <Sync
-            v-if="isSharedMode"
-            v-model:sync="k3kCluster.spec.sync"
-            :mode="mode"
-          />
         </template>
         <Storage
           v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
@@ -760,9 +755,21 @@ export default {
         />
       </Tab>
       <Tab
+        v-if="!policy"
+        name="sync"
+        label-key="k3k.policy.tabs.resourceSync"
+        :weight="10"
+      >
+        <Sync
+          v-if="isSharedMode"
+          v-model:sync="k3kCluster.spec.sync"
+          :mode="mode"
+        />
+      </Tab>
+      <Tab
         name="server-agents"
         label-key="k3k.sections.serverAndAgents"
-        :weight="10"
+        :weight="9"
       >
         <div class="row mb-20">
           <div class="col span-3">
@@ -868,7 +875,7 @@ export default {
         v-if="!policy && supportsTopology"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
-        :weight="9"
+        :weight="8"
       >
         <PolicyAffinity
           v-model:server-affinity="k3kCluster.spec.serverAffinity"
@@ -879,7 +886,7 @@ export default {
       <Tab
         name="Networking"
         label-key="k3k.sections.networking"
-        :weight="8"
+        :weight="7"
       >
         <Networking
           v-model:cluster-c-i-d-r="k3kCluster.spec.clusterCIDR"
@@ -895,7 +902,7 @@ export default {
         v-if="canManageMembers"
         name="memberRoles"
         label-key="cluster.tabs.memberRoles"
-        :weight="7"
+        :weight="6"
       >
         <Banner
           v-if="isEdit"
@@ -912,7 +919,7 @@ export default {
       <Tab
         name="advanced"
         label-key="k3k.sections.advanced"
-        :weight="6"
+        :weight="5"
       >
         <div class="gap-md">
           <RcSection

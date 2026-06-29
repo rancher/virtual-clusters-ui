@@ -63,7 +63,7 @@ export default {
 
   async fetch() {
     if (!this.value.spec) {
-      this.value.spec = { allowedMode: MODES.SHARED };
+      this.value.spec = { allowedMode: MODES.SHARED, sync: { storageClasses: { enabled: true } } };
     }
     const selectedCluster = this.parentCluster || this.$store.getters['currentCluster'];
     const mgmtId = selectedCluster?.mgmt?.id || selectedCluster?.id;
@@ -319,6 +319,13 @@ export default {
           :mode="mode"
           @update:k3k-mode="sync = {}"
         />
+      </Tab>
+
+      <Tab
+        :weight="4"
+        name="sync"
+        label-key="k3k.policy.tabs.resourceSync"
+      >
         <Sync
           v-if="isSharedMode"
           v-model:sync="sync"
@@ -327,7 +334,7 @@ export default {
       </Tab>
 
       <Tab
-        :weight="4"
+        :weight="3"
         name="resources"
         label-key="k3k.policy.tabs.resourceAllocation"
       >
@@ -345,7 +352,7 @@ export default {
       </Tab>
       <Tab
         v-if="supportsTopology"
-        :weight="3"
+        :weight="2"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
       >
@@ -356,7 +363,7 @@ export default {
         />
       </Tab>
       <Tab
-        :weight="2"
+        :weight="1"
 
         name="advanced"
         label-key="k3k.policy.tabs.advanced"
@@ -445,7 +452,7 @@ export default {
       </Tab>
 
       <Tab
-        :weight="1"
+        :weight="0"
         name="labels"
         label-key="generic.labelsAndAnnotations"
       >

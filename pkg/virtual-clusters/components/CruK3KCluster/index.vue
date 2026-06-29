@@ -75,7 +75,10 @@ const defaultCluster = {
     },
     servers:      1,
     nodeSelector: {},
-    sync:         {},
+    sync:         {
+      storageClasses:
+       { enabled: true }
+    },
     secretMounts: [{
       secretName: '',
       mountPath:  '',

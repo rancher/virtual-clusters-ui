@@ -5,6 +5,11 @@ import ButtonGroup from '@rancher/shell/components/ButtonGroup';
 import RcSection from '@rancher/shell/rancher-components/RcSection/RcSection';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 
+export const SYNC_CONTEXT = {
+  storage: 'storage',
+  policy:  'policy'
+};
+
 export default {
   name: 'K3kResourceSync',
 
@@ -25,12 +30,21 @@ export default {
       default: () => {
         return {};
       }
+    },
+
+    context: {
+      type:    String, // "cluster" or "policy"
+      default: SYNC_CONTEXT.policy
     }
   },
 
   computed: {
     isView() {
       return this.mode === _VIEW;
+    },
+
+    isPolicyContext() {
+      return this.context === SYNC_CONTEXT.policy;
     },
 
     ingressesEnabled: {
@@ -160,6 +174,7 @@ export default {
     </div>
   </div>
   <RcSection
+    v-if="isPolicyContext"
     :title="t('k3k.policy.synchronization.storageClass.title')"
     mode="with-header"
     :expandable="true"

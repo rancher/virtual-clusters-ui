@@ -99,6 +99,21 @@ const storageClassSelectorOptions = [
 
 const targetedStorageClasses = ref(null);
 
+const hasSelectors = computed(() => useStorageClassSelector.value && Object.keys(storageClassSelector.value || {}).length > 0);
+
+const selectedStorageClassesTitle = computed(() => {
+  const count = targetedStorageClasses.value?.matched;
+
+  if (count > 0) {
+    return t('k3k.policy.synchronization.storageClass.storageClassesSelected', { count });
+  }
+  if (hasSelectors.value) {
+    return t('k3k.policy.synchronization.storageClass.noClassesSynced');
+  }
+
+  return t('k3k.policy.synchronization.storageClass.allStorageClassesSynced');
+});
+
 const updateMatchingResources = throttle(async() => {
   if (!targetMgmtId.value) {
     targetedStorageClasses.value = null;
@@ -151,6 +166,8 @@ const updateMatchingResources = throttle(async() => {
 watch(storageClassSelector, (neu) => {
   if (neu && Object.keys(neu).length > 0) {
     updateMatchingResources();
+  } else {
+    targetedStorageClasses.value = null;
   }
 }, { immediate: true });
 
@@ -203,24 +220,18 @@ watch(storageClassSelector, (neu) => {
           </div>
           <div class="col span-6">
             <RcSection
-              :title="t('k3k.policy.synchronization.storageClass.selectedStorageClasses')"
+              :title="selectedStorageClassesTitle"
               mode="with-header"
               :expandable="false"
               type="secondary"
             >
               <span
-                v-if="useStorageClassSelector && !Object.keys(storageClassSelector || {}).length"
+                v-if="!targetedStorageClasses?.matched"
                 class="text-muted"
               >
-                {{ t('k3k.policy.synchronization.storageClass.allStorageClassesSelected') }}
+                {{ t('k3k.policy.synchronization.storageClass.selectByLabelHint') }}
               </span>
-              <span
-                v-else-if="targetedStorageClasses?.none"
-                class="text-muted"
-              >
-                {{ t('k3k.policy.synchronization.storageClass.noMatchingStorageClasses') }}
-              </span>
-              <template v-else-if="targetedStorageClasses?.matched">
+              <template v-else>
                 <div
                   v-for="(sc, i) in targetedStorageClasses.matches"
                   :key="i"

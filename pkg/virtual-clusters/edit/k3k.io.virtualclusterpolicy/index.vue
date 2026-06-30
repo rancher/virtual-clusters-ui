@@ -19,7 +19,7 @@ import Projects from './Projects.vue';
 import PolicyAffinity from './PolicyAffinity.vue';
 import { ANNOTATIONS, K3K } from '../../types';
 import Mode from '../../components/Mode.vue';
-import Sync from '../../components/Sync.vue';
+import Sync from '../../components/Sync';
 import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
@@ -330,6 +330,8 @@ export default {
           v-if="isSharedMode"
           v-model:sync="sync"
           :mode="mode"
+          :parent-cluster="parentCluster"
+          @error="errors.push($event)"
         />
       </Tab>
 

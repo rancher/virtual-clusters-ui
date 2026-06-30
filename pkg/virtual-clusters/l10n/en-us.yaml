@@ -93,6 +93,10 @@ k3k:
         addSelectorLabel: Add Selector
         selectorKeyPlaceholder: e.g. csi-driver
         selectorValuePlaceholder: e.g. aws-ebs
+        selectedStorageClasses: Selected Storage Classes
+        noMatchingStorageClasses: 'No storage classes match the selector(s)'
+        errorFetchingStorageClasses: 'Error fetching matching storage classes:'
+        allStorageClassesSelected: All storage classes will be synced
     quota: 
       headers:
         resourceType: Resource Type

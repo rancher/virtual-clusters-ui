@@ -35,7 +35,7 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import SecretMounts from './SecretMounts/index.vue';
 import Mode from '../Mode.vue';
-import Sync, { SYNC_CONTEXT } from '../Sync.vue';
+import Sync, { SYNC_CONTEXT } from '../Sync';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
@@ -768,7 +768,7 @@ export default {
           v-if="isSharedMode"
           v-model:sync="k3kCluster.spec.sync"
           :mode="mode"
-          :context="SYNC_CONTEXT.storage"
+          :context="SYNC_CONTEXT.cluster"
         />
       </Tab>
       <Tab

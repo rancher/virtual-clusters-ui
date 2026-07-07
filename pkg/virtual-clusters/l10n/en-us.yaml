@@ -84,23 +84,28 @@ k3k:
       priorityClassCheckbox: Priority Classes
       storageClass:
         title: Storage Classes
-        tooltip: In <code>shared</code> mode, by default all StorageClasses are synchronized from the host to the virtual cluster. You can disable that. You can also use label selectors to sync only a subset of StorageClasses.
+        tooltip: In <code>shared</code> mode, by default all Storage Classes are synchronized from the host to the virtual cluster. You can disable that. You can also use label selectors to sync only a subset of Storage Classes.
         checkbox: Sync Storage Classes
-        allStorageClasses: All StorageClasses
-        manuallySelectStorageClasses: Manually Select StorageClasses
-        selectByLabel: Select by Label
-        selectorLabel: Label
-        addSelectorLabel: Add Selector
+        allStorageClasses: All Storage Classes
+        manuallySelectStorageClasses: Select a subset
+        selectorsTitle: Filter by Label
+        selectorsDescription: Add labels to filter down the Storage Classes you want to sync. Multiple labels will be ANDed.
+        addSelectorLabel: Add label
         selectorKeyPlaceholder: e.g. csi-driver
         selectorValuePlaceholder: e.g. aws-ebs
-        errorFetchingStorageClasses: 'Error fetching matching storage classes:'
-        allStorageClassesSynced: All storage classes selected
-        noClassesSynced: No storage classes selected
-        selectByLabelHint: Select storage classes by label
+        errorFetchingStorageClasses: 'Error fetching matching Storage Classes:'
+        allStorageClassesSynced: All Storage Classes selected
+        noClassesSynced: No Storage Classes selected
         storageClassesSelected: |-
           { count, plural,
-            one {1 storage class selected}
-            other {{count} storage classes selected}}
+            one {1 Storage Class selected}
+            other {{count} Storage Classes selected}}
+        selectedClasses: Selected Classes
+        addLabelsHint: Add labels to filter the available Storage Classes
+        allStorageClassesSelected: |-
+          { count, plural,
+            one {All Storage Classes selected}
+            other {All {count} Storage Classes selected}}
     quota: 
       headers:
         resourceType: Resource Type
@@ -245,7 +250,7 @@ k3k:
     serverAndAgents: Server and Agents
     advanced: Advanced
   errors:
-    loadingStorageClasses: 'Error loading storage classes from {cluster}: '
+    loadingStorageClasses: 'Error loading Storage Classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
     importingCluster: Error importing virtual cluster

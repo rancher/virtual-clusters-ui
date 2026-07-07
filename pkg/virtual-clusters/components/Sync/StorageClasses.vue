@@ -1,15 +1,16 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
-import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import KeyValue from '@rancher/shell/components/form/KeyValue.vue';
 import ButtonGroup from '@rancher/shell/components/ButtonGroup';
-import RcSection from '@rancher/shell/rancher-components/RcSection/RcSection';
+import RcSection from '@components/RcSection/RcSection';
+import RcTag from '@components/Pill/RcTag/RcTag';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
-import { matching, labelSelectorToSelector } from '@shell/utils/selector-typed';
+import { matching } from '@shell/utils/selector-typed';
 import { STORAGE_CLASS } from '@shell/config/types';
-import { NAME as EXPLORER } from '@shell/config/product/explorer';
+import { RcButton } from '@components/RcButton';
 
 const props = defineProps({
   mode: {
@@ -98,23 +99,22 @@ const storageClassSelectorOptions = [
 ];
 
 const targetedStorageClasses = ref(null);
-
-const hasSelectors = computed(() => useStorageClassSelector.value && Object.keys(storageClassSelector.value || {}).length > 0);
-
-const selectedStorageClassesTitle = computed(() => {
-  const count = targetedStorageClasses.value?.matched;
-
-  if (count > 0) {
-    return t('k3k.policy.synchronization.storageClass.storageClassesSelected', { count });
-  }
-  if (hasSelectors.value) {
-    return t('k3k.policy.synchronization.storageClass.noClassesSynced');
-  }
-
-  return t('k3k.policy.synchronization.storageClass.allStorageClassesSynced');
+const totalStorageClassCount = ref(0);
+const allClassesSelected = computed(() => {
+  return Object.keys(storageClassSelector.value).length === 0;
 });
 
-const updateMatchingResources = throttle(async() => {
+const matchedCount = computed(() => {
+  if (allClassesSelected.value) {
+    return totalStorageClassCount.value;
+  }
+
+  // Fall back to total count while the debounced fetch is still pending
+  return targetedStorageClasses.value?.length ?? totalStorageClassCount.value;
+});
+
+// debounce to prevent fetching matching classes while user is still typing the selector
+const updateMatchingResources = debounce(async() => {
   if (!targetMgmtId.value) {
     targetedStorageClasses.value = null;
 
@@ -125,35 +125,31 @@ const updateMatchingResources = throttle(async() => {
     if (hasClusterStoreContext.value) {
       // Normal page navigation: the `cluster` store is initialised and handles
       // both pagination modes (VAI / legacy) transparently.
-      targetedStorageClasses.value = await matching({
+      const res = await matching({
         labelSelector: { matchLabels: storageClassSelector.value },
         type:          STORAGE_CLASS,
         inStore:       'cluster',
         $store:        store,
       });
+
+      targetedStorageClasses.value = res?.matches || [];
     } else {
       // component is being used in the drawer in cluster configuration: no cluster store available
-      //
-      // Steve supports pagination via the `continue` response field,
-      // but storage class counts are typically quite low, so a limit of 500 here should be more than enough
-      const selector = labelSelectorToSelector({ matchLabels: storageClassSelector.value });
-      const url = `/k8s/clusters/${ targetMgmtId.value }/v1/storage.k8s.io.storageclasses?labelSelector=${ encodeURIComponent(selector) }&limit=500`;
+      // Use the same filter format as the cluster store context
+      const filters = Object.entries(storageClassSelector.value)
+        .map(([key, val]) => `filter=${ encodeURIComponent(`metadata.labels[${ key }] IN (${ val })`) }`)
+        .join('&');
+
+      const url = `/k8s/clusters/${ targetMgmtId.value }/v1/storage.k8s.io.storageclasses?pagesize=100000${ filters ? `&${ filters }` : '' }&exclude=metadata.managedFields`;
 
       const res = await store.dispatch('management/request', {
         url,
         method: 'GET',
       });
-      const items = await Promise.all(
+
+      targetedStorageClasses.value = await Promise.all(
         (res.data || []).map((item) => store.dispatch('management/create', { ...item, type: STORAGE_CLASS }))
       );
-
-      targetedStorageClasses.value = {
-        matched: items.length,
-        matches: items,
-        none:    items.length === 0,
-        sample:  items[0]?.metadata?.name,
-        total:   items.length,
-      };
     }
   } catch (err) {
     targetedStorageClasses.value = null;
@@ -161,13 +157,36 @@ const updateMatchingResources = throttle(async() => {
 
     emit('error', `${ t('k3k.policy.synchronization.storageClass.errorFetchingStorageClasses') } ${ message }`);
   }
-}, 250, { leading: true });
+}, 500);
+
+const fetchTotalStorageClassCount = async() => {
+  if (!targetMgmtId.value) {
+    totalStorageClassCount.value = 0;
+
+    return;
+  }
+
+  try {
+    const count = await store.dispatch('management/request', {
+      url:    `/k8s/clusters/${ targetMgmtId.value }/v1/counts/count`,
+      method: 'GET',
+    });
+
+    totalStorageClassCount.value = count?.counts?.[STORAGE_CLASS]?.summary?.count || 0;
+  } catch {
+    totalStorageClassCount.value = 0;
+  }
+};
+
+watch(useStorageClassSelector, (neu) => {
+  if (neu) {
+    fetchTotalStorageClassCount();
+  }
+}, { immediate: true });
 
 watch(storageClassSelector, (neu) => {
   if (neu && Object.keys(neu).length > 0) {
     updateMatchingResources();
-  } else {
-    targetedStorageClasses.value = null;
   }
 }, { immediate: true });
 
@@ -199,55 +218,81 @@ watch(storageClassSelector, (neu) => {
       />
       <RcSection
         v-if="useStorageClassSelector"
-        :title="t('k3k.policy.synchronization.storageClass.selectByLabel')"
+        :title="t('k3k.policy.synchronization.storageClass.selectorsTitle')"
         mode="with-header"
         :expandable="true"
-        class="mt-20"
+        class="mt-20 storage-selectors"
         type="secondary"
       >
-        <div class="row">
-          <div class="col span-6">
+        <div class="row text-muted">
+          {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
+        </div>
+        <div class="row storage-row">
+          <div class="col span-8">
             <KeyValue
               v-model:value="storageClassSelector"
               :initial-empty-row="true"
               :mode="mode"
-              :key-label="t('k3k.policy.synchronization.storageClass.selectorLabel')"
               :key-placeholder="t('k3k.policy.synchronization.storageClass.selectorKeyPlaceholder')"
               :value-placeholder="t('k3k.policy.synchronization.storageClass.selectorValuePlaceholder')"
-              :add-label="t('k3k.policy.synchronization.storageClass.addSelectorLabel')"
               :read-allowed="false"
-            />
+            >
+              <template #add="{add}">
+                <RcButton
+                  v-if="!isView"
+                  size="small"
+                  variant="secondary"
+                  :class="[addClass]"
+                  data-testid="add_row_item_button"
+                  :disabled="loading || disabled || (keyOptions && filteredKeyOptions.length === 0)"
+                  :aria-label="t('generic.ariaLabel.addKeyValue')"
+                  @click="add()"
+                >
+                  {{ t('k3k.policy.synchronization.storageClass.addSelectorLabel') }}
+                </RcButton>
+              </template>
+            </KeyValue>
           </div>
-          <div class="col span-6">
+          <div class="col span-4">
             <RcSection
-              :title="selectedStorageClassesTitle"
               mode="with-header"
               :expandable="false"
               type="secondary"
+              class="selected-classes"
             >
+              <template #title>
+                {{ t('k3k.policy.synchronization.storageClass.selectedClasses') }}
+                <RcTag>
+                  {{ matchedCount }}
+                </RcTag>
+              </template>
               <span
-                v-if="!targetedStorageClasses?.matched"
-                class="text-muted"
+                v-if="allClassesSelected"
               >
-                {{ t('k3k.policy.synchronization.storageClass.selectByLabelHint') }}
+                {{ t('k3k.policy.synchronization.storageClass.addLabelsHint') }}
               </span>
-              <template v-else>
-                <div
-                  v-for="(sc, i) in targetedStorageClasses.matches"
+              <div
+                v-else
+                class="selected-classes-list"
+              >
+                <RcTag
+                  v-for="(sc, i) in targetedStorageClasses || []"
                   :key="i"
                 >
-                  <router-link
-                    :to="{ ...sc.detailLocation, params: { ...sc.detailLocation.params, cluster: targetMgmtId, product: EXPLORER } }"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ sc.nameDisplay }}
-                  </router-link>
-                </div>
-              </template>
+                  {{ sc.nameDisplay }}
+                </RcTag>
+              </div>
             </RcSection>
           </div>
         </div>
+        <template #actions>
+          <span v-if="allClassesSelected">
+            {{ t('k3k.policy.synchronization.storageClass.allStorageClassesSelected', { count: matchedCount }) }}
+          </span>
+          <span v-else>
+            {{ t('k3k.policy.synchronization.storageClass.storageClassesSelected', { count: matchedCount }) }}
+          </span>
+        </template>
       </RcSection>
     </div>
   </RcSection>
@@ -256,5 +301,40 @@ watch(storageClassSelector, (neu) => {
 <style lang="scss" scoped>
 :deep(.section-content) {
   gap: 16px;
+}
+
+.storage-selectors :deep(.actions) {
+  padding-top: 0px
+}
+
+.storage-row {
+  position: relative;
+  min-height: 100px;
+
+  .col.span-4 {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 33.33%;
+    overflow-y: auto;
+  }
+}
+
+.storage-selectors .selected-classes {
+  overflow-y: auto;
+
+  :deep(.title){
+    align-items: center;
+  }
+}
+
+.selected-classes-list {
+  display: flex;
+  flex-direction: column;
+  :deep(.rc-tag) {
+    width: fit-content;
+    margin-bottom: 6px;
+  }
 }
 </style>

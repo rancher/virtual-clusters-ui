@@ -100,6 +100,7 @@ const storageClassSelectorOptions = [
 
 const targetedStorageClasses = ref(null);
 const totalStorageClassCount = ref(0);
+const fetchingMatchingClasses = ref(false);
 const allClassesSelected = computed(() => {
   return Object.keys(storageClassSelector.value).length === 0;
 });
@@ -110,7 +111,8 @@ const matchedCount = computed(() => {
   }
 
   // Fall back to total count while the debounced fetch is still pending
-  return targetedStorageClasses.value?.length ?? totalStorageClassCount.value;
+  // return targetedStorageClasses.value?.length ?? totalStorageClassCount.value;
+  return targetedStorageClasses.value?.length || 0;
 });
 
 // debounce to prevent fetching matching classes while user is still typing the selector
@@ -120,6 +122,8 @@ const updateMatchingResources = debounce(async() => {
 
     return;
   }
+
+  fetchingMatchingClasses.value = true;
 
   try {
     if (hasClusterStoreContext.value) {
@@ -156,8 +160,10 @@ const updateMatchingResources = debounce(async() => {
     const message = err?.message || err?.data || String(err);
 
     emit('error', `${ t('k3k.policy.synchronization.storageClass.errorFetchingStorageClasses') } ${ message }`);
+  } finally {
+    fetchingMatchingClasses.value = false;
   }
-}, 500);
+}, 5);
 
 const fetchTotalStorageClassCount = async() => {
   if (!targetMgmtId.value) {
@@ -266,8 +272,16 @@ watch(storageClassSelector, (neu) => {
                   {{ matchedCount }}
                 </RcTag>
               </template>
+              <i
+                v-if="fetchingMatchingClasses"
+                class="icon icon-spinner icon-spin icon-lg loading-spinner"
+              />
+              <!-- <i
+                v-if="true"
+                class="icon icon-spinner icon-spin icon-lg loading-spinner"
+              /> -->
               <span
-                v-if="allClassesSelected"
+                v-else-if="allClassesSelected"
               >
                 {{ t('k3k.policy.synchronization.storageClass.addLabelsHint') }}
               </span>
@@ -323,9 +337,17 @@ watch(storageClassSelector, (neu) => {
 
 .storage-selectors .selected-classes {
   overflow-y: auto;
+  position: relative;
 
   :deep(.title){
     align-items: center;
+  }
+
+  .loading-spinner {
+    position: absolute;
+    left: calc(50% - .5em);
+    top: calc(50% + .5em);
+    z-index: 1;
   }
 }
 

@@ -6,7 +6,7 @@ import { _CREATE, _VIEW } from '@shell/config/query-params';
 import KeyValue from '@rancher/shell/components/form/KeyValue.vue';
 import ButtonGroup from '@rancher/shell/components/ButtonGroup';
 import RcSection from '@components/RcSection/RcSection';
-import RcTag from '@components/Pill/RcTag/RcTag';
+import { RcTag, RcCounterBadge } from '@components/Pill';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
 import { STORAGE_CLASS } from '@shell/config/types';
@@ -230,11 +230,12 @@ watch(storageClassSelector, (neu) => {
         class="mt-20 storage-selectors"
         type="secondary"
       >
-        <div class="row text-muted">
-          {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
-        </div>
+
         <div class="row storage-row">
           <div class="col span-8">
+                    <div class="row text-muted">
+          {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
+        </div>
             <KeyValue
               v-model:value="storageClassSelector"
               :initial-empty-row="true"
@@ -253,6 +254,7 @@ watch(storageClassSelector, (neu) => {
                   :disabled="loading || disabled || (keyOptions && filteredKeyOptions.length === 0)"
                   :aria-label="t('generic.ariaLabel.addKeyValue')"
                   @click="add()"
+                  left-icon="plus"
                 >
                   {{ t('k3k.policy.synchronization.storageClass.addSelectorLabel') }}
                 </RcButton>
@@ -268,18 +270,12 @@ watch(storageClassSelector, (neu) => {
             >
               <template #title>
                 {{ t('k3k.policy.synchronization.storageClass.selectedClasses') }}
-                <RcTag>
-                  {{ matchedCount }}
-                </RcTag>
+                <RcCounterBadge :count="matchedCount" type="inactive"/>
               </template>
               <i
                 v-if="fetchingMatchingClasses"
                 class="icon icon-spinner icon-spin icon-lg loading-spinner"
               />
-              <!-- <i
-                v-if="true"
-                class="icon icon-spinner icon-spin icon-lg loading-spinner"
-              /> -->
               <span
                 v-else-if="allClassesSelected"
               >
@@ -292,6 +288,7 @@ watch(storageClassSelector, (neu) => {
                 <RcTag
                   v-for="(sc, i) in targetedStorageClasses || []"
                   :key="i"
+                  type="inactive"
                 >
                   {{ sc.nameDisplay }}
                 </RcTag>
@@ -323,7 +320,6 @@ watch(storageClassSelector, (neu) => {
 
 .storage-row {
   position: relative;
-  min-height: 100px;
 
   .col.span-4 {
     position: absolute;

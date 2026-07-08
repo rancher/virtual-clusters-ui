@@ -294,7 +294,7 @@ export default {
       />
       <span
         v-if="!policy && !showLoadingSpinner"
-        class="nonepolicy-warning text-muted"
+        class="nonepolicy-warning text-deemphasized"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
       <button
         v-if="policy && !isEmpty(policy)"

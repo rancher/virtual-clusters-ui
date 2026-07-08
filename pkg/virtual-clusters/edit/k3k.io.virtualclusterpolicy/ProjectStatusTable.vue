@@ -181,7 +181,7 @@ export default {
                   v-if="showDeselectIcon"
                   v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
                   class="icon icon-trash"
-                  :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-muted': isInModal && !doneSavingNamespaces}"
+                  :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-deemphasized': isInModal && !doneSavingNamespaces}"
                 />
                 <i
                   v-else-if="errMsg"
@@ -196,7 +196,7 @@ export default {
                 <i
                   v-else-if="isInModal && !doneSavingNamespaces"
                   v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
-                  class="icon icon-checkmark text-muted"
+                  class="icon icon-checkmark text-deemphasized"
                 />
                 <i
                   v-else-if="!isInModal"

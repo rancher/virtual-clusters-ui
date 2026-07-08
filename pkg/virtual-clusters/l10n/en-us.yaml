@@ -196,10 +196,37 @@ k3k:
     storageClass:
       label: Storage Class
       description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+  secretMounts:
+    title: Mounting Secrets
+    description: Mount Secrets as single files inside agent or server Pods to name them available for custom add-ons, registry configuration, certificates, or other settings. <br/> Learn more about User add-ons and k3s configuration options. #//TODO nb add links to user add-ons and k3s configuration options
+    addLabel: Add Secret Mount
+    mountTitle: Select a Secret...
+    secretName:
+      label: Secret
+      placeholder: Add a Secret from the selected Namespace
+    mountPath:
+      label: Mount Path
+      placeholder: e.g. /etc/rancher/k3s/registries.yaml
+      description: The path within Server and/or Agent Pods where the Secret contents will be mounted.
+    role:
+      label: k3k Pod type
+      description: Select the type of k3k Pod that the Secret will be mounted in.
+      server: Server Pods
+      agent: Agent Pods
+      all: Server & Agent Pods
+    # name:
+    #   label: Volume Name (optional)
+    #   placeholder: my-volume-name
+    subPath:
+      label: Subpath 
+      placeholder: e.g. my-secret.yaml
+      description: An optional path within the Secret to mount instead of the root. <br> When provided, only the specified key from the Secret will be mounted as a file at the mount path, keeping the parent directory writable.
+    remove: Remove
   sections:
     basics: Basics
     networking: Networking
     serverAndAgents: Server and Agents
+    advanced: Advanced
   errors:
     loadingStorageClasses: 'Error loading storage classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'

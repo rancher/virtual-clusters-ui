@@ -16,6 +16,7 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
+import { RcSection } from '@components/RcSection';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
@@ -30,6 +31,7 @@ import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
+import SecretMounts from './SecretMounts/index.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
@@ -108,7 +110,9 @@ export default {
     Mode,
     Sync,
     PolicyAffinity,
-    K3kVersionBanner
+    K3kVersionBanner,
+    SecretMounts,
+    RcSection
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -846,14 +850,37 @@ export default {
         />
       </Tab>
       <Tab
-        name="labels"
-        label-key="generic.labelsAndAnnotations"
+        name="advanced"
+        label-key="k3k.sections.advanced"
         :weight="6"
       >
-        <Labels
-          v-model:value="localValue"
-          :mode="mode"
-        />
+        <RcSection
+          mode="with-header"
+          :expandable="true"
+          :expanded="true"
+          type="secondary"
+          :title="t('k3k.secretMounts.title')"
+        >
+          <SecretMounts
+            :mode="mode"
+            :parent-cluster="parentCluster"
+            :target-namespace="k3kCluster.metadata.namespace"
+            :secret-mounts="k3kCluster.spec.secretMounts || []"
+            @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
+          />
+        </RcSection>
+        <RcSection
+          mode="with-header"
+          :expandable="true"
+          :expanded="false"
+          type="secondary"
+          :title="t('component.resource.detail.metadata.labelsAndAnnotations')"
+        >
+          <Labels
+            v-model:value="localValue"
+            :mode="mode"
+          />
+        </RcSection>
       </Tab>
     </Tabbed>
   </CruResource>

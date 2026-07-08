@@ -5,7 +5,7 @@ import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import KeyValue from '@rancher/shell/components/form/KeyValue.vue';
 import ButtonGroup from '@rancher/shell/components/ButtonGroup';
-import RcSection from '@components/RcSection/RcSection';
+import { RcSection, RcSectionBadges } from '@components/RcSection';
 import { RcTag, RcCounterBadge } from '@components/Pill';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
@@ -230,12 +230,11 @@ watch(storageClassSelector, (neu) => {
         class="mt-20 storage-selectors"
         type="secondary"
       >
-
         <div class="row storage-row">
           <div class="col span-8">
-                    <div class="row text-muted">
-          {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
-        </div>
+            <div class="row text-muted">
+              {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
+            </div>
             <KeyValue
               v-model:value="storageClassSelector"
               :initial-empty-row="true"
@@ -253,8 +252,8 @@ watch(storageClassSelector, (neu) => {
                   data-testid="add_row_item_button"
                   :disabled="loading || disabled || (keyOptions && filteredKeyOptions.length === 0)"
                   :aria-label="t('generic.ariaLabel.addKeyValue')"
-                  @click="add()"
                   left-icon="plus"
+                  @click="add()"
                 >
                   {{ t('k3k.policy.synchronization.storageClass.addSelectorLabel') }}
                 </RcButton>
@@ -270,7 +269,10 @@ watch(storageClassSelector, (neu) => {
             >
               <template #title>
                 {{ t('k3k.policy.synchronization.storageClass.selectedClasses') }}
-                <RcCounterBadge :count="matchedCount" type="inactive"/>
+                <RcCounterBadge
+                  :count="matchedCount"
+                  type="inactive"
+                />
               </template>
               <i
                 v-if="fetchingMatchingClasses"
@@ -296,13 +298,11 @@ watch(storageClassSelector, (neu) => {
             </RcSection>
           </div>
         </div>
-        <template #actions>
-          <span v-if="allClassesSelected">
-            {{ t('k3k.policy.synchronization.storageClass.allStorageClassesSelected', { count: matchedCount }) }}
-          </span>
-          <span v-else>
-            {{ t('k3k.policy.synchronization.storageClass.storageClassesSelected', { count: matchedCount }) }}
-          </span>
+
+        <template #badges>
+          <RcSectionBadges
+            :badges="allClassesSelected ? [{ label: t('k3k.policy.synchronization.storageClass.allStorageClassesSelected', { count: matchedCount }), status: 'none' },] : [{label: t('k3k.policy.synchronization.storageClass.storageClassesSelected', { count: matchedCount }), status: 'none'}]"
+          />
         </template>
       </RcSection>
     </div>
@@ -314,8 +314,18 @@ watch(storageClassSelector, (neu) => {
   gap: 16px;
 }
 
-.storage-selectors :deep(.actions) {
-  padding-top: 0px
+.storage-selectors :deep(.rc-status-badge.none) {
+  color: var(--body-text)
+}
+
+.theme-dark .storage-selectors :deep(.rc-status-badge.none) {
+  background: var(--rc-inactive-background);
+  border-color: var(--rc-inactive-border);
+}
+
+.theme-light .storage-selectors :deep(.rc-status-badge.none) {
+  background: var(--card-badge-text);
+  border-color: var(--card-badge-text);
 }
 
 .storage-row {

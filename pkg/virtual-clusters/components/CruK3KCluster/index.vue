@@ -19,6 +19,7 @@ import Tabbed from '@shell/components/Tabbed';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
+import { SETTING } from '@shell/config/settings';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
@@ -42,6 +43,20 @@ import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
 import merge from 'lodash/merge';
 import { set } from '@shell/utils/object';
+
+// Pinned fallback for the cluster import job image; used when the
+// 'shell-image' setting is empty. Kept in sync with the rancher/shell
+// version shipped with the minimum supported Rancher release.
+const DEFAULT_IMPORT_JOB_IMAGE = 'rancher/shell:v0.7.0';
+
+// Returns true if the first segment of an image reference is a registry
+// host (contains '.' or ':', or is 'localhost'), mirroring containerd's
+// reference parsing.
+function imageHasRegistry(image) {
+  const firstSegment = image.split('/')[0];
+
+  return firstSegment.includes('.') || firstSegment.includes(':') || firstSegment === 'localhost';
+}
 
 const defaultCluster = {
   type:       K3K.CLUSTER,
@@ -391,6 +406,35 @@ export default {
       }
     },
 
+    // resolve the image used by the import job: honor the 'shell-image'
+    // setting if configured, otherwise fall back to a pinned default, and
+    // prefix with 'system-default-registry' so air-gapped installs pull
+    // from their private registry (same behavior as Rancher's own shell pods)
+    async importJobImage() {
+      let image = DEFAULT_IMPORT_JOB_IMAGE;
+
+      try {
+        const shellImage = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'shell-image' });
+
+        if (shellImage?.value) {
+          image = shellImage.value;
+        }
+      } catch {}
+
+      if (!imageHasRegistry(image)) {
+        try {
+          const registrySetting = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: SETTING.SYSTEM_DEFAULT_REGISTRY });
+          const registry = registrySetting?.value;
+
+          if (registry) {
+            image = `${ registry }/${ image }`;
+          }
+        } catch {}
+      }
+
+      return image;
+    },
+
     // create import cluster command from new prov cluster
     // run a job to generate kubeconfig and run the import command on the virtual cluster
     async importCluster() {
@@ -419,6 +463,7 @@ export default {
       let _importJob = JSON.stringify(importJobTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 
       _importJob = _importJob.replaceAll(/__url/g, registrationUrl);
+      _importJob = _importJob.replaceAll(/__shell_image/g, await this.importJobImage());
 
       const _importConfigMap = JSON.stringify(importConfigMapTemplate).replaceAll(/K3K_NAME/g, this.value.metadata.name);
 

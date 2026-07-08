@@ -11,7 +11,7 @@
           "containers": [
             {
               "name": "import",
-              "image": "rancher/shell:head",
+              "image": "__shell_image",
               "command": [
                 "sh",
                 "/scripts/import.sh"

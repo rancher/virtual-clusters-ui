@@ -3,12 +3,18 @@ import { ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import SecretMountItem from './SecretMount.vue';
 import type { SecretMount } from '../../../types/k3k';
-import { RcSection } from '@components/RcSection';
+import { RcSection, RcSectionActions } from '@components/RcSection';
+import { RcButton } from '@components/RcButton';
 
 defineOptions({ name: 'K3kSecretMounts' });
 
+const DEFAULT_MOUNT = {
+  secretName: '',
+  mountPath:  '',
+  role:       'all'
+} as SecretMount;
+
 const store = useStore();
-// const t = store.getters['i18n/t'];
 
 const props = defineProps<{
   mode: string;
@@ -62,11 +68,7 @@ watch(
 );
 
 function addMount() {
-  const updated: SecretMount[] = [...props.secretMounts, {
-    secretName: '',
-    mountPath:  '',
-    role:       'all'
-  }];
+  const updated: SecretMount[] = [...props.secretMounts, { ...DEFAULT_MOUNT }];
 
   emit('update:secretMounts', updated);
 }
@@ -78,10 +80,10 @@ function removeMount(index: number) {
   emit('update:secretMounts', updated);
 }
 
-function updateMount(index: number, mount: SecretMount) {
+function updateField(index: number, field: keyof SecretMount, value: unknown) {
   const updated = [...props.secretMounts];
 
-  updated[index] = mount;
+  updated[index] = { ...updated[index], [field]: value };
   emit('update:secretMounts', updated);
 }
 </script>
@@ -102,30 +104,50 @@ function updateMount(index: number, mount: SecretMount) {
     v-for="(mount, i) in secretMounts"
     :key="i"
   >
+    <!-- //TODO nb title needs to include mountPath section as well -->
     <RcSection
       type="secondary"
       :expandable="true"
       :expanded="true"
       :title="mount.secretName || t('k3k.secretMounts.mountTitle')"
       mode="with-header"
+      class="secret-mount"
     >
       <SecretMountItem
         :mode="mode"
-        :secret-mount="mount"
+        :secret-name="mount.secretName || ''"
+        :mount-path="mount.mountPath || ''"
+        :sub-path="mount.subPath || ''"
+        :role="mount.role || 'all'"
         :secrets="secrets"
         :loading-secrets="loadingSecrets"
-        @update:secret-mount="updateMount(i, $event)"
-        @remove="removeMount(i)"
+        @update:secret-name="updateField(i, 'secretName', $event)"
+        @update:mount-path="updateField(i, 'mountPath', $event)"
+        @update:sub-path="updateField(i, 'subPath', $event)"
+        @update:role="updateField(i, 'role', $event)"
       />
+      <template #actions>
+        <RcSectionActions
+          :actions="[{ icon: 'trash', ariaLabel: t('generic.remove') , action: ()=>removeMount(i) }]"
+        />
+      </template>
     </RcSection>
   </template>
-  <button
-    v-if="mode !== 'view'"
-    type="button"
-    class="btn role-secondary add"
-    @click="addMount"
-  >
-    <!-- //TODO nb use rcbutton; include plus icon -->
-    {{ t('k3k.secretMounts.addLabel') }}
-  </button>
+  <div>
+    <RcButton
+      v-if="mode !== 'view'"
+      size="small"
+      variant="secondary"
+      left-icon="plus"
+      @click="addMount"
+    >
+      {{ t('k3k.secretMounts.addLabel') }}
+    </RcButton>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.secret-mount :deep(.section-header .actions){
+    padding-top: 0px;
+}
+</style>

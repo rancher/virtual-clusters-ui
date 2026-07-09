@@ -1,73 +1,59 @@
 <script setup lang="ts">
+import { useStore } from 'vuex';
+import { useI18n } from '@shell/composables/useI18n';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
-import type { SecretMount, SecretMountRole } from '../../../types/k3k';
+import type { SecretMountRole } from '../../../types/k3k';
 
-const NAME_PATTERN = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+const store = useStore();
+const { t: tn } = useI18n(store);
 
-const props = defineProps<{
+defineProps<{
   mode: string;
-  secretMount: SecretMount;
+  secretName: string;
+  mountPath: string;
+  subPath: string;
+  role: SecretMountRole;
   secrets: string[];
   loadingSecrets: boolean;
 }>();
 
 const emit = defineEmits<{
-  'update:secretMount': [value: SecretMount];
-  'remove': [];
+  'update:secretName': [value: string];
+  'update:mountPath': [value: string];
+  'update:subPath': [value: string];
+  'update:role': [value: SecretMountRole];
 }>();
 
 const roleOptions: { label: string; value: SecretMountRole }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Server', value: 'server' },
-  { label: 'Agent', value: 'agent' },
+  { label: tn('k3k.secretMounts.role.all'), value: 'all' },
+  { label: tn('k3k.secretMounts.role.server'), value: 'server' },
+  { label: tn('k3k.secretMounts.role.agent'), value: 'agent' },
 ];
-
-// const nameRules = computed(() => {
-//   const rules: Array<(val: string) => string | undefined> = [];
-
-//   rules.push((val: string) => {
-//     if (val && val.length > 63) {
-//       return 'Name must be at most 63 characters';
-//     }
-//   });
-
-//   rules.push((val: string) => {
-//     if (val && !NAME_PATTERN.test(val)) {
-//       return 'Name must consist of lowercase alphanumeric characters or dashes, and must start and end with an alphanumeric character';
-//     }
-//   });
-
-//   return rules;
-// });
-
-function update(field: keyof SecretMount, value: unknown) {
-  emit('update:secretMount', { ...props.secretMount, [field]: value });
-}
 </script>
 
 <template>
   <div class="col span-6">
     <LabeledSelect
-      :value="secretMount.secretName"
+      :value="secretName"
       label-key="k3k.secretMounts.secretName.label"
       :placeholder="t('k3k.secretMounts.secretName.placeholder')"
       :options="secrets"
       :loading="loadingSecrets"
       :mode="mode"
       :reduce="(s: string) => s"
-      @update:value="update('secretName', $event)"
+      @update:value="emit('update:secretName', $event)"
     />
   </div>
   <div>
     <div class="col span-6">
       <LabeledInput
-        :value="secretMount.mountPath"
+        :value="mountPath"
         label-key="k3k.secretMounts.mountPath.label"
         placeholder-key="k3k.secretMounts.mountPath.placeholder"
         :mode="mode"
-        @update:value="update('mountPath', $event)"
+        @update:value="emit('update:mountPath', $event)"
       />
     </div>
     <t
@@ -79,11 +65,11 @@ function update(field: keyof SecretMount, value: unknown) {
   <div>
     <div class="col span-6">
       <LabeledInput
-        :value="secretMount.subPath"
+        :value="subPath"
         label-key="k3k.secretMounts.subPath.label"
         placeholder-key="k3k.secretMounts.subPath.placeholder"
         :mode="mode"
-        @update:value="update('subPath', $event)"
+        @update:value="emit('update:subPath', $event)"
       />
     </div>
     <t
@@ -95,18 +81,32 @@ function update(field: keyof SecretMount, value: unknown) {
 
   <div class="col span-12">
     <RadioGroup
-      :value="secretMount.role || 'all'"
+      :value="role || 'all'"
       label-key="k3k.secretMounts.role.label"
       :options="roleOptions"
       :mode="mode"
       name="secretMountRole"
-      @input="update('role', $event)"
-    />
+      @update:value="emit('update:role', $event)"
+    >
+      <template #label>
+        <h4>
+          {{ t('k3k.secretMounts.role.label') }}
+        </h4>
+        <t
+          k="k3k.secretMounts.role.description"
+          raw
+        />
+      </template>
+    </RadioGroup>
   </div>
 </template>
 
 <style scoped>
 .input-description {
     font-size: 12px;
+}
+
+:deep(.radio-group h4),:deep(.radio-group.label){
+    margin-bottom: 8px;
 }
 </style>

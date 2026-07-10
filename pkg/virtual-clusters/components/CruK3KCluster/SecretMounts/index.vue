@@ -62,7 +62,7 @@ async function fetchSecrets() {
 watch(
   () => [props.parentCluster, props.targetNamespace],
   () => {
-    emit('update:secretMounts', []);
+    emit('update:secretMounts', [{ ...DEFAULT_MOUNT }]);
     fetchSecrets();
   }
 );
@@ -86,6 +86,21 @@ function updateField(index: number, field: keyof SecretMount, value: unknown) {
   updated[index] = { ...updated[index], [field]: value };
   emit('update:secretMounts', updated);
 }
+
+function mountTitle(mount: SecretMount): string {
+  const name = mount.secretName || store.getters['i18n/t']('k3k.secretMounts.mountTitle');
+  const path = mount.mountPath;
+
+  if (path) {
+    const trailingSlash = path.endsWith('/');
+    const trimmed = path.replace(/\/+$/, '');
+    const lastSegment = trimmed.split('/').pop();
+
+    return `${ name } \u2014 /${ lastSegment }${ trailingSlash ? '/' : '' }`;
+  }
+
+  return name;
+}
 </script>
 
 <template>
@@ -104,12 +119,11 @@ function updateField(index: number, field: keyof SecretMount, value: unknown) {
     v-for="(mount, i) in secretMounts"
     :key="i"
   >
-    <!-- //TODO nb title needs to include mountPath section as well -->
     <RcSection
       type="secondary"
       :expandable="true"
       :expanded="true"
-      :title="mount.secretName || t('k3k.secretMounts.mountTitle')"
+      :title="mountTitle(mount)"
       mode="with-header"
       class="secret-mount"
     >

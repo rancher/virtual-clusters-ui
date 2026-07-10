@@ -17,6 +17,7 @@ import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
 import { RcSection } from '@components/RcSection';
+import { RcCounterBadge } from '@components/Pill';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
@@ -59,7 +60,12 @@ const defaultCluster = {
     },
     servers:      1,
     nodeSelector: {},
-    sync:         {}
+    sync:         {},
+    secretMounts: [{
+      secretName: '',
+      mountPath:  '',
+      role:       'all'
+    }]
   }
 };
   // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
@@ -112,7 +118,8 @@ export default {
     PolicyAffinity,
     K3kVersionBanner,
     SecretMounts,
-    RcSection
+    RcSection,
+    RcCounterBadge
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -454,6 +461,14 @@ export default {
     },
 
     async saveOverride(btnCb) {
+      // Remove empty secret mounts before saving
+      if (this.k3kCluster.spec.secretMounts) {
+        this.k3kCluster.spec.secretMounts = this.k3kCluster.spec.secretMounts.filter((m) => m.secretName || m.mountPath);
+        if (!this.k3kCluster.spec.secretMounts.length) {
+          delete this.k3kCluster.spec.secretMounts;
+        }
+      }
+
       this.provClusterBeforeSave = cloneDeep(this.value);
       this.k3kClusterBeforeSave = cloneDeep(this.k3kCluster);
 
@@ -861,6 +876,12 @@ export default {
           type="secondary"
           :title="t('k3k.secretMounts.title')"
         >
+          <template #counter>
+            <RcCounterBadge
+              :count="(k3kCluster?.spec?.secretMounts || []).length"
+              type="inactive"
+            />
+          </template>
           <SecretMounts
             :mode="mode"
             :parent-cluster="parentCluster"

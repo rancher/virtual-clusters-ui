@@ -7,7 +7,7 @@ import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import type { SecretMountRole } from '../../../types/k3k';
 
 const store = useStore();
-const { t: tn } = useI18n(store);
+const { t: tn } = useI18n(store); // importing 't' here breaks the t tag in template
 
 defineProps<{
   mode: string;

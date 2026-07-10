@@ -12,7 +12,7 @@ export const SYNC_CONTEXT = {
 export default {
   name: 'K3kResourceSync',
 
-  emits: ['update:sync', 'error'],
+  emits: ['update:ingresses', 'update:priorityClasses', 'update:storageClasses', 'error'],
 
   components: { Checkbox, StorageClasses },
 
@@ -22,11 +22,19 @@ export default {
       default: _CREATE
     },
 
-    sync: {
+    ingresses: {
       type:    Object,
-      default: () => {
-        return {};
-      }
+      default: () => ({})
+    },
+
+    priorityClasses: {
+      type:    Object,
+      default: () => ({})
+    },
+
+    storageClasses: {
+      type:    Object,
+      default: () => ({})
     },
 
     context: {
@@ -51,32 +59,19 @@ export default {
 
     ingressesEnabled: {
       get() {
-        return this.sync?.ingresses?.enabled || false;
+        return this.ingresses?.enabled || false;
       },
       set(neu) {
-        const out = { ...this.sync };
-
-        if (!out.ingresses) {
-          out.ingresses = {};
-        }
-        out.ingresses.enabled = neu;
-        this.$emit('update:sync', out );
+        this.$emit('update:ingresses', { ...this.ingresses, enabled: neu });
       }
     },
 
     priorityClassesEnabled: {
       get() {
-        return this.sync?.priorityClasses?.enabled || false;
+        return this.priorityClasses?.enabled || false;
       },
       set(neu) {
-        const out = { ...this.sync };
-
-        if (!out.priorityClasses) {
-          out.priorityClasses = {};
-        }
-        out.priorityClasses.enabled = neu;
-
-        this.$emit('update:sync', out );
+        this.$emit('update:priorityClasses', { ...this.priorityClasses, enabled: neu });
       }
     },
 
@@ -110,10 +105,12 @@ export default {
   </div>
   <StorageClasses
     v-if="isPolicyContext"
-    :storage-classes-sync="sync.storageClasses"
+    :enabled="storageClasses?.enabled || false"
+    :selector="storageClasses?.selector"
     :mode="mode"
     :parent-cluster="parentCluster"
-    @update:storage-classes-sync="$emit('update:sync', { ...sync, storageClasses: $event })"
+    @update:enabled="$emit('update:storageClasses', { ...storageClasses, enabled: $event })"
+    @update:selector="$emit('update:storageClasses', { ...storageClasses, selector: $event })"
     @error="$emit('error', $event)"
   />
 </template>

@@ -328,7 +328,9 @@ export default {
       >
         <Sync
           v-if="isSharedMode"
-          v-model:sync="sync"
+          v-model:ingresses="sync.ingresses"
+          v-model:priority-classes="sync.priorityClasses"
+          v-model:storage-classes="sync.storageClasses"
           :mode="mode"
           :parent-cluster="parentCluster"
           @error="errors.push($event)"

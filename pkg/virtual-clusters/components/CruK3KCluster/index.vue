@@ -766,7 +766,9 @@ export default {
       >
         <Sync
           v-if="isSharedMode"
-          v-model:sync="k3kCluster.spec.sync"
+          v-model:ingresses="k3kCluster.spec.sync.ingresses"
+          v-model:priority-classes="k3kCluster.spec.sync.priorityClasses"
+          v-model:storage-classes="k3kCluster.spec.sync.storageClasses"
           :mode="mode"
           :context="SYNC_CONTEXT.cluster"
         />

@@ -3,14 +3,15 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
-import KeyValue from '@rancher/shell/components/form/KeyValue.vue';
-import ButtonGroup from '@rancher/shell/components/ButtonGroup';
+import KeyValue from '@shell/components/form/KeyValue.vue';
+import ButtonGroup from '@shell/components/ButtonGroup';
 import { RcSection, RcSectionBadges } from '@components/RcSection';
 import { RcTag, RcCounterBadge } from '@components/Pill';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
 import { STORAGE_CLASS } from '@shell/config/types';
 import { RcButton } from '@components/RcButton';
+import { useI18n } from '@shell/composables/useI18n';
 
 const props = defineProps({
   mode: {
@@ -18,9 +19,14 @@ const props = defineProps({
     default: _CREATE
   },
 
-  storageClassesSync: {
+  enabled: {
+    type:    Boolean,
+    default: false
+  },
+
+  selector: {
     type:    Object,
-    default: () => ({})
+    default: undefined
   },
 
   /**
@@ -34,14 +40,14 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:storageClassesSync', 'error']);
+const emit = defineEmits(['update:enabled', 'update:selector', 'error']);
 
 const store = useStore();
-const t = store.getters['i18n/t'];
+const tn = useI18n(store);
 
 /**
  * Resolved management cluster ID – prefers parentCluster (drawer context) but
- * falls back to currentCluster (normal page navigation).
+ * falls back to currentCluster (normal edit page).
  */
 const targetMgmtId = computed(() => {
   const resolved = props.parentCluster || store.getters.currentCluster || null;
@@ -49,41 +55,32 @@ const targetMgmtId = computed(() => {
   return resolved?.mgmt?.id || resolved?.id || null;
 });
 
-/**
- * True when the `cluster` store context is initialised for the correct cluster
- * so that `matching()` can be used directly.
- * False in the drawer case – requires a raw management/request instead.
- */
 const hasClusterStoreContext = computed(() => !!store.getters.currentCluster);
 
 const isView = computed(() => props.mode === _VIEW);
 
 const storageClassEnabled = computed({
-  get: () => props.storageClassesSync?.enabled || false,
+  get: () => props.enabled,
   set: (neu) => {
-    emit('update:storageClassesSync', { ...props.storageClassesSync, enabled: neu });
+    emit('update:enabled', neu);
   }
 });
 
 const storageClassSelector = computed({
-  get: () => props.storageClassesSync?.selector || {},
+  get: () => props.selector || {},
   set: (neu) => {
-    emit('update:storageClassesSync', { ...props.storageClassesSync, selector: neu });
+    emit('update:selector', neu);
   }
 });
 
 const useStorageClassSelector = computed({
-  get: () => !!props.storageClassesSync?.selector,
+  get: () => !!props.selector,
   set: (neu) => {
-    const out = { ...props.storageClassesSync };
-
     if (neu) {
-      out.selector = out.selector || {};
+      emit('update:selector', props.selector || {});
     } else {
-      delete out.selector;
+      emit('update:selector', undefined);
     }
-
-    emit('update:storageClassesSync', out);
   }
 });
 
@@ -139,7 +136,6 @@ const updateMatchingResources = debounce(async() => {
       targetedStorageClasses.value = res?.matches || [];
     } else {
       // component is being used in the drawer in cluster configuration: no cluster store available
-      // Use the same filter format as the cluster store context
       const filters = Object.entries(storageClassSelector.value)
         .map(([key, val]) => `filter=${ encodeURIComponent(`metadata.labels[${ key }] IN (${ val })`) }`)
         .join('&');
@@ -159,7 +155,7 @@ const updateMatchingResources = debounce(async() => {
     targetedStorageClasses.value = null;
     const message = err?.message || err?.data || String(err);
 
-    emit('error', `${ t('k3k.policy.synchronization.storageClass.errorFetchingStorageClasses') } ${ message }`);
+    emit('error', `${ tn('k3k.policy.synchronization.storageClass.errorFetchingStorageClasses') } ${ message }`);
   } finally {
     fetchingMatchingClasses.value = false;
   }

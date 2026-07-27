@@ -1,10 +1,6 @@
-const createConfig = require('@rancher/shell/vue.config');
+const config = require('@rancher/shell/vue.config');
 
-const config = createConfig(__dirname, {
+module.exports = config(__dirname, {
   excludes: [],
   // excludes: ['fleet', 'example']
 });
-
-config.css.loaderOptions.sass.additionalData += `@import "~@pkg/virtual-clusters/assets/styles/index.scss";`;
-
-module.exports = config;

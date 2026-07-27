@@ -1,3 +1,17 @@
+// rc-section CSS custom properties for compatibility with Rancher dashboard versions <2.15
+// that do not include them in their theme stylesheets
+BODY, .theme-light {
+  --rc-section-background-primary: #FFFFFF;
+  --rc-section-background-secondary: #F4F5FA;
+  --rc-section-action-color: #6C6C77;
+}
+
+BODY, .theme-dark {
+  --rc-section-background-primary: #161C24;
+  --rc-section-background-secondary: #262831;
+  --rc-section-action-color: #B6B6C3;
+}
+
 .gap-md {
     display: flex;
     flex-direction: column;

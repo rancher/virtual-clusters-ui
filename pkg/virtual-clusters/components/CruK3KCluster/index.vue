@@ -869,41 +869,45 @@ export default {
         label-key="k3k.sections.advanced"
         :weight="6"
       >
-        <RcSection
-          mode="with-header"
-          :expandable="true"
-          :expanded="true"
-          type="secondary"
-          :title="t('k3k.secretMounts.title')"
-        >
-          <template #counter>
-            <RcCounterBadge
-              :count="(k3kCluster?.spec?.secretMounts || []).length"
-              type="inactive"
-            />
-          </template>
-          <div class="gap-md">
-            <SecretMounts
+        <div class="gap-md">
+          <RcSection
+            mode="with-header"
+            :expandable="true"
+            :expanded="true"
+            type="secondary"
+            :title="t('k3k.secretMounts.title')"
+            background="secondary"
+          >
+            <template #counter>
+              <RcCounterBadge
+                :count="(k3kCluster?.spec?.secretMounts || []).length"
+                type="inactive"
+              />
+            </template>
+            <div class="gap-md">
+              <SecretMounts
+                :mode="mode"
+                :parent-cluster="parentCluster"
+                :target-namespace="k3kCluster.metadata.namespace"
+                :secret-mounts="k3kCluster.spec.secretMounts || []"
+                @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
+              />
+            </div>
+          </RcSection>
+          <RcSection
+            mode="with-header"
+            :expandable="true"
+            :expanded="false"
+            type="secondary"
+            background="secondary"
+            :title="t('component.resource.detail.metadata.labelsAndAnnotations')"
+          >
+            <Labels
+              v-model:value="localValue"
               :mode="mode"
-              :parent-cluster="parentCluster"
-              :target-namespace="k3kCluster.metadata.namespace"
-              :secret-mounts="k3kCluster.spec.secretMounts || []"
-              @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
             />
-          </div>
-        </RcSection>
-        <RcSection
-          mode="with-header"
-          :expandable="true"
-          :expanded="false"
-          type="secondary"
-          :title="t('component.resource.detail.metadata.labelsAndAnnotations')"
-        >
-          <Labels
-            v-model:value="localValue"
-            :mode="mode"
-          />
-        </RcSection>
+          </RcSection>
+        </div>
       </Tab>
     </Tabbed>
   </CruResource>

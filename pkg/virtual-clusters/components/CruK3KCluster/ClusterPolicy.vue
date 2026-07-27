@@ -278,7 +278,7 @@ export default {
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
-  <div class="row mb-20">
+  <div class="row mmb-4">
     <div
       class="col span-6"
     >
@@ -324,7 +324,7 @@ export default {
 
 <style lang="scss">
 .nonepolicy-warning {
-  margin: 3px;
+  margin-top: 4px;
   display: flex;
   & i {
     margin-right: 3px;

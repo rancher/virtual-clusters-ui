@@ -56,11 +56,12 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
         @update:value="emit('update:mountPath', $event)"
       />
     </div>
-    <t
-      k="k3k.secretMounts.mountPath.description"
-      class="input-description"
-      raw
-    />
+    <div class="input-description mmt-1">
+      <t
+        k="k3k.secretMounts.mountPath.description"
+        raw
+      />
+    </div>
   </div>
   <div>
     <div class="col span-6">
@@ -72,11 +73,12 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
         @update:value="emit('update:subPath', $event)"
       />
     </div>
-    <t
-      k="k3k.secretMounts.subPath.description"
-      class="input-description"
-      raw
-    />
+    <div class="input-description mmt-1">
+      <t
+        k="k3k.secretMounts.subPath.description"
+        raw
+      />
+    </div>
   </div>
 
   <div class="col span-12">

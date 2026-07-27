@@ -882,13 +882,15 @@ export default {
               type="inactive"
             />
           </template>
-          <SecretMounts
-            :mode="mode"
-            :parent-cluster="parentCluster"
-            :target-namespace="k3kCluster.metadata.namespace"
-            :secret-mounts="k3kCluster.spec.secretMounts || []"
-            @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
-          />
+          <div class="gap-md">
+            <SecretMounts
+              :mode="mode"
+              :parent-cluster="parentCluster"
+              :target-namespace="k3kCluster.metadata.namespace"
+              :secret-mounts="k3kCluster.spec.secretMounts || []"
+              @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
+            />
+          </div>
         </RcSection>
         <RcSection
           mode="with-header"

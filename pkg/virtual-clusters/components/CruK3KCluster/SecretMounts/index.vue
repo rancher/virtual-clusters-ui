@@ -127,19 +127,21 @@ function mountTitle(mount: SecretMount): string {
       mode="with-header"
       class="secret-mount"
     >
-      <SecretMountItem
-        :mode="mode"
-        :secret-name="mount.secretName || ''"
-        :mount-path="mount.mountPath || ''"
-        :sub-path="mount.subPath || ''"
-        :role="mount.role || 'all'"
-        :secrets="secrets"
-        :loading-secrets="loadingSecrets"
-        @update:secret-name="updateField(i, 'secretName', $event)"
-        @update:mount-path="updateField(i, 'mountPath', $event)"
-        @update:sub-path="updateField(i, 'subPath', $event)"
-        @update:role="updateField(i, 'role', $event)"
-      />
+      <div class="gap-md">
+        <SecretMountItem
+          :mode="mode"
+          :secret-name="mount.secretName || ''"
+          :mount-path="mount.mountPath || ''"
+          :sub-path="mount.subPath || ''"
+          :role="mount.role || 'all'"
+          :secrets="secrets"
+          :loading-secrets="loadingSecrets"
+          @update:secret-name="updateField(i, 'secretName', $event)"
+          @update:mount-path="updateField(i, 'mountPath', $event)"
+          @update:sub-path="updateField(i, 'subPath', $event)"
+          @update:role="updateField(i, 'role', $event)"
+        />
+      </div>
       <template #actions>
         <RcSectionActions
           :actions="[{ icon: 'trash', ariaLabel: t('generic.remove') , action: ()=>removeMount(i) }]"
@@ -164,4 +166,9 @@ function mountTitle(mount: SecretMount): string {
 .secret-mount :deep(.section-header .actions){
     padding-top: 0px;
 }
+// .gap-md {
+//   display: flex;
+//   flex-direction: column;
+//   gap: var(--gap-md);
+// }
 </style>

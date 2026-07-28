@@ -78,7 +78,7 @@ k3k:
       checkbox: Disable cluster isolation
     synchronization:
       label: Resource Synchronization
-      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync Ingresses and PriorityClasses.
+      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
       ingressCheckbox: Ingresses
       priorityClassCheckbox: PriorityClasses
     quota: 

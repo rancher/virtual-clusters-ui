@@ -198,7 +198,7 @@ k3k:
       description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
   secretMounts:
     title: Mounting Secrets
-    description: Mount secrets as single files inside agent or server pods to name them available for custom add-ons, registry configuration, certificates, or other settings. <br/> Learn more about <a target="_blank" rel="nofollow noopener noreferrer" href="https://rancher.github.io/k3k-product-docs/k3k/latest/en/how-tos-for-user/addons.html" >user add-ons</a> and <a target="_blank" rel="nofollow noopener noreferrer" href="https://docs.k3s.io/installation/configuration" >k3s configuration options.</a>
+    description: Mount secrets as single files inside agent or server pods to name them available for custom add-ons, registry configuration, certificates, or other settings. <br/> Learn more about <a target="_blank" rel="nofollow noopener noreferrer" href="https://rancher.github.io/k3k-product-docs/k3k/latest/en/how-tos-for-user/addons.html" >User add-ons</a> and <a target="_blank" rel="nofollow noopener noreferrer" href="https://docs.k3s.io/installation/configuration" >k3s configuration options.</a>
     addLabel: Add Secret Mount
     mountTitle: Select a secret...
     secretName:

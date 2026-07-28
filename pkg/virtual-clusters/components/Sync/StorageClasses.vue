@@ -108,7 +108,6 @@ const matchedCount = computed(() => {
   }
 
   // Fall back to total count while the debounced fetch is still pending
-  // return targetedStorageClasses.value?.length ?? totalStorageClassCount.value;
   return targetedStorageClasses.value?.length || 0;
 });
 

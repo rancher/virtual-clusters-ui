@@ -199,7 +199,7 @@ watch(storageClassSelector, (neu) => {
     :title="t('k3k.policy.synchronization.storageClass.title')"
     mode="with-header"
     :expandable="true"
-    type="primary"
+    type="secondary"
   >
     <t
       class="text-muted"

@@ -1,5 +1,6 @@
 // rc-section CSS custom properties for compatibility with Rancher dashboard versions <2.15
 // that do not include them in their theme stylesheets
+// TODO nb this can be removed once we stop supporting 2.14
 BODY, .theme-light {
   --rc-section-background-primary: #FFFFFF;
   --rc-section-background-secondary: #F4F5FA;
@@ -12,6 +13,7 @@ BODY, .theme-dark {
   --rc-section-action-color: #B6B6C3;
 }
 
+// medium gap spacing for rc section content - to be replaced by some global component and/or style rules in a later Rancher release
 .gap-md {
     display: flex;
     flex-direction: column;

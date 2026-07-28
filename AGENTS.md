@@ -38,8 +38,6 @@ You are an expert Senior Software Engineer specializing in Vue.js and TypeScript
   - The dashboard will be available at `https://127.0.0.1:8005`.
 - **Build**: `yarn build`
 - **Lint**: `yarn lint`
-- **Unit Tests**: `yarn test:ci` (Jest)
-- **E2E Tests**: See contributors guide
 
 
 # Contributors Guide

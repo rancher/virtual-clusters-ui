@@ -213,10 +213,7 @@ k3k:
       description: Select the type of k3k pod that the secret will be mounted in.
       server: Server Pods
       agent: Agent Pods
-      all: Server & Agent Pods
-    # name:
-    #   label: Volume Name (optional)
-    #   placeholder: my-volume-name
+      all: Server & Agent Podss
     subPath:
       label: Subpath 
       placeholder: e.g. my-secret.yaml

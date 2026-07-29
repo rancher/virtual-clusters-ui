@@ -36,6 +36,7 @@ import ClusterPolicy from './ClusterPolicy.vue';
 import SecretMounts from './SecretMounts/index.vue';
 import Mode from '../Mode.vue';
 import Sync, { SYNC_CONTEXT } from '../Sync';
+import NotAllowed from '../Sync/NotAllowed.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
@@ -137,7 +138,8 @@ export default {
     K3kVersionBanner,
     SecretMounts,
     RcSection,
-    RcCounterBadge
+    RcCounterBadge,
+    NotAllowed
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -772,6 +774,7 @@ export default {
           :mode="mode"
           :context="SYNC_CONTEXT.cluster"
         />
+        <NotAllowed v-else />
       </Tab>
       <Tab
         name="server-agents"

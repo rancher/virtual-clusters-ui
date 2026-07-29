@@ -15,11 +15,15 @@ import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 
+import { set } from '@shell/utils/object';
+
 import Projects from './Projects.vue';
 import PolicyAffinity from './PolicyAffinity.vue';
 import { ANNOTATIONS, K3K } from '../../types';
 import Mode from '../../components/Mode.vue';
 import Sync from '../../components/Sync';
+import NotAllowed from '../../components/Sync/NotAllowed.vue';
+
 import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES } from '../../utils/shared';
@@ -51,6 +55,7 @@ export default {
     Sync,
     K3kVersionBanner,
     KeyValue,
+    NotAllowed
   },
 
   // provisioning cluster object - needed when the policy form is shown in a drawer during cluster creation
@@ -171,16 +176,30 @@ export default {
       }
     },
 
-    sync: {
+    ingresses: {
       get() {
-        return this.value?.spec?.sync || {};
+        return this.value?.spec?.sync?.ingresses || {};
       },
       set(neu) {
-        if (neu && !isEmpty(neu)) {
-          this.value.spec.sync = neu;
-        } else {
-          delete this.value.spec.sync;
-        }
+        set(this.value, 'spec.sync.ingresses', neu);
+      }
+    },
+
+    priorityClasses: {
+      get() {
+        return this.value?.spec?.sync?.priorityClasses || {};
+      },
+      set(neu) {
+        set(this.value, 'spec.sync.priorityClasses', neu);
+      }
+    },
+
+    storageClasses: {
+      get() {
+        return this.value?.spec?.sync?.storageClasses || {};
+      },
+      set(neu) {
+        set(this.value, 'spec.sync.storageClasses', neu);
       }
     },
 
@@ -203,18 +222,6 @@ export default {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], '');
       } else {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], projects.map((p) => p.id).join(', '));
-      }
-    },
-
-    updateSync(key, enabled) {
-      if (!this.value.spec.sync) {
-        this.value.spec.sync = {};
-      }
-
-      if (!this.value.spec.sync[key]) {
-        this.value.spec.sync[key] = { enabled };
-      } else {
-        this.value.spec.sync[key].enabled = enabled;
       }
     },
 
@@ -328,13 +335,14 @@ export default {
       >
         <Sync
           v-if="isSharedMode"
-          v-model:ingresses="sync.ingresses"
-          v-model:priority-classes="sync.priorityClasses"
-          v-model:storage-classes="sync.storageClasses"
+          v-model:ingresses="ingresses"
+          v-model:priority-classes="priorityClasses"
+          v-model:storage-classes="storageClasses"
           :mode="mode"
           :parent-cluster="parentCluster"
           @error="errors.push($event)"
         />
+        <NotAllowed v-else />
       </Tab>
 
       <Tab

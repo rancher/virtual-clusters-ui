@@ -90,20 +90,22 @@ function updateField(index: number, field: keyof SecretMount, value: unknown) {
   emit('update:secretMounts', updated);
 }
 
-function mountTitle(mount: SecretMount): string {
+function mountTitle(mount: SecretMount): {name: string, path?: string} {
   const name = mount.secretName || store.getters['i18n/t']('k3k.secretMounts.mountTitle');
-  const path = mount.mountPath;
+  const mountPath = mount.mountPath;
 
   // grab the last segment of the mount path to append to the title, since mount.secretName is not necessarily unique
-  if (path) {
-    const trailingSlash = path.endsWith('/');
-    const trimmed = path.replace(/\/+$/, '');
+  if (mountPath) {
+    const trailingSlash = mountPath.endsWith('/');
+    const trimmed = mountPath.replace(/\/+$/, '');
     const lastSegment = trimmed.split('/').pop();
 
-    return `${ name } \u2014 /${ lastSegment }${ trailingSlash ? '/' : '' }`;
+    const path = `/${ lastSegment }${ trailingSlash ? '/' : '' }`;
+
+    return { name, path };
   }
 
-  return name;
+  return { name };
 }
 </script>
 
@@ -131,6 +133,15 @@ function mountTitle(mount: SecretMount): string {
       mode="with-header"
       class="secret-mount"
     >
+      <template #title>
+        <span class="mount-title">
+          <span class="title-name">{{ mountTitle(mount).name }}</span>
+          <span
+            v-if="mountTitle(mount).path"
+            class="title-path"
+          >&nbsp; — &nbsp;{{ mountTitle(mount).path }}</span>
+        </span>
+      </template>
       <div class="gap-md">
         <SecretMountItem
           :mode="mode"
@@ -167,7 +178,45 @@ function mountTitle(mount: SecretMount): string {
 </template>
 
 <style lang="scss" scoped>
-.secret-mount :deep(.section-header .actions){
-    padding-top: 0px;
+// style rules to make the secret name use text-overflow: ellipsis while preserving the path
+.secret-mount {
+  overflow: hidden;
+}
+
+.secret-mount :deep(.section-header .actions) {
+  padding-top: 0px;
+}
+
+.secret-mount :deep(.section-header .left-wrapper) {
+  overflow: hidden;
+  min-width: 0;
+  width: 0;
+  flex: 1 1 0%;
+}
+
+.secret-mount :deep(.section-header .title) {
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+}
+
+.mount-title {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+
+  .title-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .title-path {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }
 </style>

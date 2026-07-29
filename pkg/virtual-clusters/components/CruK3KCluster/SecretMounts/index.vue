@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import SecretMountItem from './SecretMount.vue';
 import type { SecretMount } from '../../../types/k3k';
+import { _VIEW } from '@shell/config/query-params';
 import { RcSection, RcSectionActions } from '@components/RcSection';
 import { RcButton } from '@components/RcButton';
 
@@ -26,6 +27,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:secretMounts': [value: SecretMount[]];
 }>();
+
+const isView = computed(() => props.mode === _VIEW);
 
 const secrets = ref<string[]>([]);
 const loadingSecrets = ref(false);
@@ -91,6 +94,7 @@ function mountTitle(mount: SecretMount): string {
   const name = mount.secretName || store.getters['i18n/t']('k3k.secretMounts.mountTitle');
   const path = mount.mountPath;
 
+  // grab the last segment of the mount path to append to the title, since mount.secretName is not necessarily unique
   if (path) {
     const trailingSlash = path.endsWith('/');
     const trimmed = path.replace(/\/+$/, '');
@@ -151,7 +155,7 @@ function mountTitle(mount: SecretMount): string {
   </template>
   <div>
     <RcButton
-      v-if="mode !== 'view'"
+      v-if="!isView"
       size="small"
       variant="secondary"
       left-icon="plus"
@@ -166,9 +170,4 @@ function mountTitle(mount: SecretMount): string {
 .secret-mount :deep(.section-header .actions){
     padding-top: 0px;
 }
-// .gap-md {
-//   display: flex;
-//   flex-direction: column;
-//   gap: var(--gap-md);
-// }
 </style>

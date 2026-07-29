@@ -36,8 +36,7 @@ You are an expert Senior Software Engineer specializing in Vue.js and TypeScript
 - **Start development server**: `API=<Rancher_Backend_URL> yarn dev`
   - The `API` environment variable should point to a running Rancher server (e.g., `https://localhost`).
   - The dashboard will be available at `https://127.0.0.1:8005`.
-- **Build**: `yarn build`
-- **Lint**: `yarn lint`
+- **Build**: `yarn build-pkg virtual-clusters`
 
 
 # Contributors Guide

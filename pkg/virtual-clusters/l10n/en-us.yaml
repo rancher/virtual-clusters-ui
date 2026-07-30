@@ -3,6 +3,7 @@ k3k:
   label: K3K
   policy:
     label: Virtual Cluster Policy
+    placeholder: Select a policy
     noneWarning: Clusters created without a policy should only be used for testing purposes.
     tabs:
       config: Config
@@ -141,6 +142,7 @@ k3k:
   targetNamespace:
     label: Target Namespace
     placeholder: Select the target namespace or create a new one
+    createLabel: Create a new Namespace
   hostCluster:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster
@@ -265,6 +267,7 @@ k3k:
     deletingClusterGeneric: Error deleting cluster
     deletingProvCluster: 'Cluster creation and registration has failed but a Rancher cluster resource may have been created. Check the cluster management list view before trying again.'
     deletingK3kCluster: 'Cluster creation and registration has failed but a K3K cluster resource may have been created. Check the host cluster before trying again.'
+    deletingNamespace: 'Cluster creation and registration has failed but the target namespace may have been created. Check the host cluster before trying again.'
     creatingAndRegisteringCluster: 'There was an error creating the virtual cluster:'
   landingPage:
     title: Virtual Clusters

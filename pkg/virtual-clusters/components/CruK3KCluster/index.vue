@@ -20,7 +20,7 @@ import { RcSection } from '@components/RcSection';
 import { RcCounterBadge } from '@components/Pill';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
-import { CAPI, MANAGEMENT } from '@shell/config/types';
+import { CAPI, MANAGEMENT, NAMESPACE } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
@@ -522,9 +522,13 @@ export default {
       this.k3kClusterBeforeSave = cloneDeep(this.k3kCluster);
 
       const cluster = await this.findNormanCluster();
+      let createdNamespace = false;
 
       try {
         if (this.mode === _CREATE) {
+          // create the target namespace first
+          createdNamespace = await this.$refs.clusterPolicy.createNamespaceIfNeeded();
+
           // create the k3k cluster crd
           await this.createCluster();
 
@@ -552,7 +556,7 @@ export default {
         const cb = async(passed) => {
           if (!passed && this.mode === _CREATE) {
             try {
-              await this.deleteResourcesForRedo();
+              await this.deleteResourcesForRedo(createdNamespace);
             } catch (e) {
               this.errors.push(e);
 
@@ -570,10 +574,16 @@ export default {
       }
     },
 
-    // if created, delete the k3k cluster and provisioning cluster and reset this.k3kCluster and this.localValue (prov cluster) so that the user can retry clicking save
+    // if created, delete the k3k cluster, provisioning cluster and (if we created one)
+    // the target namespace, and reset this.k3kCluster and this.localValue (prov cluster)
+    // so that the user can retry clicking save
     // only used during create, never edit
-    async deleteResourcesForRedo() {
+    async deleteResourcesForRedo(createdNamespace) {
       const errors = [];
+
+      // capture this before deleteK3kCluster() potentially resets k3kCluster
+      // back to its pre-save (blank) state
+      const namespaceToClean = createdNamespace ? this.k3kCluster?.metadata?.namespace : null;
 
       try {
         await this.deleteK3kCluster();
@@ -585,6 +595,14 @@ export default {
         await this.deleteProvCluster();
       } catch (e) {
         errors.push(e);
+      }
+
+      if (namespaceToClean) {
+        try {
+          await this.deleteNamespace(namespaceToClean);
+        } catch (e) {
+          errors.push(e);
+        }
       }
 
       // If any errors occurred, throw them
@@ -635,6 +653,20 @@ export default {
       } catch (e) {
         // warn users the prov cluster might still exist
         throw new Error(`${ this.t('k3k.errors.deletingProvCluster') }\n${ e?.message || e }`);
+      }
+    },
+
+    // best-effort rollback for a namespace ClusterPolicy created via createNamespaceIfNeeded
+    async deleteNamespace(name) {
+      try {
+        const cluster = await this.findNormanCluster();
+
+        await this.$store.dispatch('management/request', {
+          url:    `/k8s/clusters/${ cluster?.id }/v1/${ NAMESPACE }/${ name }`,
+          method: 'DELETE',
+        });
+      } catch (e) {
+        throw new Error(`${ this.t('k3k.errors.deletingNamespace') }\n${ e?.message || e }`);
       }
     },
 
@@ -720,6 +752,7 @@ export default {
         />
 
         <ClusterPolicy
+          ref="clusterPolicy"
           v-model:target-namespace="k3kCluster.metadata.namespace"
           v-model:policy="policy"
           :host-cluster="parentCluster"

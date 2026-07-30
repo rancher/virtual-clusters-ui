@@ -334,9 +334,7 @@ export default {
 
     fvExtraRules() {
       return {
-        namespaceRequired: () => {
-          const ns = this.k3kCluster?.metadata?.namespace;
-
+        namespaceRequired: (ns) => {
           return !ns ? this.t('validation.required', { key: this.t('tableHeaders.namespace') }) : null;
         }
       };

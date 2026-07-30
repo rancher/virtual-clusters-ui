@@ -2,6 +2,7 @@
 import { _CREATE } from '@shell/config/query-params';
 
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import LabeledSelectWithCreate from '@shell/components/form/LabeledSelectWithCreate';
 import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
@@ -25,6 +26,7 @@ export default {
 
   components: {
     LabeledSelect,
+    LabeledSelectWithCreate,
     Banner
   },
 
@@ -78,7 +80,9 @@ export default {
       namespaces:                   [],
       loadingPoliciesAndNamespaces: false,
       namespaceError:               false,
-      policyError:                  false
+      policyError:                  false,
+      namespaceCreating:            false,
+      previousTargetNamespace:      '',
     };
   },
 
@@ -91,19 +95,32 @@ export default {
       }
     },
 
-    policyOptions(neu = []) {
-      const policyOpt = neu.find((p) => !!p?.value ) ;
-
-      if (this.mode === _CREATE) {
-        this.$emit('update:policy', policyOpt?.value || null);
-        this.$emit('update:targetNamespace', '');
+    policyOptions(neu = [], old = []) {
+      if (this.mode !== _CREATE) {
+        return;
       }
+
+      const policyIds = (opts) => opts.map((p) => p?.value?.metadata?.name || '').join('|');
+
+      // We need this check because the policy options get recalculated when new namespace is added
+      if (policyIds(neu) === policyIds(old)) {
+        return;
+      }
+
+      // only preset the policy on create when there's a single unambiguous option
+      const realPolicyOptions = neu.filter((p) => !!p?.value);
+
+      this.$emit('update:policy', realPolicyOptions.length === 1 ? realPolicyOptions[0].value : null);
+      this.$emit('update:targetNamespace', '');
     },
 
     namespaceOptions(neu = []) {
-      if (this.mode === _CREATE && !neu.includes(this.targetNamespace)) {
-        this.$emit('update:targetNamespace', neu[0] || '');
+      if (this.mode !== _CREATE || neu.includes(this.targetNamespace)) {
+        return;
       }
+
+      // when there's no policy selected, let the user pick a namespace explicitly rather than presetting one
+      this.$emit('update:targetNamespace', this.isPolicySelected ? (neu[0] || '') : '');
     },
 
   },
@@ -158,7 +175,6 @@ export default {
 
     async fetchNamespaces() {
       this.namespaceError = false;
-      this.namespaces = [];
       try {
         const res = await this.$store.dispatch('management/request', {
           url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
@@ -194,7 +210,37 @@ export default {
       }
     },
 
-    isEmpty
+    isEmpty,
+
+    onNamespaceCreating() {
+      this.previousTargetNamespace = this.targetNamespace;
+      this.namespaceCreating = true;
+    },
+
+    async onNamespaceCreate(name) {
+      this.namespaceCreating = false;
+      try {
+        await this.$store.dispatch('management/request', {
+          url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
+          method: 'POST',
+          data:   {
+            apiVersion: 'v1',
+            kind:       'Namespace',
+            metadata:   { name },
+          },
+        });
+        await this.fetchNamespaces();
+        this.$emit('update:targetNamespace', name);
+      } catch (e) {
+        this.namespaceError = true;
+        this.$emit('update:targetNamespace', this.previousTargetNamespace);
+      }
+    },
+
+    cancelCreateNamespace() {
+      this.namespaceCreating = false;
+      this.$emit('update:targetNamespace', this.previousTargetNamespace);
+    },
   },
 
   computed: {
@@ -261,6 +307,9 @@ export default {
 
     showLoadingSpinner() {
       return this.loadingPoliciesAndNamespaces || this.$fetchState.pending;
+    },
+    isPolicySelected() {
+      return this.policy && !isEmpty(this.policy);
     }
   },
 };
@@ -283,7 +332,7 @@ export default {
       class="col span-6"
     >
       <LabeledSelect
-        :value="policy && !isEmpty(policy) ? policy : t('generic.none')"
+        :value="isPolicySelected ? policy : t('generic.none')"
         :loading="showLoadingSpinner"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
@@ -297,7 +346,7 @@ export default {
         class="nonepolicy-warning text-deemphasized"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
       <button
-        v-if="policy && !isEmpty(policy)"
+        v-if="isPolicySelected"
         type="button"
         class="btn role-link show-policy"
         data-testid="k3k-policy-open-drawer"
@@ -307,11 +356,28 @@ export default {
       </button>
     </div>
     <div class="col span-6">
-      <LabeledSelect
+      <LabeledSelectWithCreate
+        v-if="!isPolicySelected"
         :value="targetNamespace"
         :loading="showLoadingSpinner"
         :mode="mode"
-        :disabled="!isCreate"
+        :disabled="!hostClusterId || !isCreate"
+        :label="t('k3k.targetNamespace.label')"
+        :options="namespaceOptions"
+        :rules="rules.namespace"
+        :placeholder="t('k3k.targetNamespace.placeholder')"
+        required
+        @update:value="e=>$emit('update:targetNamespace', e)"
+        @creating="onNamespaceCreating"
+        @create="onNamespaceCreate"
+        @cancel="cancelCreateNamespace"
+      />
+      <LabeledSelect
+        v-else
+        :value="targetNamespace"
+        :loading="showLoadingSpinner"
+        :mode="mode"
+        :disabled="!hostClusterId || !isCreate"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
         :rules="rules.namespace"

@@ -97,7 +97,7 @@ export default {
   watch: {
     parentClusterOptions: {
       handler(neu = []) {
-        if (!this.parentCluster?.id && neu.length) {
+        if (!this.parentCluster?.id && neu.length === 1) {
           this.selectedParentOption = neu[0].value;
         }
       },
@@ -347,6 +347,8 @@ export default {
         :disabled="!isCreate"
         :options="parentClusterOptions"
         :loading="loadingClusters"
+        :placeholder="t('k3k.hostCluster.placeholder')"
+        required
       />
     </div>
     <div

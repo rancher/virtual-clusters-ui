@@ -140,6 +140,7 @@ k3k:
     viewPolicy: View Policy Configuration
   targetNamespace:
     label: Target Namespace
+    placeholder: Select the target namespace or create a new one
   hostCluster:
     label: Host cluster
     placeholder: The cluster that will host this virtual cluster

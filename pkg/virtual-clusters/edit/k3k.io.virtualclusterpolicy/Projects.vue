@@ -484,7 +484,7 @@ export default {
     <h3>
       {{ t('k3k.policy.headers.projectsAndNamespaces') }}
     </h3>
-    <h5 class="text-muted">
+    <h5 class="text-deemphasized">
       {{ t('k3k.policy.projects.subheader') }}
     </h5>
     <div class="row mb-20">

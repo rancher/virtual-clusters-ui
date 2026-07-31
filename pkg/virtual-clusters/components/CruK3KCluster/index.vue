@@ -16,6 +16,8 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import Tab from '@shell/components/Tabbed/Tab';
 import Tabbed from '@shell/components/Tabbed';
+import { RcSection } from '@components/RcSection';
+import { RcCounterBadge } from '@components/Pill';
 
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
@@ -31,6 +33,7 @@ import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
+import SecretMounts from './SecretMounts/index.vue';
 import Mode from '../Mode.vue';
 import Sync from '../Sync.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
@@ -72,7 +75,12 @@ const defaultCluster = {
     },
     servers:      1,
     nodeSelector: {},
-    sync:         {}
+    sync:         {},
+    secretMounts: [{
+      secretName: '',
+      mountPath:  '',
+      role:       'all'
+    }]
   }
 };
   // map of fields in k3kCluster that are superceded by policy configuration, in the format k3kCluster key: policy key
@@ -123,7 +131,10 @@ export default {
     Mode,
     Sync,
     PolicyAffinity,
-    K3kVersionBanner
+    K3kVersionBanner,
+    SecretMounts,
+    RcSection,
+    RcCounterBadge
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -495,6 +506,14 @@ export default {
     },
 
     async saveOverride(btnCb) {
+      // Remove empty secret mounts before saving
+      if (this.k3kCluster.spec.secretMounts) {
+        this.k3kCluster.spec.secretMounts = this.k3kCluster.spec.secretMounts.filter((m) => m.secretName || m.mountPath);
+        if (!this.k3kCluster.spec.secretMounts.length) {
+          delete this.k3kCluster.spec.secretMounts;
+        }
+      }
+
       this.provClusterBeforeSave = cloneDeep(this.value);
       this.k3kClusterBeforeSave = cloneDeep(this.k3kCluster);
 
@@ -891,14 +910,49 @@ export default {
         />
       </Tab>
       <Tab
-        name="labels"
-        label-key="generic.labelsAndAnnotations"
+        name="advanced"
+        label-key="k3k.sections.advanced"
         :weight="6"
       >
-        <Labels
-          v-model:value="localValue"
-          :mode="mode"
-        />
+        <div class="gap-md">
+          <RcSection
+            mode="with-header"
+            :expandable="true"
+            :expanded="true"
+            type="secondary"
+            :title="t('k3k.secretMounts.title')"
+            background="secondary"
+          >
+            <template #counter>
+              <RcCounterBadge
+                :count="(k3kCluster?.spec?.secretMounts || []).length"
+                type="inactive"
+              />
+            </template>
+            <div class="gap-md">
+              <SecretMounts
+                :mode="mode"
+                :parent-cluster="parentCluster"
+                :target-namespace="k3kCluster.metadata.namespace"
+                :secret-mounts="k3kCluster.spec.secretMounts || []"
+                @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
+              />
+            </div>
+          </RcSection>
+          <RcSection
+            mode="with-header"
+            :expandable="true"
+            :expanded="false"
+            type="secondary"
+            background="secondary"
+            :title="t('component.resource.detail.metadata.labelsAndAnnotations')"
+          >
+            <Labels
+              v-model:value="localValue"
+              :mode="mode"
+            />
+          </RcSection>
+        </div>
       </Tab>
     </Tabbed>
   </CruResource>

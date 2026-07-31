@@ -278,7 +278,7 @@ export default {
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
-  <div class="row mb-20">
+  <div class="row mmb-4">
     <div
       class="col span-6"
     >
@@ -294,7 +294,7 @@ export default {
       />
       <span
         v-if="!policy && !showLoadingSpinner"
-        class="nonepolicy-warning text-muted"
+        class="nonepolicy-warning text-deemphasized"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
       <button
         v-if="policy && !isEmpty(policy)"
@@ -324,7 +324,7 @@ export default {
 
 <style lang="scss">
 .nonepolicy-warning {
-  margin: 3px;
+  margin-top: 4px;
   display: flex;
   & i {
     margin-right: 3px;

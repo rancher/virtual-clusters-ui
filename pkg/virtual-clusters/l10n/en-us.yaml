@@ -69,7 +69,7 @@ k3k:
       editPolicy: Edit Policy
     security:
       label: Security
-      tooltip: Pod Security Standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
+      tooltip: Pod security standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
       learnMore: Learn more about virtual cluster network policies
     isolation:
       label: Cluster Isolation
@@ -78,7 +78,7 @@ k3k:
       checkbox: Disable cluster isolation
     synchronization:
       label: Resource Synchronization
-      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync Ingresses and PriorityClasses.
+      tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
       ingressCheckbox: Ingresses
       priorityClassCheckbox: PriorityClasses
     quota: 
@@ -196,10 +196,34 @@ k3k:
     storageClass:
       label: Storage Class
       description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+  secretMounts:
+    title: Mounting Secrets
+    description: Mount secrets as single files inside agent or server pods to make them available for custom <a target="_blank" rel="nofollow noopener noreferrer" href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/how-tos-for-user/addons.html">add-ons <icon class="icon icon-external-link icon-sm"/></a>, <a target="_blank" rel="nofollow noopener noreferrer" href="https://scc.suse.com/rancher-docs/rancherprime/latest/en/suse-virtual-cluster/installation-and-upgrades/k3k-air-gap.html#_enforce_registry_in_virtual_clusters_using_registries_yaml" >registry configuration <icon class="icon icon-external-link icon-sm"/></a>, certificates, or other settings.
+    addLabel: Add Secret Mount
+    mountTitle: Select a secret...
+    secretName:
+      label: Secret
+      placeholder: Add a secret from the selected namespace
+    mountPath:
+      label: Mount Path
+      placeholder: e.g. /etc/rancher/k3s/registries.yaml
+      description: The path within server and/or agent pods where the secret contents will be mounted.
+    role:
+      label: k3k Pod type
+      description: Select the type of k3k pod that the secret will be mounted in.
+      server: Server Pods
+      agent: Agent Pods
+      all: Server & Agent Pods
+    subPath:
+      label: Subpath 
+      placeholder: e.g. my-secret.yaml
+      description: An optional path within the secret to mount instead of the root. <br> When provided, only the specified key from the secret will be mounted as a file at the mount path, keeping the parent directory writable.
+    remove: Remove
   sections:
     basics: Basics
     networking: Networking
     serverAndAgents: Server and Agents
+    advanced: Advanced
   errors:
     loadingStorageClasses: 'Error loading storage classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'

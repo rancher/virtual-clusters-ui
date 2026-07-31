@@ -1,6 +1,6 @@
 <script>
 import { K3K } from '../types';
-import { CAPI, MANAGEMENT } from '@shell/config/types';
+import { CAPI } from '@shell/config/types';
 import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k from '../components/InstallK3k.vue';
 import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCanInstallK3k } from '../utils/k3kInstalled';

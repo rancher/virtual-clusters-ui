@@ -57,7 +57,7 @@ export default {
       >
         <template #label>
           <h3>{{ t('k3k.mode.label') }}</h3>
-          <h5 class="text-muted">
+          <h5 class="text-deemphasized">
             {{ t('k3k.mode.tooltip') }}
           </h5>
         </template>

@@ -42,3 +42,22 @@ export type ParentClusterType = {
     id?: string;
   };
 } | null;
+
+export type SecretMountRole = 'server' | 'agent' | 'all';
+
+export type SecretVolumeSourceItem = {
+  key: string;
+  path: string;
+  mode?: number;
+};
+
+export type SecretMount = {
+  secretName?: string;
+  items?: SecretVolumeSourceItem[];
+  defaultMode?: number;
+  optional?: boolean;
+  name?: string;
+  mountPath?: string;
+  subPath?: string;
+  role?: SecretMountRole;
+};

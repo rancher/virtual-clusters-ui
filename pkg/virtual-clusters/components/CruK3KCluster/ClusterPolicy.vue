@@ -374,6 +374,7 @@ export default {
     </div>
     <div class="col span-6">
       <LabeledSelectWithCreate
+        :key="isPolicySelected"
         :value="targetNamespace"
         :loading="showLoadingSpinner"
         :mode="mode"

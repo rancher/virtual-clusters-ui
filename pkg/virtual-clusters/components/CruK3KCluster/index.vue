@@ -179,6 +179,8 @@ export default {
         this.k3kCluster = res || {};
         this.parentClusterId = parentProvCluster.id;
         this.parentCluster = parentProvCluster;
+        //on edit, the parent display name annotation is used as a display-only fallback if the user currently loading the form can't view the parent prov cluster obeject
+        this.parentClusterDisplayAnnotation = this.value.metadata.annotations['ui.rancher/parent-cluster-display']
       } catch (e) {
         this.errors.push(e);
       }
@@ -280,6 +282,7 @@ export default {
       connectingToHost:           false,
       provClusters:               [],
       parentCluster:              {}, // provisioning cluster representing the "host cluster"
+      parentClusterDisplayAnnotation: null, 
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
@@ -691,6 +694,7 @@ export default {
         <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"
+          :parent-cluster-display-annotation="parentClusterDisplayAnnotation"
           :mode="mode"
           :clusters="provClusters"
           @error="handleInstallationError"

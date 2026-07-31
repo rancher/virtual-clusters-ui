@@ -54,6 +54,12 @@ export default {
       }
     },
 
+    // display-only fallback for edit/view mode if the current user can't fetch the parent prov cluster
+    parentClusterDisplayAnnotation: {
+      type:    String,
+      default: ''
+    },
+
     mode: {
       type:    String,
       default: _CREATE
@@ -129,8 +135,10 @@ export default {
     },
 
     selectedParentOption: {
+      // building parentClusterOptions is only done on create because it requires multiple api calls per cluster
+      // on edit/view, just show the parent cluster display name
       get() {
-        return this.parentClusterOptions.find((opt) => opt?.value?.id === this.localParentCluster?.id);
+        return this.isCreate ? this.parentClusterOptions.find((opt) => opt?.value?.id === this.localParentCluster?.id) : this.getClusterDisplayName(this.parentCluster) || this.parentClusterDisplayAnnotation;
       },
       async set( value ) {
         const fullOption = this.parentClusterOptions.find((opt) => opt?.value?.id === value?.id);
@@ -150,6 +158,11 @@ export default {
 
   methods: {
     isEmpty,
+
+    getClusterDisplayName(provCluster) {
+      return provCluster?.displayName || provCluster?.name || provCluster?.id;
+    },
+
     // track which clusters already have k3k and the user has permission to create k3k clusters in,
     // and which clusters the user has permission to install k3k in
     async getParentClusterInstallationStatus() {
@@ -170,7 +183,7 @@ export default {
           isVirtual:            !!pCluster.metadata?.annotations?.['ui.rancher/parent-cluster'],
           isLocal:              pCluster.name === 'local',
           isReady:              mgmt.isReady,
-          label:                pCluster.displayName || pCluster.name || pCluster.id,
+          label:                this.getClusterDisplayName(pCluster),
           value:                pCluster,
           k3kInstalled,
           canInstallK3k,

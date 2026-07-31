@@ -81,7 +81,7 @@ export default {
       loadingPoliciesAndNamespaces: false,
       namespaceError:               false,
       policyError:                  false,
-      previousTargetNamespace:      '',
+      previousTargetNamespace:      ''
     };
   },
 
@@ -253,6 +253,13 @@ export default {
       return mgmt?.id;
     },
 
+    // project-scoped RBAC only propagates into namespaces backed by a project, so only
+    // users with cluster-level permissions can create resources in projectless namespaces -
+    // mirrors Dashboard's own canSeeProjectlessNamespaces (ExplorerProjectsNamespaces.vue)
+    canCreateInProjectlessNamespaces() {
+      return !!this.hostCluster?.mgmt?.canUpdate;
+    },
+
     namespaceIdsByProject() {
       const out = { none: [] };
 
@@ -277,7 +284,7 @@ export default {
     },
 
     policyOptions() {
-      return [{ label: this.t('generic.none'), value: {} }, ...this.policies.reduce((hasNs, p) => {
+      return [{ label: this.t('k3k.policy.noneOption'), value: {} }, ...this.policies.reduce((hasNs, p) => {
         const projectIds = (getProjectIds(p) || []);
 
         const hasNamespaces = (projectIds).find((p) => this.namespaceIdsByProject[p]);
@@ -340,7 +347,7 @@ export default {
       class="col span-6"
     >
       <LabeledSelect
-        :value="isPolicySelected ? policy : (isNoneSelected ? t('generic.none') : null)"
+        :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
         :loading="showLoadingSpinner"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
@@ -367,7 +374,6 @@ export default {
     </div>
     <div class="col span-6">
       <LabeledSelectWithCreate
-        v-if="!isPolicySelected"
         :value="targetNamespace"
         :loading="showLoadingSpinner"
         :mode="mode"
@@ -377,22 +383,11 @@ export default {
         :rules="rules.namespace"
         :placeholder="t('k3k.targetNamespace.placeholder')"
         :create-label="t('k3k.targetNamespace.createLabel')"
+        :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
         required
         @update:value="e=>$emit('update:targetNamespace', e)"
         @creating="onNamespaceCreating"
         @cancel="cancelCreateNamespace"
-      />
-      <LabeledSelect
-        v-else
-        :value="targetNamespace"
-        :loading="showLoadingSpinner"
-        :mode="mode"
-        :disabled="!hostClusterId || !isCreate || isPolicyUnset"
-        :label="t('k3k.targetNamespace.label')"
-        :options="namespaceOptions"
-        :rules="rules.namespace"
-        :require-dirty="false"
-        @update:value="e=>$emit('update:targetNamespace', e)"
       />
     </div>
   </div>

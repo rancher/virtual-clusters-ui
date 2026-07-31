@@ -5,6 +5,7 @@ k3k:
     label: Virtual Cluster Policy
     placeholder: Select a policy
     noneWarning: Clusters created without a policy should only be used for testing purposes.
+    noneOption: No policy
     tabs:
       config: Config
       resourceSync: Resource Synchronization

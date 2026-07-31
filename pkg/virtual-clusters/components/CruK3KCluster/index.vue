@@ -311,6 +311,18 @@ export default {
           rootObject: this.k3kCluster,
           rules:      ['namespaceRequired']
         },
+        {
+          path:           'policyForValidation',
+          rootObject:     this,
+          rules:          ['required'],
+          translationKey: 'k3k.policy.label'
+        },
+        {
+          path:           'parentCluster.id',
+          rootObject:     this,
+          rules:          ['required'],
+          translationKey: 'k3k.hostCluster.label'
+        },
       ],
       /**
        * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
@@ -338,6 +350,10 @@ export default {
           return !ns ? this.t('validation.required', { key: this.t('tableHeaders.namespace') }) : null;
         }
       };
+    },
+
+    policyForValidation() {
+      return this.policy === null ? '' : this.policy;
     },
 
     isCreate() {
@@ -748,6 +764,7 @@ export default {
           v-model:k3k-installed="k3kInstalled"
           :mode="mode"
           :clusters="provClusters"
+          :rules="{hostCluster: fvGetAndReportPathRules('parentCluster.id')}"
           @error="handleInstallationError"
         />
 
@@ -758,7 +775,7 @@ export default {
           :host-cluster="parentCluster"
           :k3k-installed="k3kInstalled"
           :mode="mode"
-          :rules="{namespace:fvGetAndReportPathRules('metadata.namespace')}"
+          :rules="{namespace:fvGetAndReportPathRules('metadata.namespace'), policy:fvGetAndReportPathRules('policyForValidation')}"
         />
 
         <div class="row mb-20">

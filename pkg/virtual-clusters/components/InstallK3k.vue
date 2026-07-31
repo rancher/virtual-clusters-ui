@@ -73,6 +73,13 @@ export default {
     showButtonOnly: {
       type:    Boolean,
       default: false
+    },
+
+    rules: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
     }
   },
 
@@ -348,6 +355,7 @@ export default {
         :options="parentClusterOptions"
         :loading="loadingClusters"
         :placeholder="t('k3k.hostCluster.placeholder')"
+        :rules="rules.hostCluster"
         required
       />
     </div>

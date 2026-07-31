@@ -228,22 +228,17 @@ export default {
         return false;
       }
 
-      try {
-        await this.$store.dispatch('management/request', {
-          url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
-          method: 'POST',
-          data:   {
-            apiVersion: 'v1',
-            kind:       'Namespace',
-            metadata:   { name: this.targetNamespace },
-          },
-        });
+      await this.$store.dispatch('management/request', {
+        url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
+        method: 'POST',
+        data:   {
+          apiVersion: 'v1',
+          kind:       'Namespace',
+          metadata:   { name: this.targetNamespace },
+        },
+      });
 
-        return true;
-      } catch (e) {
-        this.namespaceError = true;
-        throw e;
-      }
+      return true;
     }
   },
 
@@ -352,7 +347,8 @@ export default {
         :label="t('k3k.policy.label')"
         :placeholder="t('k3k.policy.placeholder')"
         :options="policyOptions"
-        :hover-tooltip="false"
+        :rules="rules.policy"
+        required
         @update:value="e=>$emit('update:policy', e)"
       />
       <span

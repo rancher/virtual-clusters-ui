@@ -35,7 +35,8 @@ import Storage from './Storage.vue';
 import ClusterPolicy from './ClusterPolicy.vue';
 import SecretMounts from './SecretMounts/index.vue';
 import Mode from '../Mode.vue';
-import Sync from '../Sync.vue';
+import Sync, { SYNC_CONTEXT } from '../Sync';
+import NotAllowed from '../Sync/NotAllowed.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
@@ -75,7 +76,10 @@ const defaultCluster = {
     },
     servers:      1,
     nodeSelector: {},
-    sync:         {},
+    sync:         {
+      storageClasses:
+       { enabled: true }
+    },
     secretMounts: [{
       secretName: '',
       mountPath:  '',
@@ -134,7 +138,8 @@ export default {
     K3kVersionBanner,
     SecretMounts,
     RcSection,
-    RcCounterBadge
+    RcCounterBadge,
+    NotAllowed
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -286,6 +291,7 @@ export default {
     const t = this.$store.getters['i18n/t'];
 
     return {
+      SYNC_CONTEXT,
       k3kInstalled:               false,
       policy:                     null,
       connectingToHost:           false,
@@ -744,11 +750,6 @@ export default {
             :mode="mode"
             @update:k3k-mode="k3kCluster.spec.sync = {}"
           />
-          <Sync
-            v-if="isSharedMode"
-            v-model:sync="k3kCluster.spec.sync"
-            :mode="mode"
-          />
         </template>
         <Storage
           v-model:storage-class-name="k3kCluster.spec.persistence.storageClassName"
@@ -760,9 +761,25 @@ export default {
         />
       </Tab>
       <Tab
+        v-if="!policy"
+        name="sync"
+        label-key="k3k.policy.tabs.resourceSync"
+        :weight="10"
+      >
+        <Sync
+          v-if="isSharedMode"
+          v-model:ingresses="k3kCluster.spec.sync.ingresses"
+          v-model:priority-classes="k3kCluster.spec.sync.priorityClasses"
+          v-model:storage-classes="k3kCluster.spec.sync.storageClasses"
+          :mode="mode"
+          :context="SYNC_CONTEXT.cluster"
+        />
+        <NotAllowed v-else />
+      </Tab>
+      <Tab
         name="server-agents"
         label-key="k3k.sections.serverAndAgents"
-        :weight="10"
+        :weight="9"
       >
         <div class="row mb-20">
           <div class="col span-3">
@@ -868,7 +885,7 @@ export default {
         v-if="!policy && supportsTopology"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
-        :weight="9"
+        :weight="8"
       >
         <PolicyAffinity
           v-model:server-affinity="k3kCluster.spec.serverAffinity"
@@ -879,7 +896,7 @@ export default {
       <Tab
         name="Networking"
         label-key="k3k.sections.networking"
-        :weight="8"
+        :weight="7"
       >
         <Networking
           v-model:cluster-c-i-d-r="k3kCluster.spec.clusterCIDR"
@@ -895,7 +912,7 @@ export default {
         v-if="canManageMembers"
         name="memberRoles"
         label-key="cluster.tabs.memberRoles"
-        :weight="7"
+        :weight="6"
       >
         <Banner
           v-if="isEdit"
@@ -912,7 +929,7 @@ export default {
       <Tab
         name="advanced"
         label-key="k3k.sections.advanced"
-        :weight="6"
+        :weight="5"
       >
         <div class="gap-md">
           <RcSection

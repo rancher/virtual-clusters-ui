@@ -6,6 +6,7 @@ k3k:
     noneWarning: Clusters created without a policy should only be used for testing purposes.
     tabs:
       config: Config
+      resourceSync: Resource Synchronization
       resourceAllocation: Resource Allocation
       advanced: Advanced
       topology: Topology
@@ -80,7 +81,34 @@ k3k:
       label: Resource Synchronization
       tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
       ingressCheckbox: Ingresses
-      priorityClassCheckbox: PriorityClasses
+      priorityClassCheckbox: Priority Classes
+      notAllowed:
+        title: Not available in virtual mode
+        description: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn mode about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+      storageClass:
+        title: Storage Classes
+        tooltip: In <code>shared</code> mode, by default all storage classes are synchronized from the host to the virtual cluster. You can disable that. You can also use label selectors to sync only a subset of storage classes.
+        checkbox: Sync storage classes
+        allStorageClasses: All storage classes
+        manuallySelectStorageClasses: Select a subset
+        selectorsTitle: Filter by Label
+        selectorsDescription: Add labels to filter down the storage classes you want to sync. Multiple labels will be ANDed.
+        addSelectorLabel: Add label
+        selectorKeyPlaceholder: e.g. csi-driver
+        selectorValuePlaceholder: e.g. aws-ebs
+        errorFetchingStorageClasses: 'Error fetching matching storage classes:'
+        allStorageClassesSynced: All storage classes selected
+        noClassesSynced: No storage classes selected
+        storageClassesSelected: |-
+          { count, plural,
+            one {1 storage class selected}
+            other {{count} storage classes selected}}
+        selectedClasses: Selected classes
+        addLabelsHint: Add labels to filter the available storage classes
+        allStorageClassesSelected: |-
+          { count, plural,
+            one {All storage classes selected}
+            other {All {count} storage classes selected}}
     quota: 
       headers:
         resourceType: Resource Type
@@ -190,7 +218,7 @@ k3k:
         placeholder: 'Default: random value between 30000-32767'
   storage:
     noneOption: Ephemeral
-    title: Storage
+    title: Server Persistence
     storageRequestSize:
       label: Storage Request Size
     storageClass:

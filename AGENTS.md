@@ -33,7 +33,7 @@ You are an expert Senior Software Engineer specializing in Vue.js and TypeScript
 - **Install dependencies**: `yarn install --frozen-lockfile`
 - **Start development server**: `API=<Rancher_Backend_URL> yarn dev`
   - The `API` environment variable should point to a running Rancher server (e.g., `https://localhost`).
-  - The dashboard will be available at `https://127.0.0.1:8005`.
+  - The dev server will be available at `https://127.0.0.1:8005`.
 - **Clean build artifacts**: `yarn clean`
  - **Build package**: `yarn build-pkg`
  - **Serve packages**: `yarn serve-pkgs`

@@ -16,6 +16,7 @@ import {
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
 } from '../utils/k3kInstalled';
+import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
@@ -180,7 +181,7 @@ export default {
         ]) : [false, false, false];
 
         out.push({
-          isVirtual:            !!pCluster.metadata?.annotations?.['ui.rancher/parent-cluster'],
+          isVirtual:            !!pCluster.metadata?.annotations?.[PARENT_CLUSTER],
           isLocal:              pCluster.name === 'local',
           isReady:              mgmt.isReady,
           label:                this.getClusterDisplayName(pCluster),

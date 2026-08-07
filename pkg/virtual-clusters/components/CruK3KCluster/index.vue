@@ -29,6 +29,7 @@ import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
+import { PROVIDER, PARENT_CLUSTER, PARENT_CLUSTER_DISPLAY, K3K_NAMESPACE } from '../../labels-annotations';
 import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
@@ -100,15 +101,15 @@ const POLICY_OVERRIDES = {
  * provisioning.cattle.io.cluster default annotations
  *
  * also set before creation:
- * 'ui.rancher/parent-cluster' - host cluster's norman cluster id
- * 'ui.rancher/parent-cluster-display' - host cluster provisioning cluster displayName model property
- * 'ui.rancher/k3k-namespace'  - namespace of the k3k cluster in the host cluster
+ * PARENT_CLUSTER - host cluster's norman cluster id
+ * PARENT_CLUSTER_DISPLAY - host cluster provisioning cluster displayName model property
+ * K3K_NAMESPACE - namespace of the k3k cluster in the host cluster
  */
 const defaultAnnotations = {
   // prevent k3s-upgrade-controller from running: this will be managed by k3k
   'rancher.io/imported-cluster-version-management': 'false',
   // display machine provider in cluster mgmt list
-  'ui.rancher/provider':                            'k3k'
+  [PROVIDER]:                            'k3k'
 };
 
 export default {
@@ -180,9 +181,9 @@ export default {
     if (this.mode === _CREATE) {
       this.k3kCluster = await this.$store.dispatch('management/create', cloneDeep(defaultCluster));
     } else {
-      const ns = this.value.metadata?.annotations?.['ui.rancher/k3k-namespace'] || '';
+      const ns = this.value.metadata?.annotations?.[K3K_NAMESPACE] || '';
       const id = `${ ns }/${ this.value.metadata.name }`;
-      const parentClusterId = this.value.metadata?.annotations?.['ui.rancher/parent-cluster'] || '';
+      const parentClusterId = this.value.metadata?.annotations?.[PARENT_CLUSTER] || '';
 
       const parentProvCluster = this.provClusters.find((c) => c?.mgmt?.id === parentClusterId);
 
@@ -195,6 +196,8 @@ export default {
         this.k3kCluster = res || {};
         this.parentClusterId = parentProvCluster.id;
         this.parentCluster = parentProvCluster;
+        // on edit, the parent display name annotation is used as a display-only fallback if the user currently loading the form can't view the parent prov cluster obeject
+        this.parentClusterDisplayAnnotation = this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY]
       } catch (e) {
         this.errors.push(e);
       }
@@ -297,6 +300,7 @@ export default {
       connectingToHost:           false,
       provClusters:               [],
       parentCluster:              {}, // provisioning cluster representing the "host cluster"
+      parentClusterDisplayAnnotation: '', 
       k3kCluster:                 {},
       modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
       k3sVersions:                [],
@@ -535,10 +539,10 @@ export default {
           this.value.metadata = this.value.metadata || {};
           merge(this.value.metadata.annotations, defaultAnnotations);
 
-          this.value.metadata.annotations['ui.rancher/parent-cluster'] = cluster.id;
+          this.value.metadata.annotations[PARENT_CLUSTER] = cluster.id;
 
-          this.value.metadata.annotations['ui.rancher/parent-cluster-display'] = this.parentCluster.displayName || this.parentCluster.name;
-          this.value.metadata.annotations['ui.rancher/k3k-namespace'] = this.k3kCluster.metadata.namespace;
+          this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY] = this.parentCluster.displayName || this.parentCluster.name;
+          this.value.metadata.annotations[K3K_NAMESPACE] = this.k3kCluster.metadata.namespace;
         } else {
           // save existing k3kCluster
           await cluster.$dispatch('request', {
@@ -716,6 +720,7 @@ export default {
         <InstallK3k
           v-model:parent-cluster="parentCluster"
           v-model:k3k-installed="k3kInstalled"
+          :parent-cluster-display-annotation="parentClusterDisplayAnnotation"
           :mode="mode"
           :clusters="provClusters"
           @error="handleInstallationError"

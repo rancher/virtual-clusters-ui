@@ -1,4 +1,5 @@
 import { ModelExtensionContext, IClusterModelExtension } from '@shell/core/types';
+import { PROVIDER, PARENT_CLUSTER, PARENT_CLUSTER_DISPLAY, K3K_NAMESPACE } from '../labels-annotations';
 
 type ICluster = any;
 
@@ -7,7 +8,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
   constructor(private context: ModelExtensionContext) {}
 
   useFor(cluster: ICluster) {
-    return cluster?.metadata?.annotations['ui.rancher/provider']  === 'k3k'
+    return cluster?.metadata?.annotations[PROVIDER]  === 'k3k'
   }
 
   get detailTabs(): any {
@@ -28,17 +29,17 @@ export class VClusterModelExtension implements IClusterModelExtension {
   }
 
   provisionerDisplay(cluster: ICluster): string {
-    return cluster?.metadata?.annotations['ui.rancher/provider'];
+    return cluster?.metadata?.annotations[PROVIDER];
   }
 
   parentCluster(cluster: ICluster): string {
-    return cluster.metadata?.annotations?.['ui.rancher/parent-cluster-display'];
+    return cluster.metadata?.annotations?.[PARENT_CLUSTER_DISPLAY];
   }
 
   
   async postDelete(cluster: ICluster): Promise<any> {
-    const parentClusterId = cluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
-    const namespace = cluster.metadata?.annotations?.['ui.rancher/k3k-namespace'];
+    const parentClusterId = cluster.metadata?.annotations?.[PARENT_CLUSTER];
+    const namespace = cluster.metadata?.annotations?.[K3K_NAMESPACE];
     const name =  cluster.metadata.name
 
 

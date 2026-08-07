@@ -7,6 +7,7 @@ import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCa
 import Loading from '@shell/components/Loading';
 import { isRancherPrime } from '@shell/config/version';
 import { NAME as MGMT_NAME } from '@shell/config/product/manager';
+import { PARENT_CLUSTER } from '../labels-annotations';
 
 export default {
   name: 'K3kExplorerLandingPage',
@@ -27,7 +28,7 @@ export default {
         });
       } catch {}
 
-      const hostClusterId = this.currentProvCluster.metadata?.annotations?.['ui.rancher/parent-cluster'];
+      const hostClusterId = this.currentProvCluster.metadata?.annotations?.[PARENT_CLUSTER];
 
       this.isVirtual = !!hostClusterId;
 

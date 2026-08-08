@@ -2,6 +2,7 @@
 import { _CREATE } from '@shell/config/query-params';
 
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import LabeledSelectWithCreate from '@shell/components/form/LabeledSelectWithCreate';
 import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
@@ -25,6 +26,7 @@ export default {
 
   components: {
     LabeledSelect,
+    LabeledSelectWithCreate,
     Banner
   },
 
@@ -78,32 +80,28 @@ export default {
       namespaces:                   [],
       loadingPoliciesAndNamespaces: false,
       namespaceError:               false,
-      policyError:                  false
+      policyError:                  false,
+      previousTargetNamespace:      ''
     };
   },
 
   watch: {
     hostClusterId(neu) {
-      this.$emit('update:policy', {});
+      // policy is unset (not an explicit None) until we know what's available for the new host cluster
+      this.$emit('update:policy', null);
       this.$emit('update:targetNamespace', '');
       if (neu) {
         this.fetchPolicies();
       }
     },
 
-    policyOptions(neu = []) {
-      const policyOpt = neu.find((p) => !!p?.value ) ;
-
-      if (this.mode === _CREATE) {
-        this.$emit('update:policy', policyOpt?.value || null);
-        this.$emit('update:targetNamespace', '');
-      }
-    },
-
     namespaceOptions(neu = []) {
-      if (this.mode === _CREATE && !neu.includes(this.targetNamespace)) {
-        this.$emit('update:targetNamespace', neu[0] || '');
+      if (this.mode !== _CREATE) {
+        return;
       }
+
+      // when there's no policy selected, let the user pick a namespace explicitly rather than presetting one
+      this.$emit('update:targetNamespace', this.isPolicySelected ? (neu[0] || '') : '');
     },
 
   },
@@ -152,13 +150,36 @@ export default {
           }
         }
 
-        return await this.fetchNamespaces();
+        await this.fetchNamespaces();
+
+        if (this.mode === _CREATE) {
+          this.presetPolicyIfUnambiguous();
+        }
+      }
+    },
+
+    // only preset the policy on create, and only when there's a single
+    // unambiguous outcome - either exactly one real policy, or none at all
+    // (in which case None is the only possible choice). With 2+ real
+    // policies available it's left null, waiting on the user to choose.
+    presetPolicyIfUnambiguous() {
+      if (this.policy !== null) {
+        return;
+      }
+
+      const realPolicyOptions = this.policyOptions.filter((p) => !isEmpty(p?.value));
+
+      if (realPolicyOptions.length === 1) {
+        this.$emit('update:policy', realPolicyOptions[0].value);
+        this.$emit('update:targetNamespace', '');
+      } else if (realPolicyOptions.length === 0) {
+        this.$emit('update:policy', {});
+        this.$emit('update:targetNamespace', '');
       }
     },
 
     async fetchNamespaces() {
       this.namespaceError = false;
-      this.namespaces = [];
       try {
         const res = await this.$store.dispatch('management/request', {
           url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
@@ -189,12 +210,36 @@ export default {
       // we should show 'none' in that case
       const policyObject = this.policies.find((p) => p?.metadata?.name === policyName);
 
-      if (policyObject) {
-        this.$emit('update:policy', policyObject);
-      }
+      this.$emit('update:policy', policyObject || {});
     },
 
-    isEmpty
+    isEmpty,
+
+    onNamespaceCreating() {
+      this.previousTargetNamespace = this.targetNamespace;
+    },
+
+    cancelCreateNamespace() {
+      this.$emit('update:targetNamespace', this.previousTargetNamespace);
+    },
+
+    async createNamespaceIfNeeded() {
+      if (!this.targetNamespace || this.namespaces.some((ns) => ns.id === this.targetNamespace)) {
+        return false;
+      }
+
+      await this.$store.dispatch('management/request', {
+        url:    `/k8s/clusters/${ this.hostClusterId }/v1/${ NAMESPACE }`,
+        method: 'POST',
+        data:   {
+          apiVersion: 'v1',
+          kind:       'Namespace',
+          metadata:   { name: this.targetNamespace },
+        },
+      });
+
+      return true;
+    }
   },
 
   computed: {
@@ -206,6 +251,13 @@ export default {
       const mgmt = this.hostCluster?.mgmt;
 
       return mgmt?.id;
+    },
+
+    // project-scoped RBAC only propagates into namespaces backed by a project, so only
+    // users with cluster-level permissions can create resources in projectless namespaces -
+    // mirrors Dashboard's own canSeeProjectlessNamespaces (ExplorerProjectsNamespaces.vue)
+    canCreateInProjectlessNamespaces() {
+      return !!this.hostCluster?.mgmt?.canUpdate;
     },
 
     namespaceIdsByProject() {
@@ -232,7 +284,7 @@ export default {
     },
 
     policyOptions() {
-      return [{ label: this.t('generic.none'), value: null }, ...this.policies.reduce((hasNs, p) => {
+      return [{ label: this.t('k3k.policy.noneOption'), value: {} }, ...this.policies.reduce((hasNs, p) => {
         const projectIds = (getProjectIds(p) || []);
 
         const hasNamespaces = (projectIds).find((p) => this.namespaceIdsByProject[p]);
@@ -261,6 +313,18 @@ export default {
 
     showLoadingSpinner() {
       return this.loadingPoliciesAndNamespaces || this.$fetchState.pending;
+    },
+    isPolicySelected() {
+      return this.policy && !isEmpty(this.policy);
+    },
+
+    isNoneSelected() {
+      return !!this.policy && isEmpty(this.policy);
+    },
+
+    // nothing has been chosen yet (ambiguous, waiting on the user)
+    isPolicyUnset() {
+      return !this.policy;
     }
   },
 };
@@ -283,21 +347,23 @@ export default {
       class="col span-6"
     >
       <LabeledSelect
-        :value="policy && !isEmpty(policy) ? policy : t('generic.none')"
+        :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
         :loading="showLoadingSpinner"
         :disabled="!hostClusterId || !k3kInstalled || !isCreate"
         :mode="mode"
         :label="t('k3k.policy.label')"
+        :placeholder="t('k3k.policy.placeholder')"
         :options="policyOptions"
-        :hover-tooltip="false"
+        :rules="rules.policy"
+        required
         @update:value="e=>$emit('update:policy', e)"
       />
       <span
-        v-if="!policy && !showLoadingSpinner"
+        v-if="isNoneSelected && !showLoadingSpinner"
         class="nonepolicy-warning text-deemphasized"
       ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
       <button
-        v-if="policy && !isEmpty(policy)"
+        v-if="isPolicySelected"
         type="button"
         class="btn role-link show-policy"
         data-testid="k3k-policy-open-drawer"
@@ -307,16 +373,22 @@ export default {
       </button>
     </div>
     <div class="col span-6">
-      <LabeledSelect
+      <LabeledSelectWithCreate
+        :key="isPolicySelected"
         :value="targetNamespace"
         :loading="showLoadingSpinner"
         :mode="mode"
-        :disabled="!isCreate"
+        :disabled="!hostClusterId || !isCreate || isPolicyUnset"
         :label="t('k3k.targetNamespace.label')"
         :options="namespaceOptions"
         :rules="rules.namespace"
-        :require-dirty="false"
+        :placeholder="t('k3k.targetNamespace.placeholder')"
+        :create-label="t('k3k.targetNamespace.createLabel')"
+        :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
+        required
         @update:value="e=>$emit('update:targetNamespace', e)"
+        @creating="onNamespaceCreating"
+        @cancel="cancelCreateNamespace"
       />
     </div>
   </div>

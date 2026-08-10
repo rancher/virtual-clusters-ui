@@ -1,6 +1,6 @@
 {
   "name": "virtual-clusters",
-  "version": "1.2.0-rc1",
+  "version": "1.2.0-rc2",
   "private": false,
   "engines": {
     "node": ">=24.0.0"
@@ -8,7 +8,7 @@
   "dependencies": {
     "@babel/plugin-transform-class-static-block": "7.28.3",
     "@rancher/components": "0.3.0-alpha.4",
-    "@rancher/shell": "v3.0.12-rc.2",
+    "@rancher/shell": "v3.0.13",
     "@types/lodash": "4.14.196",
     "cache-loader": "4.1.0",
     "core-js": "3.48.0",

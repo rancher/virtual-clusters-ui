@@ -9,7 +9,7 @@
     "@babel/plugin-transform-class-static-block": "7.28.3",
     "@rancher/components": "0.3.0-alpha.4",
     "@rancher/shell": "v3.0.13",
-    "@types/lodash": "4.14.196",
+    "@types/lodash": "4.17.25",
     "cache-loader": "4.1.0",
     "core-js": "3.48.0",
     "css-loader": "7.1.2",

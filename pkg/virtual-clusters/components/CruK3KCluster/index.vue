@@ -48,7 +48,7 @@ import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
 import merge from 'lodash/merge';
 import { set } from '@shell/utils/object';
-import  isEmpty  from 'lodash/isEmpty';
+import isEmpty from 'lodash/isEmpty';
 
 // Pinned fallback for the cluster import job image; used when the
 // 'shell-image' setting is empty. Kept in sync with the rancher/shell
@@ -361,7 +361,7 @@ export default {
       return this.policy === null ? '' : this.policy;
     },
 
-    hasPolicy(){
+    hasPolicy() {
       return this.policy && !isEmpty(this.policy)
     },
 

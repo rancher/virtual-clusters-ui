@@ -68,7 +68,10 @@ export default {
 
   async fetch() {
     if (!this.value.spec) {
-      this.value.spec = { allowedMode: MODES.SHARED, sync: { storageClasses: { enabled: true } } };
+      this.value.spec = {
+        allowedMode: MODES.SHARED,
+        sync:        { storageClasses: { enabled: true } }
+      };
     }
     const selectedCluster = this.parentCluster || this.$store.getters['currentCluster'];
     const mgmtId = selectedCluster?.mgmt?.id || selectedCluster?.id;
@@ -89,7 +92,7 @@ export default {
   data() {
     return {
       errors:         [],
-      fvFormRuleSets:          [{
+      fvFormRuleSets: [{
         path:  'name',
         rules: ['required'],
       }],
@@ -110,7 +113,11 @@ export default {
         const { max = {}, defaultRequest = {} } = limit;
 
         return {
-          limitsCpu: max.cpu, limitsMemory: max.memory, limitsGpu: max['nvidia.com/gpu'], requestsCpu: defaultRequest.cpu, requestsMemory: defaultRequest.memory
+          limitsCpu:      max.cpu,
+          limitsMemory:   max.memory,
+          limitsGpu:      max['nvidia.com/gpu'],
+          requestsCpu:    defaultRequest.cpu,
+          requestsMemory: defaultRequest.memory
         };
       },
 
@@ -241,7 +248,6 @@ export default {
         if (projectComponent) {
           await projectComponent.annotateAndSaveNamespaces();
         } else {
-          // eslint-disable-next-line node/no-callback-literal
           cb(true);
         }
       } catch (err) {
@@ -261,7 +267,6 @@ export default {
         } else {
           this.errors = exceptionToErrorsArray(err);
         }
-        // eslint-disable-next-line node/no-callback-literal
         cb && cb(false);
       }
     },
@@ -302,8 +307,7 @@ export default {
       :value="value"
       :create-namespace-override="true"
       :rules="{name:fvGetAndReportPathRules('name')}"
-    >
-    </NameNsDescription>
+    />
 
     <Tabbed
       :side-tabs="true"

@@ -44,7 +44,10 @@ export default {
 
   emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
 
-  components: { LabeledSelect, AsyncButton },
+  components: {
+    LabeledSelect,
+    AsyncButton
+  },
 
   props: {
     // parent cluster's prov cluster
@@ -188,11 +191,11 @@ export default {
         ]) : [false, false, false];
 
         out.push({
-          isVirtual:            !!pCluster.metadata?.annotations?.[PARENT_CLUSTER],
-          isLocal:              pCluster.name === 'local',
-          isReady:              mgmt.isReady,
-          label:                this.getClusterDisplayName(pCluster),
-          value:                pCluster,
+          isVirtual: !!pCluster.metadata?.annotations?.[PARENT_CLUSTER],
+          isLocal:   pCluster.name === 'local',
+          isReady:   mgmt.isReady,
+          label:     this.getClusterDisplayName(pCluster),
+          value:     pCluster,
           k3kInstalled,
           canInstallK3k,
           canCreateK3kClusters,
@@ -228,7 +231,10 @@ export default {
         apiVersion: 'catalog.cattle.io/v1',
         kind:       'ClusterRepo',
         metadata:   { name: K3K_REPO_NAME },
-        spec:       { url: K3K_REPO_URL, insecurePlainHttp: false }
+        spec:       {
+          url:               K3K_REPO_URL,
+          insecurePlainHttp: false
+        }
       };
 
       const cluster = this.parentCluster;

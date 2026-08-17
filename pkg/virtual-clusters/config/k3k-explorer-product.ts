@@ -23,12 +23,12 @@ export async function init($plugin:any, store:any) {
     });
 
     virtualType({
-      labelKey:       'product.virtualclusters',
-      icon:        'k3k',
-      name:        'virtual-cluster-dashboard',
-      namespaced:  false,
-      weight:      99,
-      route:                  { name: `c-cluster-virtualclusters` },
+      labelKey:   'product.virtualclusters',
+      icon:       'k3k',
+      name:       'virtual-cluster-dashboard',
+      namespaced: false,
+      weight:     99,
+      route:      { name: `c-cluster-virtualclusters` },
       overview:   true,
       exact:      true,
     });
@@ -39,15 +39,15 @@ export async function init($plugin:any, store:any) {
       STATE,
       NAME_COL,
       {
-        name:          'vcmode',
-        labelKey:      'k3k.policy.listView.modeHeader',
-        sort:          ['spec.allowedMode'],
-        value:         'spec.allowedMode',
+        name:     'vcmode',
+        labelKey: 'k3k.policy.listView.modeHeader',
+        sort:     ['spec.allowedMode'],
+        value:    'spec.allowedMode',
       },
       {
-        name:          'projects',
-        labelKey:      'k3k.policy.listView.projectHeader',
-        formatter:     'PolicyAssignment'
+        name:      'projects',
+        labelKey:  'k3k.policy.listView.projectHeader',
+        formatter: 'PolicyAssignment'
       },
       AGE
     ]);

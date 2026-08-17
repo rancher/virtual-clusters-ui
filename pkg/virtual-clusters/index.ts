@@ -72,9 +72,9 @@ export default function(plugin: IPlugin): void {
       const t = store.getters['i18n/t'];
 
       store.dispatch('notifications/add', {
-        level:         NotificationLevel.Error,
-        title:         t('k3k.errors.creatingRoles'),
-        message:       e,
+        level:   NotificationLevel.Error,
+        title:   t('k3k.errors.creatingRoles'),
+        message: e,
       });
     }
   });

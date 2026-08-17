@@ -14,7 +14,10 @@ export default {
 
   emits: ['update:ingresses', 'update:priorityClasses', 'update:storageClasses', 'error'],
 
-  components: { Checkbox, StorageClasses },
+  components: {
+    Checkbox,
+    StorageClasses
+  },
 
   props: {
     mode: {
@@ -62,7 +65,10 @@ export default {
         return this.ingresses?.enabled || false;
       },
       set(neu) {
-        this.$emit('update:ingresses', { ...this.ingresses, enabled: neu });
+        this.$emit('update:ingresses', {
+          ...this.ingresses,
+          enabled: neu
+        });
       }
     },
 
@@ -71,7 +77,10 @@ export default {
         return this.priorityClasses?.enabled || false;
       },
       set(neu) {
-        this.$emit('update:priorityClasses', { ...this.priorityClasses, enabled: neu });
+        this.$emit('update:priorityClasses', {
+          ...this.priorityClasses,
+          enabled: neu
+        });
       }
     },
 

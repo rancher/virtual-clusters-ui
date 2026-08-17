@@ -80,7 +80,10 @@ export default class VirtualClusterPolicy extends SteveModel {
       message: this.stateDescription
     };
 
-    return { ...defaultStateObj, ...partialError };
+    return {
+      ...defaultStateObj,
+      ...partialError
+    };
   }
 
   get stateColor() {

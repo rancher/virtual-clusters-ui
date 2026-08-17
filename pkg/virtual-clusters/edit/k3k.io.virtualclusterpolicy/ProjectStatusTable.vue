@@ -108,8 +108,8 @@ export default {
       }
 
       this.statuses[p.id] = {
-        project:             p,
-        willSave:            namespaces,
+        project:  p,
+        willSave: namespaces,
         saved,
         showDeselectIcon,
         showSuccessIcon,

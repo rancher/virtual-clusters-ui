@@ -72,7 +72,10 @@ export default {
       exposeMode = exposeModes.NONE;
     }
 
-    return { exposeModes, exposeMode };
+    return {
+      exposeModes,
+      exposeMode
+    };
   },
 
   watch: {

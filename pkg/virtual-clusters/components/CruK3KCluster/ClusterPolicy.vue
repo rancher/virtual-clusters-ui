@@ -6,6 +6,7 @@ import LabeledSelectWithCreate from '@shell/components/form/LabeledSelectWithCre
 import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
+import { RcContentGroup } from '@components/Layout';
 import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
 import PolicyDrawer from '../PolicyDrawer.vue';
 import { useDrawer } from '@shell/composables/drawer';
@@ -27,7 +28,8 @@ export default {
   components: {
     LabeledSelect,
     LabeledSelectWithCreate,
-    Banner
+    Banner,
+    RcContentGroup
   },
 
   props: {
@@ -126,7 +128,7 @@ export default {
         policy:        drawerPolicy,
         parentCluster: this.hostCluster,
         showHeader:    false,
-        width:         '50%'
+        width:         'wide'
       });
     },
 
@@ -348,56 +350,64 @@ export default {
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
-  <div class="row mmb-4">
-    <div
-      class="col span-6"
-    >
-      <LabeledSelect
-        :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
-        :loading="showLoadingSpinner"
-        :disabled="!hostClusterId || !k3kInstalled || !isCreate"
-        :mode="mode"
-        :label="t('k3k.policy.label')"
-        :placeholder="t('k3k.policy.placeholder')"
-        :options="policyOptions"
-        :rules="rules.policy"
-        required
-        @update:value="e=>$emit('update:policy', e)"
-      />
-      <span
-        v-if="isNoneSelected && !showLoadingSpinner"
-        class="nonepolicy-warning text-deemphasized"
-      ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
-      <button
-        v-if="isPolicySelected"
-        type="button"
-        class="btn role-link show-policy"
-        data-testid="k3k-policy-open-drawer"
-        @click="openPolicyDrawer"
-      >
-        {{ t('k3k.policy.viewPolicy') }}
-      </button>
-    </div>
-    <div class="col span-6">
-      <LabeledSelectWithCreate
-        :key="isPolicySelected"
-        :value="targetNamespace"
-        :loading="showLoadingSpinner"
-        :mode="mode"
-        :disabled="!hostClusterId || !isCreate || isPolicyUnset"
-        :label="t('k3k.targetNamespace.label')"
-        :options="namespaceOptions"
-        :rules="rules.namespace"
-        :placeholder="t('k3k.targetNamespace.placeholder')"
-        :create-label="t('k3k.targetNamespace.createLabel')"
-        :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
-        required
-        @update:value="e=>$emit('update:targetNamespace', e)"
-        @creating="onNamespaceCreating"
-        @cancel="cancelCreateNamespace"
+  <RcContentGroup>
+    <div :style="{'margin-bottom': '-12px' }">
+      <t
+        k="k3k.policy.description"
+        :raw="true"
+        class="text-label"
       />
     </div>
-  </div>
+
+    <div class="input-row">
+      <div>
+        <LabeledSelect
+          data-testid="k3k-policy-select"
+          :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
+          :loading="showLoadingSpinner"
+          :disabled="!hostClusterId || !k3kInstalled || !isCreate"
+          :mode="mode"
+          :label="t('k3k.policy.label')"
+          :placeholder="t('k3k.policy.placeholder')"
+          :options="policyOptions"
+          :rules="rules.policy"
+          required
+          @update:value="e=>$emit('update:policy', e)"
+        />
+
+        <button
+          v-if="isPolicySelected"
+          type="button"
+          class="role-link show-policy mmt-1"
+          data-testid="k3k-policy-open-drawer"
+          @click="openPolicyDrawer"
+        >
+          {{ t('k3k.policy.viewPolicy') }}
+        </button>
+      </div>
+      <div>
+        <LabeledSelectWithCreate
+          id="policy-namespace-create"
+          :key="isPolicySelected"
+          data-testid="k3k-target-namespace"
+          :value="targetNamespace"
+          :loading="showLoadingSpinner"
+          :mode="mode"
+          :disabled="!hostClusterId || !isCreate || isPolicyUnset"
+          :label="t('k3k.targetNamespace.label')"
+          :options="namespaceOptions"
+          :rules="rules.namespace"
+          :placeholder="t('k3k.targetNamespace.placeholder')"
+          :create-label="t('k3k.targetNamespace.createLabel')"
+          :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
+          required
+          @update:value="e=>$emit('update:targetNamespace', e)"
+          @creating="onNamespaceCreating"
+          @cancel="cancelCreateNamespace"
+        />
+      </div>
+    </div>
+  </RcContentGroup>
 </template>
 
 <style lang="scss">
@@ -410,6 +420,17 @@ export default {
 }
 
 .show-policy {
-  padding-left: 6px;
+  padding-left: 0px;
+  min-height: 1em;
+  line-height: 1em;
+}
+
+#policy-namespace-create {
+  & :deep(.v-select .vs--single) {
+    display: flex !important;
+    &>*{
+      flex-grow: 1 !important;
+    }
+  }
 }
 </style>

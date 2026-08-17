@@ -1,6 +1,7 @@
 <script>
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
+import { RcContentGroup } from '@components/Layout';
 import StorageClasses from './StorageClasses.vue';
 
 // in the cluster context storage class sync cannot be configured
@@ -16,6 +17,7 @@ export default {
 
   components: {
     Checkbox,
+    RcContentGroup,
     StorageClasses
   },
 
@@ -89,19 +91,16 @@ export default {
 </script>
 
 <template>
-  <div class="row mb-10">
-    <div class="col span-12">
+  <RcContentGroup>
+    <div class="sync-simple-checkboxes">
       <t
-        class="text-deemphasized"
+        class="text-deemphasized mmb-3"
         k="k3k.policy.synchronization.tooltip"
         raw
       />
-    </div>
-  </div>
-  <div class="row sync-simple">
-    <div class="col span-6 vertical-checkboxes">
       <Checkbox
         v-model:value="ingressesEnabled"
+        class="mmb-2"
         :mode="mode"
         :label="t('k3k.policy.synchronization.ingressCheckbox')"
       />
@@ -111,21 +110,22 @@ export default {
         :label="t('k3k.policy.synchronization.priorityClassCheckbox')"
       />
     </div>
-  </div>
-  <StorageClasses
-    v-if="isPolicyContext"
-    :enabled="storageClasses?.enabled || false"
-    :selector="storageClasses?.selector"
-    :mode="mode"
-    :parent-cluster="parentCluster"
-    @update:enabled="$emit('update:storageClasses', { ...storageClasses, enabled: $event })"
-    @update:selector="$emit('update:storageClasses', { ...storageClasses, selector: $event })"
-    @error="$emit('error', $event)"
-  />
+    <StorageClasses
+      v-if="isPolicyContext"
+      :enabled="storageClasses?.enabled || false"
+      :selector="storageClasses?.selector"
+      :mode="mode"
+      :parent-cluster="parentCluster"
+      @update:enabled="$emit('update:storageClasses', { ...storageClasses, enabled: $event })"
+      @update:selector="$emit('update:storageClasses', { ...storageClasses, selector: $event })"
+      @error="$emit('error', $event)"
+    />
+  </RcContentGroup>
 </template>
 
 <style lang="scss" scoped>
-.sync-simple {
-  margin-bottom: 16px;
-}
+  .sync-simple-checkboxes {
+    display: flex;
+    flex-direction: column;
+  }
 </style>

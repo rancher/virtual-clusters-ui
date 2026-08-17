@@ -1,5 +1,6 @@
 <script>
 import ArrayList from '@rancher/shell/components/form/ArrayList';
+import { RcContentGroup } from '@components/Layout';
 import Row from './QuotaRow';
 import { QUOTA_COMPUTED } from '@rancher/shell/components/form/ResourceQuota/shared';
 import { GENERIC_QUOTA_TYPES } from '../../utils/quota.js';
@@ -11,6 +12,7 @@ export default {
 
   components: {
     ArrayList,
+    RcContentGroup,
     Row
   },
 
@@ -74,12 +76,12 @@ export default {
 };
 </script>
 <template>
-  <div>
-    <div class="headers mb-10">
-      <div class="mr-10">
+  <RcContentGroup>
+    <div class="headers">
+      <div>
         <label>{{ t('k3k.policy.quota.headers.resourceType') }}</label>
       </div>
-      <div class="mr-20">
+      <div>
         <label>{{ t('k3k.policy.quota.headers.clusterSetLimit') }}</label>
       </div>
     </div>
@@ -89,6 +91,8 @@ export default {
       :default-add-value="remainingTypes()[0] ? remainingTypes()[0].value : ''"
       :add-allowed="remainingTypes().length > 0"
       :mode="mode"
+      :use-rc-button="true"
+      add-icon="icon-plus"
       @remove="removeRow"
     >
       <template #columns="props">
@@ -103,13 +107,14 @@ export default {
         />
       </template>
     </ArrayList>
-  </div>
+  </RcContentGroup>
 </template>
 <style lang="scss" scoped>
 .headers {
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    // match the gap input-row gives the QuotaRow columns below
+    gap: var(--gap-md);
     align-items: center;
     border-bottom: 1px solid var(--border);
     height: 30px;

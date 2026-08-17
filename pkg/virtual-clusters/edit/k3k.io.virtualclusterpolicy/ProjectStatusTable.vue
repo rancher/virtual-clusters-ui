@@ -2,6 +2,7 @@
 import { _CREATE } from '@shell/config/query-params';
 import { LABELS } from '../../types';
 import { Banner } from '@rancher/components';
+import { RcContentGroup } from '@components/Layout';
 
 export default {
   name: 'K3kProjectNSLabelStatus',
@@ -48,7 +49,7 @@ export default {
     },
   },
 
-  components: { Banner },
+  components: { Banner, RcContentGroup },
 
   created() {
     this.computeAllStatuses();
@@ -126,90 +127,88 @@ export default {
 </script>
 
 <template>
-  <div class="row mb-20">
-    <div class="col span-12">
-      <Banner
-        v-if="showErrorBanner"
-        color="error"
-        :label="t('k3k.policy.projects.table.errorBannerInline')"
-      />
-      <table
-        class="project-label-status"
-        :class="{'in-modal': isInModal}"
-      >
-        <thead>
-          <tr>
-            <th>
-              {{ t('k3k.policy.projects.table.projects') }}
-            </th>
-            <th class="ns">
-              {{ t('k3k.policy.projects.table.namespaces') }}
-            </th>
-            <th class="status">
-              {{ t('k3k.policy.projects.table.status') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="({willSave, saved, errMsg, project, showDeselectIcon, showSuccessIcon}) of statuses"
-            :key="project.id"
+  <RcContentGroup>
+    <Banner
+      v-if="showErrorBanner"
+      color="error"
+      :label="t('k3k.policy.projects.table.errorBannerInline')"
+    />
+    <table
+      class="project-label-status"
+      :class="{'in-modal': isInModal}"
+    >
+      <thead>
+        <tr>
+          <th>
+            {{ t('k3k.policy.projects.table.projects') }}
+          </th>
+          <th class="ns">
+            {{ t('k3k.policy.projects.table.namespaces') }}
+          </th>
+          <th class="status">
+            {{ t('k3k.policy.projects.table.status') }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="({willSave, saved, errMsg, project, showDeselectIcon, showSuccessIcon}) of statuses"
+          :key="project.id"
+        >
+          <td>
+            <div>{{ project.nameDisplay }}</div>
+            <span
+              v-if="errMsg"
+              class="project-err-msg"
+            >{{ errMsg }}</span>
+          </td>
+          <td
+            v-if="showDeselectIcon && isInModal"
+            class="ns"
           >
-            <td>
-              <div>{{ project.nameDisplay }}</div>
-              <span
-                v-if="errMsg"
-                class="project-err-msg"
-              >{{ errMsg }}</span>
-            </td>
-            <td
-              v-if="showDeselectIcon && isInModal"
-              class="ns"
-            >
-              {{ willSave.length - saved.length }}/{{ willSave.length }}
-            </td>
-            <td
-              v-else
-              class="ns"
-            >
-              {{ saved.length }}/{{ willSave.length }}
-            </td>
+            {{ willSave.length - saved.length }}/{{ willSave.length }}
+          </td>
+          <td
+            v-else
+            class="ns"
+          >
+            {{ saved.length }}/{{ willSave.length }}
+          </td>
 
-            <td class="status">
-              <div>
-                <i
-                  v-if="showDeselectIcon"
-                  v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
-                  class="icon icon-trash"
-                  :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-deemphasized': isInModal && !doneSavingNamespaces}"
-                />
-                <i
-                  v-else-if="errMsg"
-                  v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
-                  class="icon icon-error text-error"
-                />
-                <i
-                  v-else-if="showSuccessIcon"
-                  v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
-                  class="icon icon-checkmark text-success"
-                />
-                <i
-                  v-else-if="isInModal && !doneSavingNamespaces"
-                  v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
-                  class="icon icon-checkmark text-deemphasized"
-                />
-                <i
-                  v-else-if="!isInModal"
-                  v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
-                  class="icon icon-refresh text-warning"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+          <td class="status">
+            <div>
+              <i
+                v-if="showDeselectIcon"
+                v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
+                class="icon icon-trash"
+                :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-deemphasized': isInModal && !doneSavingNamespaces}"
+              />
+              <i
+                v-else-if="errMsg"
+                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                class="icon icon-error text-error"
+              />
+              <i
+                v-else-if="showSuccessIcon"
+                v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
+                class="icon icon-checkmark text-success"
+              />
+              <i
+                v-else-if="isInModal && !doneSavingNamespaces"
+                v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
+                class="icon icon-checkmark text-deemphasized"
+              />
+              <i
+                v-else-if="!isInModal"
+                v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
+                class="icon icon-refresh text-warning"
+              />
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </RcContentGroup>
 </template>
 
 <style lang="scss" scoped>

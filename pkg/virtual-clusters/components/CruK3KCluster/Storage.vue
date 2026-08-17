@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { _CREATE } from '@shell/config/query-params';
 import { Banner } from '@components/Banner';
+import { RcContentGroup } from '@components/Layout';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { STORAGE } from '@shell/config/labels-annotations';
 import UnitInput from '@shell/components/form/UnitInput';
@@ -19,6 +20,7 @@ export default {
   components: {
     Banner,
     LabeledSelect,
+    RcContentGroup,
     UnitInput
   },
 
@@ -149,16 +151,21 @@ export default {
 </script>
 
 <template>
-  <div>
-    <h3>{{ t('k3k.storage.title') }}</h3>
+  <RcContentGroup>
     <Banner
       v-if="storageClassErrors.length"
       color="error"
       :label="storageClassErrors.join('. ')"
     />
-    <div class="row mb-20">
-      <div class="col span-6">
+    <div>
+      <t
+        class="text-deemphasized"
+        raw
+        k="k3k.storage.storageClass.description"
+      />
+      <div class="input-row mmt-1">
         <LabeledSelect
+          class="half"
           :disabled="storageClassOptions.length === 1"
           :value="storageClassName || t('k3k.storage.noneOption')"
           :loading="loadingStorageClasses"
@@ -167,30 +174,18 @@ export default {
           :options="storageClassOptions"
           @update:value="updateStorageClass"
         />
-      </div>
-      <div class="col span-6">
-        <t
-          class="text-label centered"
-          raw
-          k="k3k.storage.storageClass.description"
-        />
-      </div>
-    </div>
-    <div
-      v-if="storageClassName"
-      class="row mb-20"
-    >
-      <div class="col span-3">
         <UnitInput
+          v-if="storageClassName"
           :increment="1024"
           :input-exponent="3"
           output-modifier
           :value="storageRequestSize || ''"
           :mode="mode"
+          class="half"
           label-key="k3k.storage.storageRequestSize.label"
           @update:value="$emit('update:storageRequestSize', $event)"
         />
       </div>
     </div>
-  </div>
+  </RcContentGroup>
 </template>

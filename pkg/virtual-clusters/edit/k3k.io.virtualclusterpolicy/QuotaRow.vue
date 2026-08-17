@@ -57,19 +57,15 @@ export default {
 };
 </script>
 <template>
-  <div
-    class="row"
-  >
+  <div class="input-row">
     <UnabeledSelect
       :value="type"
-      class="mr-10"
       :mode="mode"
       :options="types"
       @update:value="updateType($event)"
     />
     <UnitInput
       :value="value[type]"
-      class="mr-10"
       :mode="mode"
       :placeholder="typeOption.placeholder"
       :increment="typeOption.increment"
@@ -81,10 +77,3 @@ export default {
   </div>
 </template>
 
-<style lang='scss' scoped>
-  .row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-  }
-</style>

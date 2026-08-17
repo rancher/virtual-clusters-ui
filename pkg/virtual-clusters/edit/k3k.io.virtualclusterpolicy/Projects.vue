@@ -10,6 +10,7 @@ import { NotificationLevel } from '@shell/types/notifications';
 import AppModal from '@shell/components/AppModal.vue';
 import ProgressBar from './ProgressBar.vue';
 import { Banner } from '@rancher/components';
+import { RcContentGroup } from '@components/Layout';
 
 import { ANNOTATIONS, LABELS, K3K } from '../../types';
 import ProjectStatusTable from './ProjectStatusTable.vue';
@@ -34,7 +35,8 @@ export default {
     ProjectStatusTable,
     AppModal,
     Banner,
-    ProgressBar
+    ProgressBar,
+    RcContentGroup
   },
 
   props: {
@@ -498,15 +500,12 @@ export default {
 </script>
 
 <template>
-  <div>
-    <h3>
-      {{ t('k3k.policy.headers.projectsAndNamespaces') }}
-    </h3>
-    <h5 class="text-deemphasized">
-      {{ t('k3k.policy.projects.subheader') }}
-    </h5>
-    <div class="row mb-20">
-      <div class="col span-9">
+  <RcContentGroup>
+    <div>
+      <h5 class="text-deemphasized">
+        {{ t('k3k.policy.projects.subheader') }}
+      </h5>
+      <div class="input-row">
         <LabeledSelect
           v-model:value="selectedProjects"
           :label="t('k3k.policy.projects.label')"
@@ -571,7 +570,7 @@ export default {
           >
             <button
               v-if="hasErrors"
-              class="btn role-secondary mr-5"
+              class="btn role-secondary"
               @click="policy.goToEdit()"
             >
               {{ t('k3k.policy.projects.editPolicy') }}
@@ -586,7 +585,7 @@ export default {
         </div>
       </div>
     </AppModal>
-  </div>
+  </RcContentGroup>
 </template>
 
 <style lang="scss" scoped>
@@ -619,6 +618,7 @@ export default {
 
    display: flex;
    justify-content: flex-end;
+   gap: var(--gap);
   }
 }
 

@@ -15,7 +15,11 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "preserveSymlinks": true,
+    // Must stay false so a `yarn link`ed @rancher/shell resolves to its real
+    // checkout. Left symlinked it appears under node_modules, where TS will not
+    // infer types from its plain .js modules (config/table-headers etc) and
+    // falls back to the ambient stubs in shell.d.ts. No-op for a normal install.
+    "preserveSymlinks": false,
     "typeRoots": [
       "../../node_modules",
       "../../node_modules/@rancher/shell/types",
@@ -36,8 +40,9 @@
       "@shell/*": [
         "../../node_modules/@rancher/shell/*"
       ],
+      // same directory the shell's pkg/vue.config.js aliases @components to
       "@components/*": [
-        "@rancher/components/*"
+        "../../node_modules/@rancher/shell/rancher-components/*"
       ]
     }
   },

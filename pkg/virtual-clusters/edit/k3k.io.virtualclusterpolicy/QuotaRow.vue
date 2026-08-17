@@ -5,7 +5,10 @@ import UnitInput from '@shell/components/form/UnitInput';
 export default {
   emits: ['type-change', 'update'],
 
-  components: { UnabeledSelect: Select, UnitInput },
+  components: {
+    UnabeledSelect: Select,
+    UnitInput
+  },
 
   props: {
     mode: {

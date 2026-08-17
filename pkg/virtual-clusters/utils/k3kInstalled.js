@@ -22,7 +22,7 @@ export const verifyK3kIsInstalled = async(store, mgmtId) => {
     });
 
     return !!count?.counts?.[CATALOG.APP]?.namespaces?.[K3K_CHART_NAMESPACE]?.count;
-  } catch (err) {
+  } catch {
     return false;
   }
 };
@@ -73,7 +73,7 @@ export const verifyUserCanCreateK3kClusters = async(store, mgmtId) => {
     });
 
     return !!k3kClusterSchema?.collectionMethods.find((x) => x.toLowerCase() === 'post');
-  } catch (err) {
+  } catch {
     return false;
   }
 };
@@ -114,7 +114,7 @@ export const verifyK3kVersionMatches = async(store, mgmtId) => {
     }
 
     return semver.major(coercedK3kVersion) === semver.major(coercedExtensionVersion) && semver.minor(coercedK3kVersion) === semver.minor(coercedExtensionVersion);
-  } catch (e) {
+  } catch {
     return null;
   }
 };

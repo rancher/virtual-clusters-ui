@@ -11,7 +11,10 @@ module.exports = {
     browser: true,
     node:    true
   },
-  globals: { NodeJS: true, Timer: true },
+  globals: {
+    NodeJS: true,
+    Timer:    true
+  },
   extends: [
     'standard',
     'eslint:recommended',
@@ -33,7 +36,7 @@ module.exports = {
     'nuxt/no-cjs-in-config':         'off',
     'semi-spacing':                  'off',
     'space-in-parens':               'off',
-    strict:                          'off',
+    'strict':                          'off',
     'unicorn/no-new-buffer':         'off',
     'vue/html-self-closing':         'off',
     'vue/no-unused-components':      'warn',
@@ -42,16 +45,19 @@ module.exports = {
     'vue/no-v-for-template-key':     'off',
     'array-bracket-spacing':             'warn',
     'arrow-parens':                      'warn',
-    'arrow-spacing':                     ['warn', { before: true, after: true }],
+    'arrow-spacing':                     ['warn', {
+      before: true,
+      after:    true
+    }],
     'block-spacing':                     ['warn', 'always'],
     'brace-style':                       ['warn', '1tbs'],
     'comma-dangle':                      ['warn', 'only-multiline'],
     'comma-spacing':                     'warn',
-    curly:                               'warn',
-    eqeqeq:                              'warn',
+    'curly':                               'warn',
+    'eqeqeq':                              'warn',
     'func-call-spacing':                 ['warn', 'never'],
     'implicit-arrow-linebreak':          'warn',
-    indent:                              ['warn', 2],
+    'indent':                              ['warn', 2],
     'keyword-spacing':                   'warn',
     'lines-between-class-members':       ['warn', 'always', { exceptAfterSingleLine: true }],
     'multiline-ternary':                 ['warn', 'never'],
@@ -74,7 +80,7 @@ module.exports = {
     'prefer-template':                   'warn',
     'quote-props':                       'warn',
     'rest-spread-spacing':               'warn',
-    semi:                                ['warn', 'always'],
+    'semi':                                ['warn', 'always'],
     'space-before-function-paren':       ['warn', 'never'],
     'space-infix-ops':                   'warn',
     'spaced-comment':                    'warn',
@@ -139,7 +145,7 @@ module.exports = {
       }
     ],
 
-    quotes: [
+    'quotes': [
       'warn',
       'single',
       {

@@ -9,7 +9,10 @@ export default {
 
   name: 'VirtualClusterQuota',
 
-  components: { ArrayList, Row },
+  components: {
+    ArrayList,
+    Row
+  },
 
   props: {
     mode: {

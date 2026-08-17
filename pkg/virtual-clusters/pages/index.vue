@@ -12,7 +12,10 @@ import { PARENT_CLUSTER } from '../labels-annotations';
 export default {
   name: 'K3kExplorerLandingPage',
 
-  components: { InstallK3k, Loading },
+  components: {
+    InstallK3k,
+    Loading
+  },
 
   async fetch() {
     this.isPrime = isRancherPrime();
@@ -24,7 +27,9 @@ export default {
 
       try {
         this.currentProvCluster = await this.$store.dispatch('management/find', {
-          type: CAPI.RANCHER_CLUSTER, id: provClusterId, opt: { force: true }
+          type: CAPI.RANCHER_CLUSTER,
+          id:     provClusterId,
+          opt:    { force: true }
         });
       } catch {}
 
@@ -36,7 +41,7 @@ export default {
 
       try {
         k3kIsAlreadyInstalled = await verifyK3kIsInstalled(this.$store, currentCluster.id);
-      } catch (e) {
+      } catch {
       }
 
       if (k3kIsAlreadyInstalled) {

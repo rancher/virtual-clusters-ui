@@ -17,12 +17,11 @@
     "semver": "7.5.4"
   },
   "devDependencies": {
-    "eslint-plugin-cypress": "2.12.1",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jest": "24.4.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "7.2.1",
-    "eslint-plugin-vue": "9.32.0",
+    "eslint-plugin-vue": "10.10.0",
     "@types/node": "25.3.3"
   },
   "resolutions": {
@@ -35,6 +34,7 @@
     "build-pkg": "./node_modules/@rancher/shell/scripts/build-pkg.sh",
     "serve-pkgs": "./node_modules/@rancher/shell/scripts/serve-pkgs",
     "publish-pkgs": "./node_modules/@rancher/shell/scripts/extension/publish",
-    "parse-tag-name": "./node_modules/@rancher/shell/scripts/extension/parse-tag-name"
+    "parse-tag-name": "./node_modules/@rancher/shell/scripts/extension/parse-tag-name",
+    "lint": "./node_modules/.bin/eslint --max-warnings 0 ."
   }
 }

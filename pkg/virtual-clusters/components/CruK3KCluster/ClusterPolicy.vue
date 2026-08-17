@@ -144,7 +144,7 @@ export default {
             });
 
             this.policies = res.data || [];
-          } catch (err) {
+          } catch {
             this.policies = [];
             this.policyError = true;
           }
@@ -187,7 +187,7 @@ export default {
         });
 
         this.namespaces = res.data || [];
-      } catch (e) {
+      } catch {
         this.namespaces = [];
         this.namespaceError = true;
       }
@@ -284,13 +284,19 @@ export default {
     },
 
     policyOptions() {
-      return [{ label: this.t('k3k.policy.noneOption'), value: {} }, ...this.policies.reduce((hasNs, p) => {
+      return [{
+        label: this.t('k3k.policy.noneOption'),
+        value:   {}
+      }, ...this.policies.reduce((hasNs, p) => {
         const projectIds = (getProjectIds(p) || []);
 
         const hasNamespaces = (projectIds).find((p) => this.namespaceIdsByProject[p]);
 
         if (hasNamespaces) {
-          hasNs.push({ label: p?.metadata?.name, value: p });
+          hasNs.push({
+            label: p?.metadata?.name,
+            value:   p
+          });
         }
 
         return hasNs;

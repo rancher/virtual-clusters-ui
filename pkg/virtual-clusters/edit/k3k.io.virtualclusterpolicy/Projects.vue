@@ -178,7 +178,10 @@ export default {
 
         if (policyLabel && policyLabel !== this?.policy?.metadata?.name) {
           try {
-            const exists = await this.$store.dispatch('cluster/find', { type: K3K.POLICY, id: policyLabel });
+            const exists = await this.$store.dispatch('cluster/find', {
+              type: K3K.POLICY,
+              id:     policyLabel
+            });
 
             if (exists) {
               continue;
@@ -212,14 +215,18 @@ export default {
       const url = `/k8s/clusters/${ this.currentCluster.id }/v1/namespaces/${ ns.metadata.name }`;
 
       return await this.$store.dispatch('cluster/request', {
-        url, method: 'PUT', data: ns.cleanForSave(JSON.parse(JSON.stringify(ns)))
+        url,
+        method: 'PUT',
+        data:   ns.cleanForSave(JSON.parse(JSON.stringify(ns)))
       });
     },
 
     async verifyNamespaceWasSaved(namespace) {
       const shouldBeLabeled = !!namespace?.metadata?.labels[LABELS.POLICY];
       const refreshed = await this.$store.dispatch('cluster/find', {
-        type: NAMESPACE, id: namespace.id, opt: { force: true }
+        type: NAMESPACE,
+        id:     namespace.id,
+        opt:    { force: true }
       });
 
       return shouldBeLabeled ? !!refreshed?.metadata?.labels[LABELS.POLICY] : !refreshed?.metadata?.labels[LABELS.POLICY];
@@ -287,7 +294,13 @@ export default {
       const { nsWillSave, namespacesDone, projectsWithServerErrors } = this;
 
       const policyName = `${ this.policy?.metadata?.name }`;
-      const editRoute = { ...this.policy?.detailLocation || {}, query: { [MODE]: _EDIT, [AS]: _UNFLAG } };
+      const editRoute = {
+        ...this.policy?.detailLocation || {},
+        query: {
+          [MODE]: _EDIT,
+          [AS]:   _UNFLAG
+        }
+      };
       const editPath = this.$router.resolve(editRoute)?.fullPath; // edit path is used to add a 'go to edit' button to failure notifications
 
       this.selectedProjects.forEach((p) => {
@@ -333,7 +346,10 @@ export default {
           return p.save();
         }));
       } catch {
-        this.addProjectNotification({ policyName, editPath });
+        this.addProjectNotification({
+          policyName,
+          editPath
+        });
       }
 
       try {
@@ -341,7 +357,7 @@ export default {
           return this.saveEachNamespace(ns);
         }));
         this.doneSavingNamespaces = true;
-      } catch (e) {
+      } catch {
         if (!this.showModal) {
           this.$emit('finish');
         }
@@ -398,13 +414,9 @@ export default {
         translationKeyPath = 'k3k.policy.projects.notification.removingNamespaces';
       }
 
-      let level = NotificationLevel.Task;
-      let title = this.t(`${ translationKeyPath }.task.title`);
-      let message = this.t(`${ translationKeyPath }.task.message`, {
-        namespaceCount:      toBeAssignedCount || toBeUnAssssignedCount,
-        removeCount:    toBeUnAssssignedCount,
-        policyName,
-      });
+      let level;
+      let title;
+      let message;
       let primaryAction = null;
 
       const succeeded = !nsErrored?.length;
@@ -412,7 +424,10 @@ export default {
       if (!succeeded) {
         level = NotificationLevel.Error;
         title = this.t(`${ translationKeyPath }.error.title`);
-        message = this.t(`${ translationKeyPath }.error.message`, { policyName, removeCount: toBeUnAssssignedCount });
+        message = this.t(`${ translationKeyPath }.error.message`, {
+          policyName,
+          removeCount: toBeUnAssssignedCount
+        });
 
         if (nsErrored.length) {
           primaryAction = {
@@ -457,7 +472,10 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ t: 'i18n/t', currentCluster: 'currentCluster' }),
+    ...mapGetters({
+      t:              'i18n/t',
+      currentCluster: 'currentCluster'
+    }),
 
     isCreate() {
       return this.mode === _CREATE;

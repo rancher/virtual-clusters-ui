@@ -7,7 +7,7 @@ import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import type { SecretMountRole } from '../../../types/k3k';
 
 const store = useStore();
-const { t: tn } = useI18n(store); // importing 't' here breaks the t tag in template
+const { 't': tn } = useI18n(store); // importing 't' here breaks the t tag in template
 
 defineProps<{
   mode: string;
@@ -27,9 +27,18 @@ const emit = defineEmits<{
 }>();
 
 const roleOptions: { label: string; value: SecretMountRole }[] = [
-  { label: tn('k3k.secretMounts.role.all'), value: 'all' },
-  { label: tn('k3k.secretMounts.role.server'), value: 'server' },
-  { label: tn('k3k.secretMounts.role.agent'), value: 'agent' },
+  {
+    label: tn('k3k.secretMounts.role.all'),
+    value:   'all'
+  },
+  {
+    label: tn('k3k.secretMounts.role.server'),
+    value:   'server'
+  },
+  {
+    label: tn('k3k.secretMounts.role.agent'),
+    value:   'agent'
+  },
 ];
 </script>
 

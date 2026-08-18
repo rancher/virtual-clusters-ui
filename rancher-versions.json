@@ -1,0 +1,7 @@
+{
+  "_readme": "Rancher Prime alpha lines to test the extension against, keyed by base branch. chartVersionPrefix is a minor line (e.g. '2.16'); the exact patch/build within that line is resolved at CI run time against the rancher-alpha channel, so this file only needs updating when a new minor line should be added/dropped or a kubeVersion changes. kubeVersion values are best-effort as of authoring time (taken from rancher/dashboard's own CI matrix) - verify against the live alpha chart's supported k3s version before relying on them.",
+  "main": [
+    { "chartVersionPrefix": "2.15", "kubeVersion": "v1.36.2+k3s1" },
+    { "chartVersionPrefix": "2.14", "kubeVersion": "v1.35.5+k3s1" }
+  ]
+}

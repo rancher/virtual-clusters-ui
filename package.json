@@ -19,6 +19,8 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.5.0",
+    "@rancher/cypress": "1.0.7",
+    "cypress": "15.19.0",
     "eslint-plugin-cypress": "4.3.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
@@ -27,7 +29,8 @@
     "globals": "17.7.0",
     "neostandard": "0.13.0",
     "typescript-eslint": "8.62.0",
-    "@types/node": "25.3.3"
+    "@types/node": "25.3.3",
+    "eslint-plugin-promise": "7.2.1"
   },
   "resolutions": {
     "**/webpack": "5",

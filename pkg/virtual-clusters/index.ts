@@ -16,7 +16,7 @@ const createRoleIfNotFound = async(roleTemplate: any, store:any) => {
   const rolesMatching = await store.dispatch('management/findLabelSelector', {
     type:     MANAGEMENT.ROLE_TEMPLATE,
     matching: { labelSelector: { matchLabels: roleTemplate.metadata.labels } }
-  }) || [];
+  }, {force:true}) || [];
 
   if (!rolesMatching.length) {
     const newRole = await store.dispatch('management/create', { type: MANAGEMENT.ROLE_TEMPLATE, ...roleTemplate });

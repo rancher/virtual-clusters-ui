@@ -17,12 +17,15 @@
     "semver": "7.5.4"
   },
   "devDependencies": {
+    "@rancher/cypress": "1.0.7",
+    "@types/node": "25.3.3",
+    "cypress": "15.19.0",
+    "eslint-plugin-cypress": "4.3.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jest": "24.4.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "7.2.1",
-    "eslint-plugin-vue": "10.10.0",
-    "@types/node": "25.3.3"
+    "eslint-plugin-vue": "10.10.0"
   },
   "resolutions": {
     "**/webpack": "5"
@@ -35,6 +38,9 @@
     "serve-pkgs": "./node_modules/@rancher/shell/scripts/serve-pkgs",
     "publish-pkgs": "./node_modules/@rancher/shell/scripts/extension/publish",
     "parse-tag-name": "./node_modules/@rancher/shell/scripts/extension/parse-tag-name",
-    "lint": "./node_modules/.bin/eslint --max-warnings 0 ."
+    "lint": "./node_modules/.bin/eslint --max-warnings 0 .",
+    "cy:open": "./node_modules/.bin/cypress open --config numTestsKeptInMemory=10",
+    "cy:run": "./node_modules/.bin/cypress run",
+    "e2e:ci": "./node_modules/.bin/cypress run --browser chrome"
   }
 }

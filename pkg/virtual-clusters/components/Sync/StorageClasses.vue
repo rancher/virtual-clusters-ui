@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
@@ -63,6 +63,10 @@ const storageClassEnabled = computed({
   get: () => props.enabled,
   set: (neu) => {
     emit('update:enabled', neu);
+    //changing enabled and selector each trigger update:storageClasses from the parent component - nextTick avoids timing issue
+    nextTick(() => {
+      storageClassSelector.value = undefined
+    })
   }
 });
 

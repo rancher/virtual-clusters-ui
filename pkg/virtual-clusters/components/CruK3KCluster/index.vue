@@ -48,6 +48,7 @@ import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
 import merge from 'lodash/merge';
 import { set } from '@shell/utils/object';
+import isEmpty from 'lodash/isEmpty';
 
 // Pinned fallback for the cluster import job image; used when the
 // 'shell-image' setting is empty. Kept in sync with the rancher/shell
@@ -358,6 +359,10 @@ export default {
 
     policyForValidation() {
       return this.policy === null ? '' : this.policy;
+    },
+
+    hasPolicy() {
+      return this.policy && !isEmpty(this.policy)
     },
 
     isCreate() {
@@ -712,7 +717,7 @@ export default {
           resource: CAPI.RANCHER_CLUSTER,
         },
       });
-    },
+    }
   }
 };
 </script>
@@ -796,7 +801,7 @@ export default {
         </div>
 
         <template
-          v-if="!policy"
+          v-if="!hasPolicy"
         >
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
@@ -814,7 +819,7 @@ export default {
         />
       </Tab>
       <Tab
-        v-if="!policy"
+        v-if="!hasPolicy"
         name="sync"
         label-key="k3k.policy.tabs.resourceSync"
         :weight="10"
@@ -911,7 +916,7 @@ export default {
           </div>
         </div>
         <div
-          v-if="!policy"
+          v-if="!hasPolicy"
           class="row mt-40 mb-20"
         >
           <div class="col span-12">
@@ -935,7 +940,7 @@ export default {
         </div>
       </Tab>
       <Tab
-        v-if="!policy && supportsTopology"
+        v-if="!hasPolicy && supportsTopology"
         name="affinity"
         label-key="k3k.policy.tabs.topology"
         :weight="8"

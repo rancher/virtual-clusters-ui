@@ -31,12 +31,15 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    clusterCreate.selectTypeByName('K3K').click();
-
+    // TODO nb revert when @rancher/cypress release is ready
+    // clusterCreate.selectTypeByName('K3K').click();
+    clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
 
     const cruK3k = new CruK3kPo();
 
-    cruK3k.hostClusterSelect().waitForLoading();
+    // TODO nb revert when @rancher/cypress release is ready
+    // cruK3k.hostClusterSelect().waitForLoading();
+    cruK3k.waitForHostClusterLoad();
     cruK3k.selectHostCluster('e2e-generic');
     cruK3k.installK3kButton().self().should('be.visible');
   });
@@ -47,13 +50,16 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    clusterCreate.selectTypeByName('K3K').click();
-
+    // TODO nb revert when @rancher/cypress release is ready
+    // clusterCreate.selectTypeByName('K3K').click();
+    clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
 
 
     const cruK3k = new CruK3kPo();
 
-    cruK3k.hostClusterSelect().waitForLoading();
+    // TODO nb revert when @rancher/cypress release is ready
+    // cruK3k.hostClusterSelect().waitForLoading();
+    cruK3k.waitForHostClusterLoad();
     cruK3k.hostClusterOptionLabels().should('not.include', 'e2e-generic');
   });
 });

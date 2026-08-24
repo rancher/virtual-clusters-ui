@@ -1,6 +1,5 @@
 import { extendConfig } from '@rancher/cypress/extend-config';
 
-
 if (!process.env.TEST_BASE_URL) {
   throw new Error('TEST_BASE_URL must be set to the Rancher instance to test against');
 }
@@ -13,11 +12,10 @@ if (!baseUrl.endsWith('/dashboard') && !baseUrl.includes('https://localhost')) {
   baseUrl += '/dashboard';
 }
 
-
 export default extendConfig({
   env: { extensionUrl: process.env.EXTENSION_URL },
   e2e: {
     baseUrl,
     specPattern: 'cypress/e2e/tests/**/*.spec.ts',
-  },
+  }
 });

@@ -5,7 +5,7 @@ set -e
 # Bring up a k3d cluster and import it into the Rancher instance started by
 # e2e-k3s-start.sh, as a generic (imported) cluster 
 #   1. POST /v3/clusters creates the management.cattle.io.cluster directly -
-#      this mirrors our genric import cluster UI (see
+#      this mirrors our generic import cluster UI (see
 #      @rancher/shell pkg/imported/components/CruImported.vue)
 #   2. the registration command lives on
 #      /v1/management.cattle.io.clusterregistrationtoken, namespaced by that
@@ -35,18 +35,12 @@ k3d cluster create "$CLUSTER_NAME" --wait
 k3d kubeconfig get "$CLUSTER_NAME" > "$K3D_KUBECONFIG"
 
 echo "Logging in to Rancher.........."
-TOKEN=""
-for i in $(seq 1 60); do
-  TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
-    -H "Content-Type: application/json" \
-    -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
-    | jq -r '.token // empty' 2>/dev/null || echo "")
-  [ -n "$TOKEN" ] && break
-  echo "  Login not ready yet... ($i/60)"
-  sleep 5
-done
+TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
+  | jq -r '.token // empty' 2>/dev/null || echo "")
 if [ -z "$TOKEN" ]; then
-  echo "Failed to obtain an admin token"
+  echo "Failed to log in as global admin"
   exit 1
 fi
 
@@ -56,7 +50,13 @@ CLUSTER_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/clusters" \
   -H "Content-Type: application/json" \
   -d "{\"type\":\"cluster\",\"name\":\"${CLUSTER_NAME}\",\"agentEnvVars\":[],\"importedConfig\":{},\"labels\":{},\"annotations\":{\"rancher.io/imported-cluster-version-management\":\"system-default\"}}")
 
-MGMT_CLUSTER_NAME=$(echo "$CLUSTER_RESP" | jq -r '.id')
+#get the cluster id, fall back to empty so MGMT_CLUSTER_NAME isnt literally null
+MGMT_CLUSTER_NAME=$(echo "$CLUSTER_RESP" | jq -r '.id // empty')
+if [ -z "$MGMT_CLUSTER_NAME" ]; then
+   echo "Failed to create cluster. POST Response: ${CLUSTER_RESP}"
+   exit 1
+ fi
+
 echo "Management cluster name: ${MGMT_CLUSTER_NAME}"
 echo "MGMT_CLUSTER_NAME=${MGMT_CLUSTER_NAME}" >> "$GITHUB_ENV"
 

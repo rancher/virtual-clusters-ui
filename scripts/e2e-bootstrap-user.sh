@@ -72,7 +72,7 @@ fi
 # and run tests without necessarily running admin tests first, so create the
 # roles here too if they're missing.
 #
-# RoleTemplate ids are server-generated, so in order to check existance
+# RoleTemplate ids are server-generated, so in order to check existence
 # and get the role ID to use in rolebindings, we need to check a ui-role-name label
 # same mechanism that the UI extension relies on, including the use of the filter query param
 find_role_id() {

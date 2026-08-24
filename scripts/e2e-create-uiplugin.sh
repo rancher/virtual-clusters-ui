@@ -27,27 +27,30 @@ yarn build-pkg "$EXTENSION_NAME"
 echo "Serving the extension on port ${EXTENSION_SERVER_PORT}.........."
 PORT="$EXTENSION_SERVER_PORT" nohup node node_modules/@rancher/shell/scripts/serve-pkgs > serve-pkgs.log 2>&1 &
 sleep 3
-curl -s "http://127.0.0.1:${EXTENSION_SERVER_PORT}/" | head -20
+
+# wait up to 30 seconds for the extension server to be ready (returns a non-4xx/5xx response)
+if ! curl --fail --silent --retry 30 --retry-connrefused --retry-delay 1 "http://127.0.0.1:${EXTENSION_SERVER_PORT}/" > /dev/null; then
+   echo "Extension server failed to become ready"
+   cat serve-pkgs.log
+   exit 1
+fi
 
 EXTENSION_ENDPOINT="http://127.0.0.1:${EXTENSION_SERVER_PORT}/${NAME_WITH_VERSION}/${NAME_WITH_VERSION}.umd.min.js"
 
 echo "Logging in to Rancher.........."
-TOKEN=""
-for i in $(seq 1 60); do
-  TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
-    -H "Content-Type: application/json" \
-    -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
-    | jq -r '.token // empty' 2>/dev/null || echo "")
-  [ -n "$TOKEN" ] && break
-  sleep 5
-done
+
+
+TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
+  | jq -r '.token // empty' 2>/dev/null || echo "")
 if [ -z "$TOKEN" ]; then
-  echo "Failed to obtain an admin token"
+  echo "Failed to login as global admin"
   exit 1
 fi
 
 echo "Registering the extension with Rancher.........."
-curl -sk -X POST "${TEST_BASE_URL}/v1/catalog.cattle.io.uiplugin" \
+curl -sk --fail-with-body -X POST "${TEST_BASE_URL}/v1/catalog.cattle.io.uiplugin" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{

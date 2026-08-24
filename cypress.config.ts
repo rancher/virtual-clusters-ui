@@ -7,8 +7,10 @@ if (!process.env.TEST_BASE_URL) {
 // TEST_BASE_URL is the Rancher instance itself (same as API env var)
 // baseUrl for cypress tests will need to include /dashboard unless the UI is running locally
 let baseUrl = process.env.TEST_BASE_URL.replace(/\/$/, '');
+const localDevHosts = ['localhost', '127.0.0.1'];
+const isLocalDevServer = localDevHosts.includes(new URL(baseUrl).hostname);
 
-if (!baseUrl.endsWith('/dashboard') && !baseUrl.includes('https://localhost')) {
+if (!baseUrl.endsWith('/dashboard') && !isLocalDevServer) {
   baseUrl += '/dashboard';
 }
 

@@ -18,7 +18,7 @@ describe('cluster creation', () => {
 
   it('shows a card for the k3k provisioner', { tags: ['@adminUser', '@standardUser'] }, () => {
     ClusterManagerCreatePagePo.goTo('_');
-    const clusterCreate = new ClusterManagerCreatePagePo(  );
+    const clusterCreate = new ClusterManagerCreatePagePo();
 
     clusterCreate.waitForPage();
 
@@ -31,11 +31,12 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
+    clusterCreate.selectTypeByName('K3K').click();
+
 
     const cruK3k = new CruK3kPo();
 
-    cruK3k.waitForHostClusterLoad();
+    cruK3k.hostClusterSelect().waitForLoading();
     cruK3k.selectHostCluster('e2e-generic');
     cruK3k.installK3kButton().self().should('be.visible');
   });
@@ -46,11 +47,13 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
+    clusterCreate.selectTypeByName('K3K').click();
+
+
 
     const cruK3k = new CruK3kPo();
 
-    cruK3k.waitForHostClusterLoad();
+    cruK3k.hostClusterSelect().waitForLoading();
     cruK3k.hostClusterOptionLabels().should('not.include', 'e2e-generic');
   });
 });

@@ -19,6 +19,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.5.0",
+    "eslint-plugin-cypress": "4.3.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jest": "24.4.0",
     "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",

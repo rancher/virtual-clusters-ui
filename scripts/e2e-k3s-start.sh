@@ -2,7 +2,7 @@
 set -e
 
 # ---------------------------------------------------------------------------
-# Stand up k3s + Rancher from the SUSE Prime alpha channel, pinned to a
+# Stand up k3s + Rancher from the SUSE Prime channel, pinned to a
 # specific minor line. The extension is annotated prime-only, so
 # Rancher setup is a little different than what is used in dashboard CI. 
 #   - the chart's own default server image must be left alone: no
@@ -24,7 +24,7 @@ CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-password}
 TEST_BASE_URL=${TEST_BASE_URL:-https://127.0.0.1.sslip.io}
 
 DASHBOARD_URL="${TEST_BASE_URL#https://}"
-RANCHER_HELM_REPO_NAME=rancher-alpha
+RANCHER_HELM_REPO_NAME=rancher-latest
 
 echo -e "${CYAN}--------------------------------------${RESET}"
 echo -e "${BOLD}virtual-clusters e2e - Rancher Prime via Helm${RESET}"
@@ -84,7 +84,7 @@ RANCHER_CHART_VERSION=$(helm search repo $RANCHER_HELM_REPO_NAME/rancher --versi
         else ($matches | first | .version)
         end
     ')
-echo "Selected Rancher chart version: ${RANCHER_CHART_VERSION}"
+echo -e "${CYAN}Selected Rancher chart version: ${RANCHER_CHART_VERSION}${RESET}"
 
 echo -e "${YELLOW}Installing Rancher..........${RESET}"
 kubectl create ns cattle-system

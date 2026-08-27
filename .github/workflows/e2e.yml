@@ -30,6 +30,7 @@ jobs:
       max-parallel: 3
       matrix:
         version:
+          - { chartVersionPrefix: "2.16", kubeVersion: "v1.36.2+k3s1" }
           - { chartVersionPrefix: "2.15", kubeVersion: "v1.36.2+k3s1" }
           - { chartVersionPrefix: "2.14", kubeVersion: "v1.35.5+k3s1" }
         role:

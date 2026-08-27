@@ -5,14 +5,12 @@ set -e
 # Stand up k3s + Rancher from the SUSE Prime alpha channel, pinned to a
 # specific minor line. The extension is annotated prime-only, so
 # Rancher setup is a little different than what is used in dashboard CI. 
-#   - the chart MUST come from the alpha channel, not the per-line optimus
-#     release-2.XX channels - those are community, not prime
 #   - the chart's own default server image must be left alone: no
 #     image.repository / image.tag / systemDefaultRegistry overrides, or the
 #     prime image gets replaced with a community one
 # ---------------------------------------------------------------------------
 
-RANCHER_HELM_REPO_URL=${RANCHER_HELM_REPO_URL:-https://charts.optimus.rancher.io/server-charts/alpha}
+RANCHER_HELM_REPO_URL=${RANCHER_HELM_REPO_URL:-https://charts.optimus.rancher.io/server-charts/latest}
 CHART_VERSION_PREFIX=${CHART_VERSION_PREFIX:?CHART_VERSION_PREFIX must be set (e.g. 2.16)}
 KUBE_VERSION=${KUBE_VERSION:?KUBE_VERSION must be set (e.g. v1.36.2+k3s1)}
 CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-password}

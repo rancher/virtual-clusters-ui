@@ -19,13 +19,6 @@ RESET='\033[0m'
 #      management cluster name (id from step 1)
 #   3. running that command against the target cluster's kubeconfig
 #      registers it with Rancher
-#
-# NOTE: step 2's exact field (status.insecureCommand on the v1 resource) is
-# inferred, not confirmed against a live cluster - rancher/dashboard's own
-# UI reads the equivalent field from the older Norman
-# /v3/clusterregistrationtokens API instead, so there is no in-repo
-# precedent for the v1 shape. Verify this against a real Rancher instance
-# and adjust if the field lives elsewhere.
 # ---------------------------------------------------------------------------
 
 TEST_BASE_URL=${TEST_BASE_URL:-https://127.0.0.1.sslip.io}

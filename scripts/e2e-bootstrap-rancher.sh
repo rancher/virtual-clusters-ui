@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # Accepts the EULA and sets the server URL, mirroring the bootstrap curl loop
 # rancher/dashboard runs in its own CI (scripts/e2e-extension-k3s-start.sh
 # callers). This allows virtual clusters tests to skip the initial Rancher setup flow, which is tested in the dashboard repo. 
@@ -28,7 +35,7 @@ for i in $(seq 1 60); do
   sleep 5
 done
 if [ -z "$TOKEN" ]; then
-  echo "Failed to obtain an admin token"
+  echo -e "${RED}Failed to obtain an admin token${RESET}"
   exit 1
 fi
 
@@ -47,4 +54,4 @@ curl -sk --fail-with-body -X PUT "${TEST_BASE_URL}/v3/settings/first-login" \
   -H "Content-Type: application/json" \
   -d '{"name":"first-login","value":"false"}'
 
-echo "Rancher bootstrapped"
+echo -e "${GREEN}${BOLD}Rancher bootstrapped${RESET}"

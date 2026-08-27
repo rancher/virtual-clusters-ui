@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # ---------------------------------------------------------------------------
 # Bring up a k3d cluster and import it into the Rancher instance started by
 # e2e-k3s-start.sh, as a generic (imported) cluster 
@@ -26,25 +33,25 @@ CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-password}
 CLUSTER_NAME=${CLUSTER_NAME:-e2e-generic}
 K3D_KUBECONFIG=${K3D_KUBECONFIG:-$HOME/.kube/k3d-${CLUSTER_NAME}.yaml}
 
-echo "Installing k3d.........."
+echo -e "${YELLOW}Installing k3d..........${RESET}"
 K3D_INSTALL_VERSION=${K3D_INSTALL_VERSION:-v5.9.0}
 curl -s "https://raw.githubusercontent.com/k3d-io/k3d/${K3D_INSTALL_VERSION}/install.sh" | TAG="$K3D_INSTALL_VERSION" bash
 
-echo "Creating k3d cluster '${CLUSTER_NAME}'.........."
+echo -e "${YELLOW}Creating k3d cluster '${CLUSTER_NAME}'..........${RESET}"
 k3d cluster create "$CLUSTER_NAME" --wait
 k3d kubeconfig get "$CLUSTER_NAME" > "$K3D_KUBECONFIG"
 
-echo "Logging in to Rancher.........."
+echo -e "${YELLOW}Logging in to Rancher..........${RESET}"
 TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
   | jq -r '.token // empty' 2>/dev/null || echo "")
 if [ -z "$TOKEN" ]; then
-  echo "Failed to log in as global admin"
+  echo -e "${RED}Failed to log in as global admin${RESET}"
   exit 1
 fi
 
-echo "Creating the norman cluster '${CLUSTER_NAME}'.........."
+echo -e "${YELLOW}Creating the norman cluster '${CLUSTER_NAME}'..........${RESET}"
 CLUSTER_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/clusters" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -53,14 +60,14 @@ CLUSTER_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/clusters" \
 #get the cluster id, fall back to empty so MGMT_CLUSTER_NAME isnt literally null
 MGMT_CLUSTER_NAME=$(echo "$CLUSTER_RESP" | jq -r '.id // empty')
 if [ -z "$MGMT_CLUSTER_NAME" ]; then
-   echo "Failed to create cluster. POST Response: ${CLUSTER_RESP}"
+   echo -e "${RED}Failed to create cluster. POST Response: ${CLUSTER_RESP}${RESET}"
    exit 1
  fi
 
 echo "Management cluster name: ${MGMT_CLUSTER_NAME}"
 echo "MGMT_CLUSTER_NAME=${MGMT_CLUSTER_NAME}" >> "$GITHUB_ENV"
 
-echo "Fetching the registration command.........."
+echo -e "${YELLOW}Fetching the registration command..........${RESET}"
 REGISTRATION_COMMAND=""
 for i in $(seq 1 60); do
   TOKEN_RESP=$(curl -sk -H "Authorization: Bearer ${TOKEN}" \
@@ -84,24 +91,24 @@ for i in $(seq 1 60); do
 done
 
 if [ -z "$REGISTRATION_COMMAND" ]; then
-  echo "Failed to obtain the cluster registration command"
+  echo -e "${RED}Failed to obtain the cluster registration command${RESET}"
   exit 1
 fi
 
-echo "Registering the k3d cluster with Rancher.........."
+echo -e "${YELLOW}Registering the k3d cluster with Rancher..........${RESET}"
 KUBECONFIG="$K3D_KUBECONFIG" bash -c "$REGISTRATION_COMMAND"
 
-echo "Waiting for '${CLUSTER_NAME}' to become active.........."
+echo -e "${YELLOW}Waiting for '${CLUSTER_NAME}' to become active..........${RESET}"
 for i in $(seq 1 60); do
   STATE=$(curl -sk -H "Authorization: Bearer ${TOKEN}" "${TEST_BASE_URL}/v3/clusters/${MGMT_CLUSTER_NAME}" \
     | jq -r '.state // empty' 2>/dev/null || echo "")
   if [ "$STATE" = "active" ]; then
-    echo "Cluster is active"
+    echo -e "${GREEN}${BOLD}Cluster is active${RESET}"
     exit 0
   fi
   echo "  State: ${STATE:-unknown} ($i/60)"
   sleep 10
 done
 
-echo "Cluster did not become active in time"
+echo -e "${RED}Cluster did not become active in time${RESET}"
 exit 1

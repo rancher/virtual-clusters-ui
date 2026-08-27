@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # Creates a standard user with project and namespace resources in the downstream cluster.
 # Mirrors the Cypress 'createUser' command and sub-commands
 #
@@ -23,7 +30,7 @@ STANDARD_USER_PASSWORD=${STANDARD_USER_PASSWORD:-$CATTLE_BOOTSTRAP_PASSWORD}
 # set by e2e-import-generic-cluster.sh when the Norman cluster object is created
 # (CLUSTER_NAME there) is not a valid id for the API calls below.
 if [ -z "$MGMT_CLUSTER_NAME" ]; then
-  echo "MGMT_CLUSTER_NAME must be set to the downstream cluster's management cluster id"
+  echo -e "${RED}MGMT_CLUSTER_NAME must be set to the downstream cluster's management cluster id${RESET}"
   exit 1
 fi
 
@@ -50,7 +57,7 @@ role_json() {
 ADMIN_ROLE_JSON=$(role_json "$SCRIPT_DIR/../pkg/virtual-clusters/resources/virtual-cluster-admin-role.js")
 POLICY_ROLE_JSON=$(role_json "$SCRIPT_DIR/../pkg/virtual-clusters/resources/virtual-cluster-policy-read-role.js")
 
-echo "Logging in as admin.........."
+echo -e "${YELLOW}Logging in as admin..........${RESET}"
 TOKEN=""
 for i in $(seq 1 60); do
   TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
@@ -62,7 +69,7 @@ for i in $(seq 1 60); do
   sleep 5
 done
 if [ -z "$TOKEN" ]; then
-  echo "Failed to obtain an admin token"
+  echo -e "${RED}Failed to obtain an admin token${RESET}"
   exit 1
 fi
 
@@ -120,25 +127,25 @@ ensure_role() {
 
   role_id=$(echo "$create_resp" | jq -r '.id // empty')
   if [ -z "$role_id" ]; then
-    echo "Failed to create RoleTemplate '${role_name}'. Response: ${create_resp}" >&2
+    echo -e "${RED}Failed to create RoleTemplate '${role_name}'. Response: ${create_resp}${RESET}" >&2
     exit 1
   fi
   echo "  Created RoleTemplate '${role_name}' (id: ${role_id})" >&2
   echo "$role_id"
 }
 
-echo "Ensuring required RoleTemplates exist.........."
+echo -e "${YELLOW}Ensuring required RoleTemplates exist..........${RESET}"
 PROJECT_ROLE=$(ensure_role "$ADMIN_ROLE_JSON")
 CLUSTER_ROLE=$(ensure_role "$POLICY_ROLE_JSON")
 
 if [ -z "$PROJECT_ROLE" ] || [ -z "$CLUSTER_ROLE" ]; then
-  echo "Failed to resolve role ids"
+  echo -e "${RED}Failed to resolve role ids${RESET}"
   exit 1
 fi
 echo "Project role id: ${PROJECT_ROLE}"
 echo "Cluster role id: ${CLUSTER_ROLE}"
 
-echo "Creating project '${PROJECT_NAME}'.........."
+echo -e "${YELLOW}Creating project '${PROJECT_NAME}'..........${RESET}"
 PROJECT_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/projects" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -146,12 +153,12 @@ PROJECT_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/projects" \
 
 PROJECT_ID=$(echo "$PROJECT_RESP" | jq -r '.id // empty')
 if [ -z "$PROJECT_ID" ]; then
-  echo "Failed to create project. Response: ${PROJECT_RESP}"
+  echo -e "${RED}Failed to create project. Response: ${PROJECT_RESP}${RESET}"
   exit 1
 fi
 echo "Project ID: ${PROJECT_ID}"
 
-echo "Creating namespace '${NAMESPACE_NAME}' in project.........."
+echo -e "${YELLOW}Creating namespace '${NAMESPACE_NAME}' in project..........${RESET}"
 NAMESPACE_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/namespaces" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -159,11 +166,11 @@ NAMESPACE_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/namespaces" \
 
 NAMESPACE_ID=$(echo "$NAMESPACE_RESP" | jq -r '.id // empty')
 if [ -z "$NAMESPACE_ID" ]; then
-  echo "Failed to create namespace. Response: ${NAMESPACE_RESP}"
+  echo -e "${RED}Failed to create namespace. Response: ${NAMESPACE_RESP}${RESET}"
   exit 1
 fi
 
-echo "Creating user '${STANDARD_USER}'.........."
+echo -e "${YELLOW}Creating user '${STANDARD_USER}'..........${RESET}"
 USER_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/management.cattle.io.users" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -171,7 +178,7 @@ USER_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/management.cattle.io.users" \
 
 USER_ID=$(echo "$USER_RESP" | jq -r '.id // empty')
 if [ -z "$USER_ID" ]; then
-  echo "Failed to create user. Response: ${USER_RESP}"
+  echo -e "${RED}Failed to create user. Response: ${USER_RESP}${RESET}"
   exit 1
 fi
 echo "User ID: ${USER_ID}"
@@ -182,18 +189,18 @@ echo "User ID: ${USER_ID}"
 # error state. Every dashboard e2e spec that creates a standard user grants
 # this same baseline role (see cy.createUser's `globalRole: { role: 'user' }`
 # usage across rancher/dashboard's Cypress specs).
-echo "Setting base 'user' global role.........."
+echo -e "${YELLOW}Setting base 'user' global role..........${RESET}"
 GLOBAL_ROLE_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/globalrolebindings" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{\"type\":\"globalRoleBinding\",\"globalRoleId\":\"user\",\"userId\":\"${USER_ID}\"}")
 
 if [ -z "$(echo "$GLOBAL_ROLE_RESP" | jq -r '.id // empty')" ]; then
-  echo "Failed to set global role binding. Response: ${GLOBAL_ROLE_RESP}"
+  echo -e "${RED}Failed to set global role binding. Response: ${GLOBAL_ROLE_RESP}${RESET}"
   exit 1
 fi
 
-echo "Fetching user principal ID.........."
+echo -e "${YELLOW}Fetching user principal ID..........${RESET}"
 USER_PRINCIPAL_ID=""
 for i in $(seq 1 10); do
   USER_DATA=$(curl -sk "${TEST_BASE_URL}/v1/management.cattle.io.users/${USER_ID}" \
@@ -206,12 +213,12 @@ for i in $(seq 1 10); do
   sleep 1
 done
 if [ -z "$USER_PRINCIPAL_ID" ]; then
-  echo "Failed to fetch user principal ID. Response: ${USER_DATA}"
+  echo -e "${RED}Failed to fetch user principal ID. Response: ${USER_DATA}${RESET}"
   exit 1
 fi
 echo "User Principal ID: ${USER_PRINCIPAL_ID}"
 
-echo "Creating password secret for user.........."
+echo -e "${YELLOW}Creating password secret for user..........${RESET}"
 SECRET_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/secrets" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -219,33 +226,33 @@ SECRET_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v1/secrets" \
 
 SECRET_ID=$(echo "$SECRET_RESP" | jq -r '.id // empty')
 if [ -z "$SECRET_ID" ]; then
-  echo "Failed to create password secret. Response: ${SECRET_RESP}"
+  echo -e "${RED}Failed to create password secret. Response: ${SECRET_RESP}${RESET}"
   exit 1
 fi
 
-echo "Setting '${PROJECT_ROLE}' project role.........."
+echo -e "${YELLOW}Setting '${PROJECT_ROLE}' project role..........${RESET}"
 PROJECT_ROLE_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/projectroletemplatebindings" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{\"type\":\"projectroletemplatebinding\",\"roleTemplateId\":\"${PROJECT_ROLE}\",\"userPrincipalId\":\"${USER_PRINCIPAL_ID}\",\"projectId\":\"${PROJECT_ID}\"}")
 
 if [ -z "$(echo "$PROJECT_ROLE_RESP" | jq -r '.id // empty')" ]; then
-  echo "Failed to set project role binding. Response: ${PROJECT_ROLE_RESP}"
+  echo -e "${RED}Failed to set project role binding. Response: ${PROJECT_ROLE_RESP}${RESET}"
   exit 1
 fi
 
-echo "Setting '${CLUSTER_ROLE}' cluster role.........."
+echo -e "${YELLOW}Setting '${CLUSTER_ROLE}' cluster role..........${RESET}"
 CLUSTER_ROLE_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3/clusterroletemplatebindings" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{\"type\":\"clusterRoleTemplateBinding\",\"clusterId\":\"${MGMT_CLUSTER_NAME}\",\"roleTemplateId\":\"${CLUSTER_ROLE}\",\"userPrincipalId\":\"${USER_PRINCIPAL_ID}\"}")
 
 if [ -z "$(echo "$CLUSTER_ROLE_RESP" | jq -r '.id // empty')" ]; then
-  echo "Failed to set cluster role binding. Response: ${CLUSTER_ROLE_RESP}"
+  echo -e "${RED}Failed to set cluster role binding. Response: ${CLUSTER_ROLE_RESP}${RESET}"
   exit 1
 fi
 
-echo "Verifying standard user can log in.........."
+echo -e "${YELLOW}Verifying standard user can log in..........${RESET}"
 STANDARD_USER_TOKEN=""
 for i in $(seq 1 10); do
   LOGIN_RESP=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
@@ -258,11 +265,11 @@ for i in $(seq 1 10); do
   sleep 1
 done
 if [ -z "$STANDARD_USER_TOKEN" ]; then
-  echo "Failed to log in as standard user '${STANDARD_USER}'. Response: ${LOGIN_RESP}"
+  echo -e "${RED}Failed to log in as standard user '${STANDARD_USER}'. Response: ${LOGIN_RESP}${RESET}"
   exit 1
 fi
 
-echo "Standard user bootstrapped"
+echo -e "${GREEN}${BOLD}Standard user bootstrapped${RESET}"
 echo "  Username: ${STANDARD_USER}"
 echo "  Project: ${PROJECT_NAME}"
 echo "  Namespace: ${NAMESPACE_NAME}"

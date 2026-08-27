@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # ---------------------------------------------------------------------------
 # Build and serve the extension, then register it with Rancher directly via
 # the Steve API - a scriptable stand-in for the UI-driven "Developer Load"
@@ -21,23 +28,23 @@ EXTENSIONS_VERSION_RANGE=$(jq -r '.rancher.annotations["catalog.cattle.io/ui-ext
 # bundle path need that combined name, not the bare package name.
 NAME_WITH_VERSION="${EXTENSION_NAME}-${PKG_VERSION}"
 
-echo "Building the extension.........."
+echo -e "${YELLOW}Building the extension..........${RESET}"
 yarn build-pkg "$EXTENSION_NAME"
 
-echo "Serving the extension on port ${EXTENSION_SERVER_PORT}.........."
+echo -e "${YELLOW}Serving the extension on port ${EXTENSION_SERVER_PORT}..........${RESET}"
 PORT="$EXTENSION_SERVER_PORT" nohup node node_modules/@rancher/shell/scripts/serve-pkgs > serve-pkgs.log 2>&1 &
 sleep 3
 
 # wait up to 30 seconds for the extension server to be ready (returns a non-4xx/5xx response)
 if ! curl --fail --silent --retry 30 --retry-connrefused --retry-delay 1 "http://127.0.0.1:${EXTENSION_SERVER_PORT}/" > /dev/null; then
-   echo "Extension server failed to become ready"
+   echo -e "${RED}Extension server failed to become ready${RESET}"
    cat serve-pkgs.log
    exit 1
 fi
 
 EXTENSION_ENDPOINT="http://127.0.0.1:${EXTENSION_SERVER_PORT}/${NAME_WITH_VERSION}/${NAME_WITH_VERSION}.umd.min.js"
 
-echo "Logging in to Rancher.........."
+echo -e "${YELLOW}Logging in to Rancher..........${RESET}"
 
 
 TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
@@ -45,11 +52,11 @@ TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action
   -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
   | jq -r '.token // empty' 2>/dev/null || echo "")
 if [ -z "$TOKEN" ]; then
-  echo "Failed to login as global admin"
+  echo -e "${RED}Failed to login as global admin${RESET}"
   exit 1
 fi
 
-echo "Registering the extension with Rancher.........."
+echo -e "${YELLOW}Registering the extension with Rancher..........${RESET}"
 curl -sk --fail-with-body -X POST "${TEST_BASE_URL}/v1/catalog.cattle.io.uiplugin" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -73,4 +80,4 @@ curl -sk --fail-with-body -X POST "${TEST_BASE_URL}/v1/catalog.cattle.io.uiplugi
   }"
 
 echo
-echo "Extension registered, served at ${EXTENSION_ENDPOINT}"
+echo -e "${GREEN}${BOLD}Extension registered, served at ${EXTENSION_ENDPOINT}${RESET}"

@@ -1,0 +1,2 @@
+"use strict";(("undefined"!==typeof self?self:this)["webpackChunkvirtual_clusters_1_2_0"]=("undefined"!==typeof self?self:this)["webpackChunkvirtual_clusters_1_2_0"]||[]).push([[303],{66303:function(e,t,n){n.r(t),n.d(t,{default:function(){return a}});var r=n(9274);function s(e,t,n,s,u,o){const c=(0,r.resolveComponent)("ResourceDetail");return(0,r.openBlock)(),(0,r.createBlock)(c)}var u=n(4879),o={name:"ClusterResourcedId",components:{ResourceDetail:u.A}},c=n(47433);const l=(0,c.A)(o,[["render",s]]);var a=l}}]);
+//# sourceMappingURL=virtual-clusters-1.2.0.umd.min.303.js.map

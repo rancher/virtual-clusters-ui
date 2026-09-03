@@ -1,0 +1,107 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# The e2e job doesn't call the GitHub API or push anything - explicit least-privilege
+# regardless of the org/repo default token permissions.
+permissions:
+  contents: read
+
+env:
+  CATTLE_BOOTSTRAP_PASSWORD: password
+  EXTENSION_SERVER_PORT: "8080"
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      # Each row installs its own k3s + k3d on its own runner, so rows are
+      # independent - capped to leave runner headroom for other workflows.
+      max-parallel: 3
+      matrix:
+        version:
+          - { chartVersionPrefix: "2.16", kubeVersion: "v1.36.2+k3s1" }
+          - { chartVersionPrefix: "2.15", kubeVersion: "v1.36.2+k3s1" }
+          - { chartVersionPrefix: "2.14", kubeVersion: "v1.35.5+k3s1" }
+        role:
+          - { username: "admin", tag: "@adminUser" }
+          - { username: "standard-user", tag: "@standardUser" }
+    name: "Rancher ${{ matrix.version.chartVersionPrefix }} / ${{ matrix.role.tag }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install packages
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve a Rancher URL reachable from k3d's containers
+        run: |
+          # k3s (hosting Rancher) runs natively on this runner, but the k3d
+          # cluster imported later runs as containers on Docker's bridge
+          # network. From inside those containers, 127.0.0.1 means the
+          # container itself, not this host, so the cluster-agent could
+          # never dial back to Rancher and the import would hang in
+          # "pending" forever. The bridge gateway IP is reachable from both
+          # the host and from containers on that bridge, so route
+          # TEST_BASE_URL through it instead of a loopback address.
+          HOST_IP=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')
+          echo "Routing TEST_BASE_URL through the Docker bridge gateway: ${HOST_IP}"
+          echo "TEST_BASE_URL=https://${HOST_IP}.sslip.io" >> "$GITHUB_ENV"
+          echo "API=https://${HOST_IP}.sslip.io" >> "$GITHUB_ENV"
+
+        
+        # Install Rancher and wait for it to become available
+      - name: Start Rancher (Prime alpha, Helm on k3s)
+        env:
+          CHART_VERSION_PREFIX: ${{ matrix.version.chartVersionPrefix }}
+          KUBE_VERSION: ${{ matrix.version.kubeVersion }}
+        run: ./scripts/e2e-k3s-start.sh
+        
+        # Navigate the initial setup flow: accept EULA, bootstrap password, set server URL
+      - name: Bootstrap Rancher
+        run: ./scripts/e2e-bootstrap-rancher.sh
+        
+        # create another cluster and import it, to use as the virtual host cluster
+      - name: Import a k3d cluster as a generic cluster
+        run: ./scripts/e2e-import-generic-cluster.sh
+        
+        # build the extension from this branch's code, load it into the UI using the 'Developer Load' mechanism
+      - name: Build, serve, and register the extension
+        run: ./scripts/e2e-create-uiplugin.sh
+        
+        # create a project and ns in the imported cluster, then add a standard user with the two k3k roles (see pkg/virtual-clusters/resources)
+      - name: Bootstrap Standard User
+        env:
+          STANDARD_USER: 'standard-user'
+        run: ./scripts/e2e-bootstrap-user.sh
+
+      - name: Run Cypress
+        env:
+          TEST_USERNAME: ${{ matrix.role.username }}
+          GREP_TAGS: ${{ matrix.role.tag }}
+        run: yarn e2e:ci
+
+      - name: Upload Cypress artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cypress-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.version.chartVersionPrefix }}-${{ matrix.role.tag }}
+          path: |
+            cypress/screenshots
+            cypress/videos
+          if-no-files-found: ignore

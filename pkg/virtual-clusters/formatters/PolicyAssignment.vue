@@ -11,7 +11,7 @@ export default {
   components: { Shortened },
 
   props: {
-    row:   {
+    row: {
       type:    Object,
       default: () => {
         return {};

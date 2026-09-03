@@ -86,7 +86,10 @@ function removeMount(index: number) {
 function updateField(index: number, field: keyof SecretMount, value: unknown) {
   const updated = [...props.secretMounts];
 
-  updated[index] = { ...updated[index], [field]: value };
+  updated[index] = {
+    ...updated[index],
+    [field]: value
+  };
   emit('update:secretMounts', updated);
 }
 
@@ -102,7 +105,10 @@ function mountTitle(mount: SecretMount): {name: string, path?: string} {
 
     const path = `/${ lastSegment }${ trailingSlash ? '/' : '' }`;
 
-    return { name, path };
+    return {
+      name,
+      path
+    };
   }
 
   return { name };

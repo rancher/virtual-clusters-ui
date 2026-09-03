@@ -153,7 +153,10 @@ const updateMatchingResources = debounce(async() => {
       });
 
       targetedStorageClasses.value = await Promise.all(
-        (res.data || []).map((item) => store.dispatch('management/create', { ...item, type: STORAGE_CLASS }))
+        (res.data || []).map((item) => store.dispatch('management/create', {
+          ...item,
+          type: STORAGE_CLASS
+        }))
       );
     }
   } catch (err) {

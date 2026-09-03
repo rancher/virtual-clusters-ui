@@ -27,9 +27,18 @@ const emit = defineEmits<{
 }>();
 
 const roleOptions: { label: string; value: SecretMountRole }[] = [
-  { label: tn('k3k.secretMounts.role.all'), value: 'all' },
-  { label: tn('k3k.secretMounts.role.server'), value: 'server' },
-  { label: tn('k3k.secretMounts.role.agent'), value: 'agent' },
+  {
+    label: tn('k3k.secretMounts.role.all'),
+    value: 'all'
+  },
+  {
+    label: tn('k3k.secretMounts.role.server'),
+    value: 'server'
+  },
+  {
+    label: tn('k3k.secretMounts.role.agent'),
+    value: 'agent'
+  },
 ];
 </script>
 

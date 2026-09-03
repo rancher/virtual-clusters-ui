@@ -65,7 +65,7 @@ export default {
     },
 
     storageClassName: {
-      handler(neu, old) {
+      handler(neu) {
         if (!neu) {
           this.$emit('update:persistenceType', PERSISTENCE_TYPES.EPHEMERAL );
         } else {
@@ -78,7 +78,9 @@ export default {
 
   data() {
     return {
-      storageClassErrors: [], loadingStorageClasses: false, storageClasses: []
+      storageClassErrors:    [],
+      loadingStorageClasses: false,
+      storageClasses:        []
     };
   },
 
@@ -101,7 +103,6 @@ export default {
   },
 
   methods: {
-
     async fetchStorageClasses() {
       this.loadingStorageClasses = true;
       this.storageClassErrors = [];

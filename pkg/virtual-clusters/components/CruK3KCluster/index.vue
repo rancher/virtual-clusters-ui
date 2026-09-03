@@ -68,8 +68,11 @@ const defaultCluster = {
   type:       K3K.CLUSTER,
   apiVersion: 'k3k.io/v1beta1',
   kind:       'Cluster',
-  metadata:   { name: '', namespace: '' },
-  spec:       {
+  metadata:   {
+    name:      '',
+    namespace: ''
+  },
+  spec: {
     mode:        MODES.SHARED,
     agents:      0,
     persistence: {
@@ -110,7 +113,7 @@ const defaultAnnotations = {
   // prevent k3s-upgrade-controller from running: this will be managed by k3k
   'rancher.io/imported-cluster-version-management': 'false',
   // display machine provider in cluster mgmt list
-  [PROVIDER]:                            'k3k'
+  [PROVIDER]:                                       'k3k'
 };
 
 export default {
@@ -198,7 +201,7 @@ export default {
         this.parentClusterId = parentProvCluster.id;
         this.parentCluster = parentProvCluster;
         // on edit, the parent display name annotation is used as a display-only fallback if the user currently loading the form can't view the parent prov cluster obeject
-        this.parentClusterDisplayAnnotation = this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY]
+        this.parentClusterDisplayAnnotation = this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY];
       } catch (e) {
         this.errors.push(e);
       }
@@ -237,7 +240,9 @@ export default {
         }
 
         const obj = {
-          [CLUSTER_BADGE.ICON_TEXT]: neu.badge.iconText, [CLUSTER_BADGE.COLOR]: neu.badge.color, [CLUSTER_BADGE.TEXT]: neu.badge.text
+          [CLUSTER_BADGE.ICON_TEXT]: neu.badge.iconText,
+          [CLUSTER_BADGE.COLOR]:     neu.badge.color,
+          [CLUSTER_BADGE.TEXT]:      neu.badge.text
         };
 
         this.value.metadata.annotations = {
@@ -296,20 +301,26 @@ export default {
 
     return {
       SYNC_CONTEXT,
-      k3kInstalled:               false,
-      policy:                     null,
-      connectingToHost:           false,
-      provClusters:               [],
-      parentCluster:              {}, // provisioning cluster representing the "host cluster"
-      parentClusterDisplayAnnotation: '', 
-      k3kCluster:                 {},
-      modeOptions:                [{ label: t('k3k.mode.shared'), value: MODES.SHARED }, { label: t('k3k.mode.virtual'), value: MODES.VIRTUAL }],
-      k3sVersions:                [],
-      supportsTopology:         false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
-      fvFormRuleSets:             [
+      k3kInstalled:                   false,
+      policy:                         null,
+      connectingToHost:               false,
+      provClusters:                   [],
+      parentCluster:                  {}, // provisioning cluster representing the "host cluster"
+      parentClusterDisplayAnnotation: '',
+      k3kCluster:                     {},
+      modeOptions:                    [{
+        label: t('k3k.mode.shared'),
+        value: MODES.SHARED
+      }, {
+        label: t('k3k.mode.virtual'),
+        value: MODES.VIRTUAL
+      }],
+      k3sVersions:      [],
+      supportsTopology: false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
+      fvFormRuleSets:   [
         {
-          path:       'metadata.name',
-          rules:      ['required']
+          path:  'metadata.name',
+          rules: ['required']
         },
         {
           path:       'metadata.namespace',
@@ -436,7 +447,9 @@ export default {
       const k3kUrl = `${ baseUrl }/k3k.io.clusters`;
 
       const res = await this.$store.dispatch('management/request', {
-        url: k3kUrl, method: 'POST', data: this.k3kCluster
+        url:    k3kUrl,
+        method: 'POST',
+        data:   this.k3kCluster
       });
 
       for (const key in res) {
@@ -454,7 +467,10 @@ export default {
       let image = DEFAULT_IMPORT_JOB_IMAGE;
 
       try {
-        const shellImage = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'shell-image' });
+        const shellImage = await this.$store.dispatch('management/find', {
+          type: MANAGEMENT.SETTING,
+          id:   'shell-image'
+        });
 
         if (shellImage?.value) {
           image = shellImage.value;
@@ -463,7 +479,10 @@ export default {
 
       if (!imageHasRegistry(image)) {
         try {
-          const registrySetting = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: SETTING.SYSTEM_DEFAULT_REGISTRY });
+          const registrySetting = await this.$store.dispatch('management/find', {
+            type: MANAGEMENT.SETTING,
+            id:   SETTING.SYSTEM_DEFAULT_REGISTRY
+          });
           const registry = registrySetting?.value;
 
           if (registry) {
@@ -494,7 +513,7 @@ export default {
           throw new Error(this.t('k3k.errors.gettingToken'));
         }
       } catch (e) {
-        throw new Error(`${ this.t('k3k.errors.creatingAndRegisteringCluster') } ${ e?.message || e }`);
+        throw new Error(`${ this.t('k3k.errors.creatingAndRegisteringCluster') } ${ e?.message || e }`, { cause: e });
       }
 
       const command = clusterToken.command.split(' ');
@@ -523,11 +542,15 @@ export default {
 
       try {
         await this.$store.dispatch('management/request', {
-          url: cmUrl, method: 'POST', data: configMap
+          url:    cmUrl,
+          method: 'POST',
+          data:   configMap
         });
 
         await this.$store.dispatch('management/request', {
-          url: jobUrl, method: 'POST', data: importJob
+          url:    jobUrl,
+          method: 'POST',
+          data:   importJob
         });
       } catch (e) {
         this.errors.push(e);
@@ -663,7 +686,7 @@ export default {
         }
       } catch (e) {
         // warn users the k3k cluster might still exist
-        throw new Error(`${ this.t('k3k.errors.deletingK3kCluster') }\n${ e?.message || e }`);
+        throw new Error(`${ this.t('k3k.errors.deletingK3kCluster') }\n${ e?.message || e }`, { cause: e });
       }
     },
 
@@ -677,7 +700,7 @@ export default {
         }
       } catch (e) {
         // warn users the prov cluster might still exist
-        throw new Error(`${ this.t('k3k.errors.deletingProvCluster') }\n${ e?.message || e }`);
+        throw new Error(`${ this.t('k3k.errors.deletingProvCluster') }\n${ e?.message || e }`, { cause: e });
       }
     },
 
@@ -691,7 +714,7 @@ export default {
           method: 'DELETE',
         });
       } catch (e) {
-        throw new Error(`${ this.t('k3k.errors.deletingNamespace') }\n${ e?.message || e }`);
+        throw new Error(`${ this.t('k3k.errors.deletingNamespace') }\n${ e?.message || e }`, { cause: e });
       }
     },
 

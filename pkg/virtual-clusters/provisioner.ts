@@ -4,7 +4,7 @@ import CruK3KCluster from './components/CruK3KCluster/index.vue';
 import { isRancherPrime } from '@shell/config/version';
 
 export class k3kProvisioner implements IClusterProvisioner {
-  static ID = 'k3k'
+  static ID = 'k3k';
 
   constructor(private context: ClusterProvisionerContext) {
     mapDriver(this.id, 'k3k' );

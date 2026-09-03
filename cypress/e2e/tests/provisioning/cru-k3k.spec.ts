@@ -8,6 +8,7 @@ describe('cluster creation', () => {
     // cy.login()'s default navigation checks for the "Welcome to Rancher"
     // message, which Rancher Prime doesn't render - navigate to the login
     // page ourselves and pass skipNavigation instead.
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
     LoginPagePo.goTo();
     const loginPage = new LoginPagePo();
 
@@ -31,14 +32,12 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    // TODO nb revert when @rancher/cypress release is ready
-    // clusterCreate.selectTypeByName('K3K').click();
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
     clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
 
     const cruK3k = new CruK3kPo();
 
-    // TODO nb revert when @rancher/cypress release is ready
-    // cruK3k.hostClusterSelect().waitForLoading();
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
     cruK3k.waitForHostClusterLoad();
     cruK3k.selectHostCluster('e2e-generic');
     cruK3k.installK3kButton().self().should('be.visible');
@@ -50,15 +49,13 @@ describe('cluster creation', () => {
 
     clusterCreate.waitForPage();
 
-    // TODO nb revert when @rancher/cypress release is ready
-    // clusterCreate.selectTypeByName('K3K').click();
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
     clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
 
 
     const cruK3k = new CruK3kPo();
 
-    // TODO nb revert when @rancher/cypress release is ready
-    // cruK3k.hostClusterSelect().waitForLoading();
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
     cruK3k.waitForHostClusterLoad();
     cruK3k.hostClusterOptionLabels().should('not.include', 'e2e-generic');
   });

@@ -32,7 +32,7 @@ export default class CruK3kPo extends PagePo {
   // the host cluster select's data-testid lands on the inner v-select (LabeledSelect
   // has inheritAttrs: false), but the loading spinner is a sibling of v-select under
   // the outer .labeled-select wrapper, so we have to search from there instead
-  // TODO nb use dashboard LabeledSelect PO waitForLoading
+  // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
   waitForHostClusterLoad(timeout = 20000): Cypress.Chainable {
     return this.hostClusterSelect().self()
       .closest('.labeled-select')

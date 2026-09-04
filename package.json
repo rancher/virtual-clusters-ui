@@ -27,7 +27,7 @@
     "globals": "17.7.0",
     "neostandard": "0.13.0",
     "typescript-eslint": "8.62.0",
-    "@types/node": "25.3.3"
+    "@types/node": "25.9.5"
   },
   "resolutions": {
     "**/webpack": "5",

@@ -263,7 +263,7 @@ export default {
             url:    k3kRepoUrl,
             method: 'GET',
           });
-          const downloadedCondition = k3kRepo.status.conditions.find((s) => s.type === 'OCIDownloaded');
+          const downloadedCondition = k3kRepo.status?.conditions?.find((s) => s.type === 'OCIDownloaded');
 
           const downloaded = downloadedCondition?.status === 'True';
 

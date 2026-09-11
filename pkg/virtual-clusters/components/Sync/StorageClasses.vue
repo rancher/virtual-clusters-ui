@@ -63,12 +63,12 @@ const storageClassEnabled = computed({
   get: () => props.enabled,
   set: (neu) => {
     emit('update:enabled', neu);
-     // Changing `enabled` and `selector` both trigger `update:storageClasses` in the parent; defer selector clearing to avoid overwriting the enabled update.
-     if (!neu && props.selector) {
-       nextTick(() => {
-         emit('update:selector', undefined);
-       });
-     }
+    // Changing `enabled` and `selector` both trigger `update:storageClasses` in the parent; defer selector clearing to avoid overwriting the enabled update.
+    if (!neu && props.selector) {
+      nextTick(() => {
+        emit('update:selector', undefined);
+      });
+    }
   }
 });
 

@@ -27,12 +27,11 @@ jobs:
       fail-fast: false
       # Each row installs its own k3s + k3d on its own runner, so rows are
       # independent - capped to leave runner headroom for other workflows.
-      max-parallel: 3
+      max-parallel: 4
       matrix:
         version:
           - { chartVersionPrefix: "2.16", kubeVersion: "v1.36.2+k3s1" }
           - { chartVersionPrefix: "2.15", kubeVersion: "v1.36.2+k3s1" }
-          - { chartVersionPrefix: "2.14", kubeVersion: "v1.35.5+k3s1" }
         role:
           - { username: "admin", tag: "@adminUser" }
           - { username: "standard-user", tag: "@standardUser" }

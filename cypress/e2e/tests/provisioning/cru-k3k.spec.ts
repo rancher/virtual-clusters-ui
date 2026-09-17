@@ -59,4 +59,21 @@ describe('cluster creation', () => {
     cruK3k.waitForHostClusterLoad();
     cruK3k.hostClusterOptionLabels().should('not.include', 'e2e-generic');
   });
+
+  it('does not allow standard users to select clusters without k3k installed2', { tags: ['@standardUser'] }, () => {
+    ClusterManagerCreatePagePo.goTo( '_');
+    const clusterCreate = new ClusterManagerCreatePagePo();
+
+    clusterCreate.waitForPage();
+
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
+    clusterCreate.resourceDetail().cruResource().selectSubType(1, 0).click();
+
+
+    const cruK3k = new CruK3kPo();
+
+    // TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
+    cruK3k.waitForHostClusterLoad();
+    cruK3k.hostClusterOptionLabels().should('not.include', 'e2e-generic');
+  });
 });

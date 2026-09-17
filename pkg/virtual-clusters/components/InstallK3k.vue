@@ -369,6 +369,7 @@ export default {
     >
       <LabeledSelect
         v-model:value="selectedParentOption"
+        data-testid="k3k-host-cluster-select"
         label-key="k3k.hostCluster.label"
         :mode="mode"
         :disabled="!isCreate"
@@ -390,6 +391,7 @@ export default {
       />
       <AsyncButton
         type="button"
+        data-testid="install-k3k-button"
         class="btn-sm role-tertiary mt-5"
         mode="install"
         :action-label="t('k3k.hostCluster.installK3k')"

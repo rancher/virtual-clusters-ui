@@ -373,7 +373,7 @@ export default {
     },
 
     hasPolicy() {
-      return this.policy && !isEmpty(this.policy)
+      return this.policy && !isEmpty(this.policy);
     },
 
     isCreate() {

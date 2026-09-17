@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Accepts the EULA and sets the server URL, mirroring the bootstrap curl loop
+# rancher/dashboard runs in its own CI (scripts/e2e-extension-k3s-start.sh
+# callers). This allows virtual clusters tests to skip the initial Rancher setup flow, which is tested in the dashboard repo. 
+# This is retried because rancher-webhook can briefly be unavailable right
+# after boot, which otherwise makes login return no token.
+
+
+TEST_BASE_URL=${TEST_BASE_URL:-https://127.0.0.1.sslip.io}
+CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-password}
+
+# this script will be the first time we log in to this Rancher instance
+# so we will attempt for up to 5 minutes (60 attempts x 5 second wait)
+# in case Rancher is not ready
+TOKEN=""
+for i in $(seq 1 60); do
+  TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
+    | jq -r '.token // empty' 2>/dev/null || echo "")
+  if [ -n "$TOKEN" ]; then
+    echo "Logged in after $i attempt(s)"
+    break
+  fi
+  echo "  Login not ready yet... ($i/60)"
+  sleep 5
+done
+if [ -z "$TOKEN" ]; then
+  echo -e "${RED}Failed to obtain an admin token${RESET}"
+  exit 1
+fi
+
+curl -sk --fail-with-body -X PUT "${TEST_BASE_URL}/v3/settings/server-url" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"server-url","value":"'"${TEST_BASE_URL}"'"}'
+
+curl -sk --fail-with-body -X PUT "${TEST_BASE_URL}/v3/settings/eula-agreed" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"eula-agreed","value":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}'
+
+curl -sk --fail-with-body -X PUT "${TEST_BASE_URL}/v3/settings/first-login" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"first-login","value":"false"}'
+
+echo -e "${GREEN}${BOLD}Rancher bootstrapped${RESET}"

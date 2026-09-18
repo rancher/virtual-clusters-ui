@@ -15,7 +15,16 @@ if (!baseUrl.endsWith('/dashboard') && !isLocalDevServer) {
 }
 
 export default extendConfig({
-  env: { extensionUrl: process.env.EXTENSION_URL },
+  env: {
+    extensionUrl: process.env.EXTENSION_URL,
+    // Jenkins sets TEST_JENKINS=true. Tests that provision real cloud infrastructure
+    // (e.g. an EC2 host cluster for virtual clusters) gate on this and skip themselves
+    // elsewhere, so they stay out of the GitHub PR gate and local runs.
+    jenkins:      process.env.TEST_JENKINS === 'true',
+    // Outside Jenkins, name an existing downstream cluster to run those tests
+    // against it instead of provisioning one (it is left in place afterwards).
+    hostCluster:  process.env.TEST_HOST_CLUSTER,
+  },
   e2e: {
     baseUrl,
     specPattern: 'cypress/e2e/tests/**/*.spec.ts',

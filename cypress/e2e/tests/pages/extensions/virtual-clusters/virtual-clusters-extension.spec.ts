@@ -1,9 +1,11 @@
-import { LoginPagePo } from '@rancher/cypress/e2e/po/pages/login-page.po';
 import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/cluster-dashboard.po';
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
 
 import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
+import {
+  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, deleteResource, createAwsHostCluster
+} from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
 const NAV_LABEL = 'Virtual Clusters';
@@ -13,27 +15,16 @@ const HELM_REPO_NAME = 'virtual-clusters-ui';
 const UI_PLUGIN_ID = 'cattle-ui-plugin-system/virtual-clusters';
 
 const CLUSTER_NAMESPACE = 'fleet-default';
-const AWS_REGION = 'us-west-1';
-// waitForRancherResource polls every 1.5s; an EC2 RKE2 cluster takes 10-15 min to
-// become active, so allow ~20 min. A cluster supplied via TEST_HOST_CLUSTER should
-// already be active, so give it 30s at most.
+// waitForClusterActive polls every 1.5s; an EC2 RKE2 cluster takes 10-15 min to become
+// active, so allow ~20 min. A cluster supplied via TEST_HOST_CLUSTER is already up.
 const CLUSTER_ACTIVE_RETRIES = 800;
 const EXISTING_CLUSTER_ACTIVE_RETRIES = 20;
-
-// cy.login()'s default navigation checks for the "Welcome to Rancher" message,
-// which Rancher Prime doesn't render - navigate ourselves and pass skipNavigation.
-// TODO nb https://github.com/rancher/virtual-clusters-ui/issues/205
-function login() {
-  LoginPagePo.goTo();
-  new LoginPagePo().checkIsCurrentPage();
-  cy.login(undefined, undefined, false, true);
-}
 
 // The extension is Prime-only (catalog.cattle.io/prime-only) and every product it
 // registers is hidden behind isRancherPrime(), so fail fast with a clear message
 // rather than timing out on a missing card later.
 function assertRancherPrime() {
-  cy.getRancherVersion().then((version) => {
+  rancherVersion().then((version) => {
     expect(
       version.RancherPrime?.toLowerCase(),
       `${ EXTENSION_NAME } is Prime-only, but /rancherversion reports RancherPrime=${ version.RancherPrime }`
@@ -48,13 +39,12 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@virtualC
   let removeRepo = false;
   let removeExtension = false;
 
-  // hostClusterName is resolved asynchronously above, so read it inside the queue
-  function waitForHostClusterActive(retries: number) {
+  // hostClusterName is resolved asynchronously, so read it inside the command queue
+  function assertHostClusterActive(retries: number) {
     cy.then(() => {
-      cy.waitForResourceState('v1', `provisioning.cattle.io.clusters/${ CLUSTER_NAMESPACE }`, hostClusterName, 'active', retries)
-        .then((active) => {
-          expect(active, `host cluster '${ hostClusterName }' is not active`).to.eq(true);
-        });
+      waitForClusterActive(CLUSTER_NAMESPACE, hostClusterName, retries).then((active) => {
+        expect(active, `host cluster '${ hostClusterName }' is not active`).to.eq(true);
+      });
     });
   }
 
@@ -70,61 +60,58 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@virtualC
       this.skip();
     }
 
-    login();
+    loginAsAdmin();
     assertRancherPrime();
 
     if (existingHostCluster) {
-      // Use the cluster we were given. getClusterIdByName throws a clear error if
-      // it doesn't exist, which is the "no downstream cluster" fail-fast.
+      // Use the cluster we were given. clusterIdByName fails with a clear message if it
+      // doesn't exist, which is the "no downstream cluster" fail-fast.
       hostClusterName = existingHostCluster;
-      cy.getClusterIdByName(hostClusterName).then((id) => {
-        hostClusterId = id;
-      });
-      waitForHostClusterActive(EXISTING_CLUSTER_ACTIVE_RETRIES);
+      assertHostClusterActive(EXISTING_CLUSTER_ACTIVE_RETRIES);
     } else {
       // Provision the downstream host cluster the virtual clusters will live in.
-      cy.createE2EResourceName('vc-host').then((name) => {
+      cy.createE2EResourceName('vc-host').then((name: string) => {
         hostClusterName = name;
 
-        cy.createAmazonRke2ClusterWithoutMachineConfig({
-          cloudCredentialsAmazon: {
-            workspace: CLUSTER_NAMESPACE,
-            name,
-            region:    AWS_REGION,
-            accessKey: Cypress.env('awsAccessKey'),
-            secretKey: Cypress.env('awsSecretKey'),
-          },
-          rke2ClusterAmazon: {
-            clusterName: name,
-            namespace:   CLUSTER_NAMESPACE,
-          },
+        createAwsHostCluster({
+          name,
+          namespace:    CLUSTER_NAMESPACE,
+          region:       Cypress.env('awsRegion') || 'us-west-1',
+          accessKey:    Cypress.env('awsAccessKey'),
+          secretKey:    Cypress.env('awsSecretKey'),
+          instanceType: Cypress.env('awsInstanceType') || 't3a.medium',
+          vpcId:        Cypress.env('awsVpcId'),
+          zone:         Cypress.env('awsZone') || 'a',
         }).then(() => {
           removeHostCluster = true;
         });
 
-        waitForHostClusterActive(CLUSTER_ACTIVE_RETRIES);
-
-        cy.getClusterIdByName(name).then((id) => {
-          hostClusterId = id;
-        });
+        assertHostClusterActive(CLUSTER_ACTIVE_RETRIES);
       });
     }
 
-    // Add the published chart repository and install the extension from it.
-    const extensionsPo = new ExtensionsPagePo();
-
-    extensionsPo.goTo();
-    extensionsPo.waitForPage();
-    extensionsPo.addHelmRepository(HELM_REPO_URL, HELM_REPO_NAME).then(() => {
-      removeRepo = true;
+    cy.then(() => {
+      clusterIdByName(hostClusterName).then((id) => {
+        hostClusterId = id;
+      });
     });
 
+    // Add the published chart repository and install the extension from it. The teardown
+    // flags are raised before each step rather than after, so a failure part way through
+    // still cleans up - deleteResource tolerates anything that was never created.
+    const extensionsPo = new ExtensionsPagePo();
+
+    cy.then(() => {
+      removeRepo = true;
+    });
+    extensionsPo.addHelmRepository(HELM_REPO_URL, HELM_REPO_NAME);
+
     extensionsPo.goTo();
     extensionsPo.waitForPage();
-    extensionsPo.installExtensionFromCatalog(EXTENSION_NAME, HELM_REPO_NAME, 'vcInstall');
     cy.then(() => {
       removeExtension = true;
     });
+    extensionsPo.installExtensionFromCatalog(EXTENSION_NAME, HELM_REPO_NAME, 'vcInstall');
   });
 
   it('shows the Virtual Clusters navigation entry and landing page on the downstream cluster', () => {
@@ -167,13 +154,13 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@virtualC
 
   after('clean up', () => {
     if (removeExtension) {
-      cy.deleteRancherResource('v1', 'catalog.cattle.io.uiplugins', UI_PLUGIN_ID, false);
+      deleteResource('v1', 'catalog.cattle.io.uiplugins', UI_PLUGIN_ID);
     }
     if (removeRepo) {
-      cy.deleteRancherResource('v1', 'catalog.cattle.io.clusterrepos', HELM_REPO_NAME, false);
+      deleteResource('v1', 'catalog.cattle.io.clusterrepos', HELM_REPO_NAME);
     }
     if (removeHostCluster) {
-      cy.deleteRancherResource('v1', `provisioning.cattle.io.clusters/${ CLUSTER_NAMESPACE }`, hostClusterName, false);
+      deleteResource('v1', `provisioning.cattle.io.clusters/${ CLUSTER_NAMESPACE }`, hostClusterName);
     }
   });
 });

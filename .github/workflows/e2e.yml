@@ -92,7 +92,10 @@ jobs:
       - name: Run Cypress
         env:
           TEST_USERNAME: ${{ matrix.role.username }}
-          GREP_TAGS: ${{ matrix.role.tag }}
+          # `+-@jenkins` excludes suites that provision real cloud infrastructure.
+          # @cypress/grep matches a test when ANY of its tags match, so without this
+          # a @jenkins spec tagged @adminUser would also run in this gate.
+          GREP_TAGS: ${{ matrix.role.tag }}+-@jenkins
         run: yarn e2e:ci
 
       - name: Upload Cypress artifacts

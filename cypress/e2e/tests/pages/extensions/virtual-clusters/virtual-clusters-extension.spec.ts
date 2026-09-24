@@ -4,7 +4,7 @@ import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po'
 import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
 import {
-  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, deleteResource, createAwsHostCluster
+  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, deleteResource, createAwsHostCluster
 } from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
@@ -24,6 +24,8 @@ const AWS_INSTANCE_TYPE = 't3a.medium';
 // waitForClusterActive polls every 1.5s; an EC2 RKE2 cluster takes 10-15 min to
 // become active, so allow ~20 min.
 const CLUSTER_ACTIVE_RETRIES = 800;
+// The agent connects shortly after the cluster goes active - ~5 min at 1.5s per poll.
+const CLUSTER_CONNECTED_RETRIES = 200;
 
 // The extension is Prime-only (catalog.cattle.io/prime-only) and every product it
 // registers is hidden behind isRancherPrime(), so fail fast with a clear message
@@ -70,6 +72,12 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
       clusterIdByName(name).then((id) => {
         hostClusterId = id;
+
+        // Being active is not enough to browse to /c/<id>/explorer: the dashboard
+        // redirects to /dashboard/home until the cluster's agent is connected.
+        waitForClusterConnected(id, CLUSTER_CONNECTED_RETRIES).then((connected) => {
+          expect(connected, `host cluster '${ name }' agent never connected`).to.eq(true);
+        });
       });
     });
 

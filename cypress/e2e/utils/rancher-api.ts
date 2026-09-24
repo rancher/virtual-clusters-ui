@@ -119,9 +119,54 @@ export function waitForRepositoryDownload(name: string, retries = 20) {
   }, retries);
 }
 
-/** Poll a provisioning cluster until it settles on `active`. */
+/** True when `conditions` holds `type` with status True. */
+function conditionIsTrue(conditions: { type: string, status: string }[], type: string) {
+  return conditions.some((c) => c.type === type && c.status === 'True');
+}
+
+/**
+ * Poll a provisioning cluster until it settles on `active`.
+ *
+ * Not waitForResourceState: Steve reports `state: { name: 'active', transitioning: false }`
+ * for a resource whose controllers have not written any status yet, so a cluster created
+ * seconds ago looks active on the very first poll and the caller carries on against a
+ * cluster that is still provisioning. Require the status to exist, and `Ready` to be
+ * True, before trusting the state.
+ */
 export function waitForClusterActive(namespace: string, name: string, retries: number) {
-  return waitForResourceState('v1', `provisioning.cattle.io.clusters/${ namespace }`, name, 'active', retries);
+  return waitForResource('v1', `provisioning.cattle.io.clusters/${ namespace }`, name, (resp) => {
+    if (resp.status !== 200) {
+      return false;
+    }
+
+    const conditions = resp.body?.status?.conditions || [];
+
+    if (!conditions.length || !conditionIsTrue(conditions, 'Ready')) {
+      return false;
+    }
+
+    const state = resp.body?.metadata?.state;
+
+    return state?.transitioning === false && state?.name === 'active';
+  }, retries);
+}
+
+/**
+ * Poll the management cluster (the `c-m-xxxxxxxx` one `/c/<id>/` URLs address) until it
+ * is active with its agent connected. A provisioning cluster reaches `active` slightly
+ * before the downstream agent connects, and until it does the dashboard cannot load the
+ * cluster and bounces `/c/<id>/explorer` back to `/dashboard/home`.
+ */
+export function waitForClusterConnected(id: string, retries: number) {
+  return waitForResource('v3', 'clusters', id, (resp) => {
+    if (resp.status !== 200) {
+      return false;
+    }
+
+    const conditions = resp.body?.conditions || [];
+
+    return resp.body?.state === 'active' && conditionIsTrue(conditions, 'Ready');
+  }, retries);
 }
 
 /** Best-effort delete used in teardown - a missing resource is not an error. */

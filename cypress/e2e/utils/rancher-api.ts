@@ -178,6 +178,33 @@ export function deleteResource(prefix: string, resourceType: string, id: string)
   });
 }
 
+/**
+ * Poll until the specified schema is available in the cluster's API.
+ * This is useful for ensuring that CRDs are fully registered and available before interacting with them.
+ */
+export function waitForSchema(clusterId: string, schemaId: string, retries = 20) {
+  return waitForResource(`k8s/clusters/${ clusterId }/v1`, 'schemas', schemaId, (resp) => resp.status === 200, retries);
+}
+
+/** Mirrors pkg/virtual-clusters/utils/k3kInstalled.js. */
+export const K3K_CHART_NAME = 'suse-virtual-cluster-engine';
+export const K3K_REPO_NAME = 'suse-virtual-cluster-engine';
+export const K3K_NAMESPACE = 'k3k-system';
+export const K3K_POLICY_TYPE = 'k3k.io.virtualclusterpolicy';
+
+/**
+ * Best effort, like deleteResource. The namespace goes last because deleting it first
+ * would strand the app's release secret and leave the count non-zero.
+ */
+export function uninstallK3k(clusterId: string) {
+  const prefix = `k8s/clusters/${ clusterId }/v1`;
+
+  deleteResource(prefix, `catalog.cattle.io.apps/${ K3K_NAMESPACE }`, K3K_CHART_NAME);
+  deleteResource(prefix, 'catalog.cattle.io.clusterrepos', K3K_REPO_NAME);
+
+  return deleteResource(prefix, 'namespaces', K3K_NAMESPACE);
+}
+
 export interface AwsHostClusterParams {
   name: string;
   namespace: string;
@@ -261,7 +288,6 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
                   cni:                   'calico',
                   'disable-kube-proxy':  false,
                   'etcd-expose-metrics': false,
-                  'ingress-controller':  'ingress-nginx',
                 },
                 machineSelectorConfig: [{ config: { 'protect-kernel-defaults': false } }],
                 etcd:                  {

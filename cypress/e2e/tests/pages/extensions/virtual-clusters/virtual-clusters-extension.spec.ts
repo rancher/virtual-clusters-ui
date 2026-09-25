@@ -4,7 +4,8 @@ import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po'
 import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
 import {
-  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, deleteResource, createAwsHostCluster
+  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected,
+  describeCluster, deleteResource, createAwsHostCluster
 } from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
@@ -67,7 +68,14 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
       });
 
       waitForClusterActive(CLUSTER_NAMESPACE, name, CLUSTER_ACTIVE_RETRIES).then((active) => {
-        expect(active, `host cluster '${ name }' did not become active`).to.eq(true);
+        if (active) {
+          return;
+        }
+
+        // Say what the cluster was still waiting on - the run costs ~25 minutes to reach here
+        return describeCluster(CLUSTER_NAMESPACE, name).then((why) => {
+          expect(active, `host cluster '${ name }' did not become active. ${ why }`).to.eq(true);
+        });
       });
 
       clusterIdByName(name).then((id) => {
@@ -119,6 +127,10 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
+    // goTo() is a full page load, so the tab strip is built after the UIPlugin list
+    // comes back. Without this the Installed tab can still be unrendered when we
+    // reach for it, the same guard kubewarden.spec.ts uses upstream.
+    extensionsPo.waitForTabs();
     extensionsPo.extensionTabInstalledClick();
     extensionsPo.waitForPage(undefined, 'installed');
 

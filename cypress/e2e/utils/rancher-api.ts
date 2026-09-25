@@ -164,9 +164,35 @@ export function waitForClusterConnected(id: string, retries: number) {
     }
 
     const conditions = resp.body?.conditions || [];
+    // Same rule as shell/models/management.cattle.io.cluster.js `isReady`: prefer
+    // Connected when present (2.6+), fall back to Ready.
+    const hasConnected = conditions.some((c: { type: string }) => c.type === 'Connected');
+    const ready = conditionIsTrue(conditions, hasConnected ? 'Connected' : 'Ready');
 
-    return resp.body?.state === 'active' && conditionIsTrue(conditions, 'Ready');
+    return resp.body?.state === 'active' && ready;
   }, retries);
+}
+
+/**
+ * One-line summary of why a cluster is not ready yet, for assertion messages - a bare
+ * "did not become active" costs a 25 minute run to learn nothing.
+ */
+export function describeCluster(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/provisioning.cattle.io.clusters/${ namespace }/${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `GET returned ${ resp.status }`;
+    }
+
+    const state = resp.body?.metadata?.state;
+    const conditions = (resp.body?.status?.conditions || [])
+      .filter((c: any) => c.status !== 'True')
+      .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+    return `state=${ state?.name }/transitioning=${ state?.transitioning }; not-true conditions: ${ conditions.join('; ') || 'none' }`;
+  });
 }
 
 /** Best-effort delete used in teardown - a missing resource is not an error. */
@@ -242,7 +268,15 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
       // picking the last entry of /v1-rke2-release/releases yields a cluster whose
       // rke2-server never starts. The setting's value has no leading `v`.
       return apiRequest({ url: '/v1/management.cattle.io.settings/rke2-default-version' }).then((verResp) => {
-        const kubernetesVersion = `v${ verResp.body.value }`;
+        // A setting's `value` is empty until someone overrides it, and the effective
+        // value then lives in `default` - Rancher's own cluster form reads it the same
+        // way (shell/edit/provisioning.cattle.io.cluster/rke2.vue). Jenkins builds a
+        // fresh Rancher per run, so `value` is routinely empty there and a bare
+        // `v${value}` yields the literal "vundefined".
+        const defaultVersion = verResp.body.value || verResp.body.default;
+
+        expect(defaultVersion, 'rke2-default-version setting').to.be.a('string').and.not.be.empty;
+        const kubernetesVersion = `v${ defaultVersion }`;
 
         return apiRequest({
           method: 'POST',

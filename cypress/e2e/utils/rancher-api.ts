@@ -284,7 +284,8 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
         region,
         // The driver defaults to a 16GB root volume, which is tight once the RKE2
         // release, its images and etcd are on disk for a single all-in-one node.
-        rootSize:              50,
+        // The CRD types this as a string, an integer is rejected with a 422.
+        rootSize:              '50',
         securityGroup:         ['rancher-nodes'],
         securityGroupReadonly: false,
         subnetId:              null,

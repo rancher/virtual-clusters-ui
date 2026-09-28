@@ -225,6 +225,39 @@ export function describeClusterMachines(namespace: string, name: string): Cypres
   });
 }
 
+/**
+ * The EC2 side of each machine. CAPI only ever reports the chicken-and-egg
+ * "waiting for control plane", while the docker-machine driver's own failures
+ * (no capacity, unusable subnet, AMI problems) land on this resource.
+ */
+export function describeInfraMachines(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/rke-machine.cattle.io.amazonec2machines/${ namespace }?labelSelector=cluster.x-k8s.io/cluster-name=${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `ec2 machines: GET returned ${ resp.status }`;
+    }
+
+    const machines = resp.body?.data || [];
+
+    if (!machines.length) {
+      return 'ec2 machines: none created yet';
+    }
+
+    return `ec2 machines: ${ machines.map((m: any) => {
+      const ready = m.status?.ready;
+      const jobComplete = m.status?.jobComplete;
+      const addresses = (m.status?.addresses || []).map((a: any) => a.address).join(',');
+      const pending = (m.status?.conditions || [])
+        .filter((c: any) => c.status !== 'True')
+        .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+      return `${ m.metadata?.name }[ready=${ ready }/jobComplete=${ jobComplete }/addresses=${ addresses || 'none' }]${ pending.length ? ` ${ pending.join(', ') }` : '' }`;
+    }).join(' | ') }`;
+  });
+}
+
 /** Best-effort delete used in teardown - a missing resource is not an error. */
 export function deleteResource(prefix: string, resourceType: string, id: string) {
   return apiRequest({

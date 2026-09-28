@@ -5,7 +5,7 @@ import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
 import {
   loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected,
-  describeCluster, describeClusterMachines, deleteResource, createAwsHostCluster
+  describeCluster, describeClusterMachines, describeInfraMachines, deleteResource, createAwsHostCluster
 } from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
@@ -78,7 +78,9 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
         // Say what the cluster was still waiting on - the run costs ~25 minutes to reach here
         return describeCluster(CLUSTER_NAMESPACE, name).then((why) => {
           return describeClusterMachines(CLUSTER_NAMESPACE, name).then((machines) => {
-            expect(active, `host cluster '${ name }' did not become active. ${ why }. ${ machines }`).to.eq(true);
+            return describeInfraMachines(CLUSTER_NAMESPACE, name).then((ec2) => {
+              expect(active, `host cluster '${ name }' did not become active. ${ why }. ${ machines }. ${ ec2 }`).to.eq(true);
+            });
           });
         });
       });

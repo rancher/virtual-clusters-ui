@@ -195,6 +195,36 @@ export function describeCluster(namespace: string, name: string): Cypress.Chaina
   });
 }
 
+/**
+ * Per-machine state for a provisioning cluster. The cluster's own conditions only ever
+ * say "waiting for probes"; which node is stuck, and why, lives on the machines.
+ */
+export function describeClusterMachines(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/cluster.x-k8s.io.machines/${ namespace }?labelSelector=cluster.x-k8s.io/cluster-name=${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `machines: GET returned ${ resp.status }`;
+    }
+
+    const machines = resp.body?.data || [];
+
+    if (!machines.length) {
+      return 'machines: none created yet';
+    }
+
+    return `machines: ${ machines.map((m: any) => {
+      const phase = m.status?.phase || m.metadata?.state?.name;
+      const pending = (m.status?.conditions || [])
+        .filter((c: any) => c.status !== 'True')
+        .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+      return `${ m.metadata?.name }[${ phase }]${ pending.length ? ` ${ pending.join(', ') }` : '' }`;
+    }).join(' | ') }`;
+  });
+}
+
 /** Best-effort delete used in teardown - a missing resource is not an error. */
 export function deleteResource(prefix: string, resourceType: string, id: string) {
   return apiRequest({
@@ -252,6 +282,9 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
           annotations: {}, generateName: `nc-${ name }-pool1-`, labels: {}, namespace
         },
         region,
+        // The driver defaults to a 16GB root volume, which is tight once the RKE2
+        // release, its images and etcd are on disk for a single all-in-one node.
+        rootSize:              50,
         securityGroup:         ['rancher-nodes'],
         securityGroupReadonly: false,
         subnetId:              null,

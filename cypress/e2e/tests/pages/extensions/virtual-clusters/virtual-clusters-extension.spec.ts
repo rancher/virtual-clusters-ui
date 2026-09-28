@@ -5,7 +5,7 @@ import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
 import {
   loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected,
-  describeCluster, deleteResource, createAwsHostCluster
+  describeCluster, describeClusterMachines, deleteResource, createAwsHostCluster
 } from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
@@ -21,7 +21,10 @@ const CLUSTER_NAMESPACE = 'fleet-default';
 const AWS_REGION = 'us-west-1';
 const AWS_ZONE = 'a';
 const AWS_VPC_ID = 'vpc-081cec85dbe35e9bd';
-const AWS_INSTANCE_TYPE = 't3a.medium';
+// A single node carries etcd, the control plane and calico. t3a.medium (2 vCPU /
+// 4 GiB) is RKE2's documented minimum, and on a burstable instance that ran out of
+// CPU credits the control plane intermittently never finished initialising.
+const AWS_INSTANCE_TYPE = 't3a.xlarge';
 // waitForClusterActive polls every 1.5s; an EC2 RKE2 cluster takes 10-15 min to
 // become active, so allow ~20 min.
 const CLUSTER_ACTIVE_RETRIES = 800;
@@ -74,7 +77,9 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
         // Say what the cluster was still waiting on - the run costs ~25 minutes to reach here
         return describeCluster(CLUSTER_NAMESPACE, name).then((why) => {
-          expect(active, `host cluster '${ name }' did not become active. ${ why }`).to.eq(true);
+          return describeClusterMachines(CLUSTER_NAMESPACE, name).then((machines) => {
+            expect(active, `host cluster '${ name }' did not become active. ${ why }. ${ machines }`).to.eq(true);
+          });
         });
       });
 

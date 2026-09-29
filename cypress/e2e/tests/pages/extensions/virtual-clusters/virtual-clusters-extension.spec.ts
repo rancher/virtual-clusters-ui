@@ -1,5 +1,6 @@
 import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/cluster-dashboard.po';
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
+import { LONG_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
 import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
@@ -30,6 +31,26 @@ const AWS_INSTANCE_TYPE = 't3a.xlarge';
 const CLUSTER_ACTIVE_RETRIES = 800;
 // The agent connects shortly after the cluster goes active - ~5 min at 1.5s per poll.
 const CLUSTER_CONNECTED_RETRIES = 200;
+
+/**
+ * Open the downstream cluster and wait for its side nav to be populated.
+ *
+ * Both tests assert on a nav entry right after a full page load. `exist` would just be
+ * flaky, but `not.exist` is worse: it passes trivially against a nav that has not
+ * rendered yet, so the uninstall test could go green without the entry ever having
+ * gone away. Wait for the nav to hold groups before asserting anything about it.
+ */
+function goToClusterAndWaitForNav(clusterId: string): ProductNavPo {
+  ClusterDashboardPagePo.goTo(clusterId);
+  new ClusterDashboardPagePo(clusterId).waitForPage();
+
+  const productNav = new ProductNavPo();
+
+  productNav.self(LONG_TIMEOUT_OPT).should('exist');
+  productNav.groups().should('have.length.greaterThan', 0);
+
+  return productNav;
+}
 
 // The extension is Prime-only (catalog.cattle.io/prime-only) and every product it
 // registers is hidden behind isRancherPrime(), so fail fast with a clear message
@@ -108,6 +129,7 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
+    extensionsPo.waitForCatalog();
     cy.then(() => {
       removeExtension = true;
     });
@@ -115,18 +137,15 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
   });
 
   it('shows the Virtual Clusters navigation entry and landing page on the downstream cluster', () => {
-    ClusterDashboardPagePo.goTo(hostClusterId);
-    new ClusterDashboardPagePo(hostClusterId).waitForPage();
+    const productNav = goToClusterAndWaitForNav(hostClusterId);
 
-    const productNav = new ProductNavPo();
-
-    productNav.navToSideMenuGroupByLabelExistence(NAV_LABEL, 'exist');
+    productNav.self().contains('.accordion.has-children', NAV_LABEL, LONG_TIMEOUT_OPT).should('exist');
     productNav.navToSideMenuGroupByLabel(NAV_LABEL);
 
     const landingPage = new VirtualClustersLandingPagePo(hostClusterId);
 
     landingPage.waitForPage();
-    landingPage.title().should('be.visible');
+    landingPage.title(LONG_TIMEOUT_OPT).should('be.visible');
   });
 
   it('uninstalls the extension and removes the navigation entry', () => {
@@ -134,10 +153,9 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
-    // goTo() is a full page load, so the tab strip is built after the UIPlugin list
-    // comes back. Without this the Installed tab can still be unrendered when we
-    // reach for it, the same guard kubewarden.spec.ts uses upstream.
-    extensionsPo.waitForTabs();
+    extensionsPo.waitForCatalog();
+    // the Installed tab itself renders once the UIPlugin list comes back
+    extensionsPo.waitForInstalledTab();
     extensionsPo.extensionTabInstalledClick();
     extensionsPo.waitForPage(undefined, 'installed');
 
@@ -150,10 +168,10 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
       removeExtension = false;
     });
 
-    ClusterDashboardPagePo.goTo(hostClusterId);
-    new ClusterDashboardPagePo(hostClusterId).waitForPage();
-
-    new ProductNavPo().navToSideMenuGroupByLabelExistence(NAV_LABEL, 'not.exist');
+    goToClusterAndWaitForNav(hostClusterId)
+      .self()
+      .contains('.accordion.has-children', NAV_LABEL)
+      .should('not.exist');
   });
 
   after('clean up', () => {

@@ -17,8 +17,9 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     super(VirtualClustersLandingPagePo.createPath(clusterId));
   }
 
-  // pages/index.vue renders the title in a plain <h2> with no test id
-  title(): Cypress.Chainable {
-    return this.self().contains('h2', 'Virtual Clusters');
+  // pages/index.vue renders the title in a plain <h2> with no test id. Callers reach
+  // here straight after a route change, so allow a timeout to be passed in.
+  title(options?: { timeout: number }): Cypress.Chainable {
+    return this.self(options).contains('h2', 'Virtual Clusters', options);
   }
 }

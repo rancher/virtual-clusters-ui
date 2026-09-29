@@ -16,6 +16,12 @@
  */
 import { LoginPagePo } from '@rancher/cypress/e2e/po/pages/login-page.po';
 
+import {
+  awsCloudCredentialBlueprint,
+  awsMachineConfigBlueprint,
+  awsProvisioningClusterBlueprint,
+} from './aws-host-cluster-blueprint';
+
 const api = () => Cypress.env('api');
 
 /**
@@ -202,17 +208,13 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
   return apiRequest({
     method: 'POST',
     url:    '/v3/cloudcredentials',
-    body:   {
-      type:                      'provisioning.cattle.io/cloud-credential',
-      metadata:                  { generateName: 'cc-', namespace },
-      _name:                     name,
-      annotations:               { 'provisioning.cattle.io/driver': 'aws' },
-      amazonec2credentialConfig: {
-        defaultRegion: region, accessKey, secretKey
-      },
-      _type: 'provisioning.cattle.io/cloud-credential',
+    body:   awsCloudCredentialBlueprint({
       name,
-    },
+      namespace,
+      region,
+      accessKey,
+      secretKey,
+    }),
   }).then((credResp) => {
     expect(credResp.status, 'create cloud credential').to.eq(201);
     const cloudCredentialSecretName = credResp.body.id;
@@ -220,19 +222,14 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
     return apiRequest({
       method: 'POST',
       url:    `/v1/rke-machine-config.cattle.io.amazonec2configs/${ namespace }`,
-      body:   {
-        instanceType,
-        metadata: {
-          annotations: {}, generateName: `nc-${ name }-pool1-`, labels: {}, namespace
-        },
+      body:   awsMachineConfigBlueprint({
+        name,
+        namespace,
         region,
-        securityGroup:         ['rancher-nodes'],
-        securityGroupReadonly: false,
-        subnetId:              null,
+        instanceType,
         vpcId,
         zone,
-        type:                  'rke-machine-config.cattle.io.amazonec2config',
-      },
+      }),
     }).then((mcResp) => {
       expect(mcResp.status, 'create machine config').to.eq(201);
       const machineConfigName = String(mcResp.body.id).split('/')[1];
@@ -247,52 +244,13 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
         return apiRequest({
           method: 'POST',
           url:    '/v1/provisioning.cattle.io.clusters',
-          body:   {
-            type:     'provisioning.cattle.io.cluster',
-            metadata: {
-              namespace,
-              name,
-              annotations: { 'field.cattle.io/description': `${ name }-description` },
-            },
-            spec: {
-              rkeConfig: {
-                chartValues:         { 'rke2-calico': {} },
-                machineGlobalConfig: {
-                  cni:                   'calico',
-                  'disable-kube-proxy':  false,
-                  'etcd-expose-metrics': false,
-                  'ingress-controller':  'ingress-nginx',
-                },
-                machineSelectorConfig: [{ config: { 'protect-kernel-defaults': false } }],
-                etcd:                  {
-                  disableSnapshots:     false,
-                  s3:                   null,
-                  snapshotRetention:    5,
-                  snapshotScheduleCron: '0 */5 * * *',
-                },
-                registries:   { configs: {}, mirrors: {} },
-                machinePools: [{
-                  name:                 'pool1',
-                  etcdRole:             true,
-                  controlPlaneRole:     true,
-                  workerRole:           true,
-                  hostnamePrefix:       '',
-                  labels:               {},
-                  quantity:             1,
-                  unhealthyNodeTimeout: '0m',
-                  machineConfigRef:     { kind: 'Amazonec2Config', name: machineConfigName },
-                  drainBeforeDelete:    true,
-                }],
-              },
-              machineSelectorConfig:                                [{ config: {} }],
-              kubernetesVersion,
-              defaultPodSecurityAdmissionConfigurationTemplateName: '',
-              cloudCredentialSecretName,
-              localClusterAuthEndpoint:                             {
-                enabled: false, caCerts: '', fqdn: ''
-              },
-            },
-          },
+          body:   awsProvisioningClusterBlueprint({
+            name,
+            namespace,
+            cloudCredentialSecretName,
+            machineConfigName,
+            kubernetesVersion,
+          }),
         }).then((resp) => {
           expect(resp.status, 'create provisioning cluster').to.eq(201);
         });

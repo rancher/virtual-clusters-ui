@@ -12,17 +12,17 @@ import {
 
 const EXTENSION_NAME = 'Virtual Clusters';
 // Which build of the extension to test:
-//   'released'  - install the newest published version from the chart repo (default)
+//   'published' - install the newest published version from the chart repo, GA or rc (default)
 //   'dev-load'  - CI builds it from this checkout and developer-loads it before Cypress
 //                 starts, so there is no chart repo to add and nothing to install or
 //                 uninstall here. The only way to reach selectors that are on main but
 //                 not yet in a published chart.
 //   <version>   - install that exact published version, e.g. '1.2.1' or '1.2.1-rc1'
-const EXTENSION_VERSION = `${ Cypress.env('extensionVersion') || 'released' }`;
+const EXTENSION_VERSION = `${ Cypress.env('extensionVersion') || 'published' }`;
 const DEV_LOADED = EXTENSION_VERSION === 'dev-load';
 // The install modal defaults to the newest published version, which is what an
 // undefined version leaves it on.
-const PINNED_VERSION = ['dev-load', 'released'].includes(EXTENSION_VERSION) ? undefined : EXTENSION_VERSION;
+const PINNED_VERSION = ['dev-load', 'published'].includes(EXTENSION_VERSION) ? undefined : EXTENSION_VERSION;
 const HELM_REPO_URL = 'https://rancher.github.io/virtual-clusters-ui';
 const HELM_REPO_NAME = 'virtual-clusters-ui';
 

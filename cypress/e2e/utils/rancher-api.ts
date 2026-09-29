@@ -358,11 +358,16 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
             spec: {
               rkeConfig: {
                 chartValues:         { 'rke2-calico': {} },
+                // No `ingress-controller` here on purpose: RKE2 1.37 dropped ingress-nginx
+                // as a standalone controller and exits fatally when it is requested
+                // ("ingress-nginx is no longer supported as a standalone ingress
+                // controller, please use traefik"), so rke2-server restart-loops and the
+                // cluster never leaves Provisioning. Leaving it unset uses each release's
+                // own default, which works on 1.36 and 1.37 alike.
                 machineGlobalConfig: {
                   cni:                   'calico',
                   'disable-kube-proxy':  false,
                   'etcd-expose-metrics': false,
-                  'ingress-controller':  'ingress-nginx',
                 },
                 machineSelectorConfig: [{ config: { 'protect-kernel-defaults': false } }],
                 etcd:                  {

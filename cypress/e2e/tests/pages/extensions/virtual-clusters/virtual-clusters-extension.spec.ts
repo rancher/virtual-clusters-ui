@@ -1,10 +1,12 @@
 import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/cluster-dashboard.po';
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
+import { LONG_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
 import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo from '../../../../po/virtual-clusters-landing.po';
 import {
-  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, deleteResource, createAwsHostCluster
+  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected,
+  describeCluster, describeClusterMachines, describeInfraMachines, deleteResource, createAwsHostCluster
 } from '../../../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
@@ -20,12 +22,35 @@ const CLUSTER_NAMESPACE = 'fleet-default';
 const AWS_REGION = 'us-west-1';
 const AWS_ZONE = 'a';
 const AWS_VPC_ID = 'vpc-081cec85dbe35e9bd';
-const AWS_INSTANCE_TYPE = 't3a.medium';
+// A single node carries etcd, the control plane and calico. t3a.medium (2 vCPU /
+// 4 GiB) is RKE2's documented minimum, and on a burstable instance that ran out of
+// CPU credits the control plane intermittently never finished initialising.
+const AWS_INSTANCE_TYPE = 't3a.xlarge';
 // waitForClusterActive polls every 1.5s; an EC2 RKE2 cluster takes 10-15 min to
 // become active, so allow ~20 min.
 const CLUSTER_ACTIVE_RETRIES = 800;
 // The agent connects shortly after the cluster goes active - ~5 min at 1.5s per poll.
 const CLUSTER_CONNECTED_RETRIES = 200;
+
+/**
+ * Open the downstream cluster and wait for its side nav to be populated.
+ *
+ * Both tests assert on a nav entry right after a full page load. `exist` would just be
+ * flaky, but `not.exist` is worse: it passes trivially against a nav that has not
+ * rendered yet, so the uninstall test could go green without the entry ever having
+ * gone away. Wait for the nav to hold groups before asserting anything about it.
+ */
+function goToClusterAndWaitForNav(clusterId: string): ProductNavPo {
+  ClusterDashboardPagePo.goTo(clusterId);
+  new ClusterDashboardPagePo(clusterId).waitForPage();
+
+  const productNav = new ProductNavPo();
+
+  productNav.self(LONG_TIMEOUT_OPT).should('exist');
+  productNav.groups().should('have.length.greaterThan', 0);
+
+  return productNav;
+}
 
 // The extension is Prime-only (catalog.cattle.io/prime-only) and every product it
 // registers is hidden behind isRancherPrime(), so fail fast with a clear message
@@ -67,7 +92,18 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
       });
 
       waitForClusterActive(CLUSTER_NAMESPACE, name, CLUSTER_ACTIVE_RETRIES).then((active) => {
-        expect(active, `host cluster '${ name }' did not become active`).to.eq(true);
+        if (active) {
+          return;
+        }
+
+        // Say what the cluster was still waiting on - the run costs ~25 minutes to reach here
+        return describeCluster(CLUSTER_NAMESPACE, name).then((why) => {
+          return describeClusterMachines(CLUSTER_NAMESPACE, name).then((machines) => {
+            return describeInfraMachines(CLUSTER_NAMESPACE, name).then((ec2) => {
+              expect(active, `host cluster '${ name }' did not become active. ${ why }. ${ machines }. ${ ec2 }`).to.eq(true);
+            });
+          });
+        });
       });
 
       clusterIdByName(name).then((id) => {
@@ -93,6 +129,7 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
+    extensionsPo.waitForCatalog();
     cy.then(() => {
       removeExtension = true;
     });
@@ -100,18 +137,15 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
   });
 
   it('shows the Virtual Clusters navigation entry and landing page on the downstream cluster', () => {
-    ClusterDashboardPagePo.goTo(hostClusterId);
-    new ClusterDashboardPagePo(hostClusterId).waitForPage();
+    const productNav = goToClusterAndWaitForNav(hostClusterId);
 
-    const productNav = new ProductNavPo();
-
-    productNav.navToSideMenuGroupByLabelExistence(NAV_LABEL, 'exist');
+    productNav.self().contains('.accordion.has-children', NAV_LABEL, LONG_TIMEOUT_OPT).should('exist');
     productNav.navToSideMenuGroupByLabel(NAV_LABEL);
 
     const landingPage = new VirtualClustersLandingPagePo(hostClusterId);
 
     landingPage.waitForPage();
-    landingPage.title().should('be.visible');
+    landingPage.title(LONG_TIMEOUT_OPT).should('be.visible');
   });
 
   it('uninstalls the extension and removes the navigation entry', () => {
@@ -119,6 +153,9 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
+    extensionsPo.waitForCatalog();
+    // the Installed tab itself renders once the UIPlugin list comes back
+    extensionsPo.waitForInstalledTab();
     extensionsPo.extensionTabInstalledClick();
     extensionsPo.waitForPage(undefined, 'installed');
 
@@ -131,10 +168,10 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
       removeExtension = false;
     });
 
-    ClusterDashboardPagePo.goTo(hostClusterId);
-    new ClusterDashboardPagePo(hostClusterId).waitForPage();
-
-    new ProductNavPo().navToSideMenuGroupByLabelExistence(NAV_LABEL, 'not.exist');
+    goToClusterAndWaitForNav(hostClusterId)
+      .self()
+      .contains('.accordion.has-children', NAV_LABEL)
+      .should('not.exist');
   });
 
   after('clean up', () => {

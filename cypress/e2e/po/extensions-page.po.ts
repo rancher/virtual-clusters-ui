@@ -2,6 +2,7 @@ import BaseExtensionsPagePo from '@rancher/cypress/e2e/po/pages/extensions.po';
 import RepositoriesPagePo from '@rancher/cypress/e2e/po/pages/chart-repositories.po';
 import ChartRepositoriesCreateEditPo from '@rancher/cypress/e2e/po/edit/chart-repositories.po';
 import LabeledInputPo from '@rancher/cypress/e2e/po/components/labeled-input.po';
+import { LONG_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
 import { waitForRepositoryDownload, waitForResourceState } from '../utils/rancher-api';
 
@@ -15,6 +16,33 @@ const APP_REPOS_PATH = '/c/local/apps/catalog.cattle.io.clusterrepo';
  */
 export default class ExtensionsPagePo extends BaseExtensionsPagePo {
   /**
+   * Wait until the Installed tab is actually clickable.
+   *
+   * waitForTabs() only waits for the tab strip container; the Installed tab itself is
+   * rendered later, once the list of installed plugins has come back, and it is absent
+   * entirely when nothing is installed. Reaching for it too early finds a strip holding
+   * only the active tab, which fails as "expected to find content 'Installed' within
+   * <li.tab.active>".
+   */
+  waitForInstalledTab(): Cypress.Chainable {
+    this.loading().should('not.exist');
+    this.waitForTabs();
+
+    return cy.get('[data-testid="btn-installed"]', LONG_TIMEOUT_OPT).should('be.visible');
+  }
+
+  /**
+   * Wait until the extensions page has finished loading and its catalog is rendered.
+   * waitForPage only asserts the URL, so without this every later reach for a tab or a
+   * card races a page that is still coming up.
+   */
+  waitForCatalog(): Cypress.Chainable {
+    this.loading().should('not.exist');
+
+    return this.waitForTabs();
+  }
+
+  /**
    * Add a Helm HTTP repository through the chart repositories UI and wait for it to
    * be downloaded and Active. Navigates straight to the repositories list rather than
    * going through the Extensions kebab menu, which the upstream helper depends on.
@@ -25,12 +53,16 @@ export default class ExtensionsPagePo extends BaseExtensionsPagePo {
     const appRepoList = new RepositoriesPagePo('local', 'apps');
 
     appRepoList.waitForPage();
-    appRepoList.list().checkVisible();
+    // waitForPage only asserts the URL, and cy.visit is a full page load: on a loaded
+    // CI node the dashboard can take well over the default 10s to render the list.
+    appRepoList.list().checkVisible(LONG_TIMEOUT_OPT);
     appRepoList.create();
 
     const appRepoCreate = new ChartRepositoriesCreateEditPo('local', 'apps');
 
     appRepoCreate.waitForPage();
+    // the source-type cards render after the form route resolves
+    appRepoCreate.repoRcItemCard('helm-url').checkVisible(LONG_TIMEOUT_OPT);
 
     // fill the form
     appRepoCreate.selectHelmUrlCard();

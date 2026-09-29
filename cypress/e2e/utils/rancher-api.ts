@@ -164,9 +164,98 @@ export function waitForClusterConnected(id: string, retries: number) {
     }
 
     const conditions = resp.body?.conditions || [];
+    // Same rule as shell/models/management.cattle.io.cluster.js `isReady`: prefer
+    // Connected when present (2.6+), fall back to Ready.
+    const hasConnected = conditions.some((c: { type: string }) => c.type === 'Connected');
+    const ready = conditionIsTrue(conditions, hasConnected ? 'Connected' : 'Ready');
 
-    return resp.body?.state === 'active' && conditionIsTrue(conditions, 'Ready');
+    return resp.body?.state === 'active' && ready;
   }, retries);
+}
+
+/**
+ * One-line summary of why a cluster is not ready yet, for assertion messages - a bare
+ * "did not become active" costs a 25 minute run to learn nothing.
+ */
+export function describeCluster(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/provisioning.cattle.io.clusters/${ namespace }/${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `GET returned ${ resp.status }`;
+    }
+
+    const state = resp.body?.metadata?.state;
+    const conditions = (resp.body?.status?.conditions || [])
+      .filter((c: any) => c.status !== 'True')
+      .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+    return `state=${ state?.name }/transitioning=${ state?.transitioning }; not-true conditions: ${ conditions.join('; ') || 'none' }`;
+  });
+}
+
+/**
+ * Per-machine state for a provisioning cluster. The cluster's own conditions only ever
+ * say "waiting for probes"; which node is stuck, and why, lives on the machines.
+ */
+export function describeClusterMachines(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/cluster.x-k8s.io.machines/${ namespace }?labelSelector=cluster.x-k8s.io/cluster-name=${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `machines: GET returned ${ resp.status }`;
+    }
+
+    const machines = resp.body?.data || [];
+
+    if (!machines.length) {
+      return 'machines: none created yet';
+    }
+
+    return `machines: ${ machines.map((m: any) => {
+      const phase = m.status?.phase || m.metadata?.state?.name;
+      const pending = (m.status?.conditions || [])
+        .filter((c: any) => c.status !== 'True')
+        .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+      return `${ m.metadata?.name }[${ phase }]${ pending.length ? ` ${ pending.join(', ') }` : '' }`;
+    }).join(' | ') }`;
+  });
+}
+
+/**
+ * The EC2 side of each machine. CAPI only ever reports the chicken-and-egg
+ * "waiting for control plane", while the docker-machine driver's own failures
+ * (no capacity, unusable subnet, AMI problems) land on this resource.
+ */
+export function describeInfraMachines(namespace: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    url:              `/v1/rke-machine.cattle.io.amazonec2machines/${ namespace }?labelSelector=cluster.x-k8s.io/cluster-name=${ name }`,
+    failOnStatusCode: false,
+  }).then((resp) => {
+    if (resp.status !== 200) {
+      return `ec2 machines: GET returned ${ resp.status }`;
+    }
+
+    const machines = resp.body?.data || [];
+
+    if (!machines.length) {
+      return 'ec2 machines: none created yet';
+    }
+
+    return `ec2 machines: ${ machines.map((m: any) => {
+      const ready = m.status?.ready;
+      const jobComplete = m.status?.jobComplete;
+      const addresses = (m.status?.addresses || []).map((a: any) => a.address).join(',');
+      const pending = (m.status?.conditions || [])
+        .filter((c: any) => c.status !== 'True')
+        .map((c: any) => `${ c.type }=${ c.status }${ c.message ? ` (${ c.message })` : '' }`);
+
+      return `${ m.metadata?.name }[ready=${ ready }/jobComplete=${ jobComplete }/addresses=${ addresses || 'none' }]${ pending.length ? ` ${ pending.join(', ') }` : '' }`;
+    }).join(' | ') }`;
+  });
 }
 
 /** Best-effort delete used in teardown - a missing resource is not an error. */
@@ -226,6 +315,10 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
           annotations: {}, generateName: `nc-${ name }-pool1-`, labels: {}, namespace
         },
         region,
+        // The driver defaults to a 16GB root volume, which is tight once the RKE2
+        // release, its images and etcd are on disk for a single all-in-one node.
+        // The CRD types this as a string, an integer is rejected with a 422.
+        rootSize:              '50',
         securityGroup:         ['rancher-nodes'],
         securityGroupReadonly: false,
         subnetId:              null,
@@ -242,7 +335,15 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
       // picking the last entry of /v1-rke2-release/releases yields a cluster whose
       // rke2-server never starts. The setting's value has no leading `v`.
       return apiRequest({ url: '/v1/management.cattle.io.settings/rke2-default-version' }).then((verResp) => {
-        const kubernetesVersion = `v${ verResp.body.value }`;
+        // A setting's `value` is empty until someone overrides it, and the effective
+        // value then lives in `default` - Rancher's own cluster form reads it the same
+        // way (shell/edit/provisioning.cattle.io.cluster/rke2.vue). Jenkins builds a
+        // fresh Rancher per run, so `value` is routinely empty there and a bare
+        // `v${value}` yields the literal "vundefined".
+        const defaultVersion = verResp.body.value || verResp.body.default;
+
+        expect(defaultVersion, 'rke2-default-version setting').to.be.a('string').and.not.be.empty;
+        const kubernetesVersion = `v${ defaultVersion }`;
 
         return apiRequest({
           method: 'POST',
@@ -257,11 +358,16 @@ export function createAwsHostCluster(params: AwsHostClusterParams) {
             spec: {
               rkeConfig: {
                 chartValues:         { 'rke2-calico': {} },
+                // No `ingress-controller` here on purpose: RKE2 1.37 dropped ingress-nginx
+                // as a standalone controller and exits fatally when it is requested
+                // ("ingress-nginx is no longer supported as a standalone ingress
+                // controller, please use traefik"), so rke2-server restart-loops and the
+                // cluster never leaves Provisioning. Leaving it unset uses each release's
+                // own default, which works on 1.36 and 1.37 alike.
                 machineGlobalConfig: {
                   cni:                   'calico',
                   'disable-kube-proxy':  false,
                   'etcd-expose-metrics': false,
-                  'ingress-controller':  'ingress-nginx',
                 },
                 machineSelectorConfig: [{ config: { 'protect-kernel-defaults': false } }],
                 etcd:                  {

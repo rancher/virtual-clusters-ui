@@ -2,6 +2,7 @@ import BaseExtensionsPagePo from '@rancher/cypress/e2e/po/pages/extensions.po';
 import RepositoriesPagePo from '@rancher/cypress/e2e/po/pages/chart-repositories.po';
 import ChartRepositoriesCreateEditPo from '@rancher/cypress/e2e/po/edit/chart-repositories.po';
 import LabeledInputPo from '@rancher/cypress/e2e/po/components/labeled-input.po';
+import { LONG_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
 import { waitForRepositoryDownload, waitForResourceState } from '../utils/rancher-api';
 
@@ -25,7 +26,9 @@ export default class ExtensionsPagePo extends BaseExtensionsPagePo {
     const appRepoList = new RepositoriesPagePo('local', 'apps');
 
     appRepoList.waitForPage();
-    appRepoList.list().checkVisible();
+    // waitForPage only asserts the URL, and cy.visit is a full page load: on a loaded
+    // CI node the dashboard can take well over the default 10s to render the list.
+    appRepoList.list().checkVisible(LONG_TIMEOUT_OPT);
     appRepoList.create();
 
     const appRepoCreate = new ChartRepositoriesCreateEditPo('local', 'apps');

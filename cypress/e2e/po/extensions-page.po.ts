@@ -2,6 +2,7 @@ import BaseExtensionsPagePo from '@rancher/cypress/e2e/po/pages/extensions.po';
 import RepositoriesPagePo from '@rancher/cypress/e2e/po/pages/chart-repositories.po';
 import ChartRepositoriesCreateEditPo from '@rancher/cypress/e2e/po/edit/chart-repositories.po';
 import LabeledInputPo from '@rancher/cypress/e2e/po/components/labeled-input.po';
+import { MEDIUM_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
 import { waitForRepositoryDownload, waitForResourceState } from '../utils/rancher-api';
 
@@ -55,5 +56,30 @@ export default class ExtensionsPagePo extends BaseExtensionsPagePo {
         expect(active, `chart repository '${ name }' did not become active`).to.eq(true);
       });
     });
+  }
+
+  /**
+   * The upstream helper installs whatever version the modal defaults to, which is the
+   * newest in the repo. Add an optional version so a specific published release can be
+   * pinned instead.
+   */
+  installExtensionFromCatalog(extensionName: string, clusterRepoName: string, interceptAlias: string, version?: string): void {
+    if (!version) {
+      super.installExtensionFromCatalog(extensionName, clusterRepoName, interceptAlias);
+
+      return;
+    }
+
+    cy.intercept('POST', `${ CLUSTER_REPOS_BASE_URL }/${ clusterRepoName }?action=install`).as(interceptAlias);
+
+    this.extensionTabAvailableClick();
+    this.waitForPage(undefined, 'available');
+    this.extensionCardInstallClick(extensionName);
+    this.installModal().checkVisible();
+    this.installModal().selectVersionLabel(version);
+    this.installModal().installButton().click();
+    cy.wait(`@${ interceptAlias }`, MEDIUM_TIMEOUT_OPT).its('response.statusCode').should('be.oneOf', [200, 201]);
+    this.extensionReloadBanner().should('be.visible');
+    this.extensionReloadClick();
   }
 }

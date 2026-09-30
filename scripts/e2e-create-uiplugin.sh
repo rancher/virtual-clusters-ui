@@ -17,12 +17,17 @@ RESET='\033[0m'
 # ---------------------------------------------------------------------------
 
 TEST_BASE_URL=${TEST_BASE_URL:-https://127.0.0.1.sslip.io}
-CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-password}
+CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-${TEST_PASSWORD:-password}}
 EXTENSION_SERVER_PORT=${EXTENSION_SERVER_PORT:-8080}
 EXTENSION_NAME=virtual-clusters
 
-PKG_VERSION=$(jq -r '.version' pkg/virtual-clusters/package.json)
-EXTENSIONS_VERSION_RANGE=$(jq -r '.rancher.annotations["catalog.cattle.io/ui-extensions-version"]' pkg/virtual-clusters/package.json)
+# TEST_BASE_URL points at the dashboard UI, which CI sets to https://<host>/dashboard.
+# The Rancher API is served from the root, so strip that suffix before calling it.
+RANCHER_URL=${TEST_BASE_URL%/}
+RANCHER_URL=${RANCHER_URL%/dashboard}
+
+PKG_VERSION=$(node -p "require('./pkg/virtual-clusters/package.json').version")
+EXTENSIONS_VERSION_RANGE=$(node -p "require('./pkg/virtual-clusters/package.json').rancher.annotations['catalog.cattle.io/ui-extensions-version']")
 # build-pkg names the output dir/bundle "<pkg>-<version>" (see
 # @rancher/shell scripts/build-pkg.sh), so both the CRD name and the served
 # bundle path need that combined name, not the bare package name.
@@ -47,17 +52,17 @@ EXTENSION_ENDPOINT="http://127.0.0.1:${EXTENSION_SERVER_PORT}/${NAME_WITH_VERSIO
 echo -e "${YELLOW}Logging in to Rancher..........${RESET}"
 
 
-TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
+TOKEN=$(curl -sk -X POST "${RANCHER_URL}/v3-public/localProviders/local?action=login" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"admin\",\"password\":\"${CATTLE_BOOTSTRAP_PASSWORD}\"}" \
-  | jq -r '.token // empty' 2>/dev/null || echo "")
+  | node -e "let b='';process.stdin.on('data',(d)=>b+=d).on('end',()=>{try{process.stdout.write(JSON.parse(b).token||'')}catch(e){}})" 2>/dev/null || echo "")
 if [ -z "$TOKEN" ]; then
   echo -e "${RED}Failed to login as global admin${RESET}"
   exit 1
 fi
 
 echo -e "${YELLOW}Registering the extension with Rancher..........${RESET}"
-curl -sk --fail-with-body -X POST "${TEST_BASE_URL}/v1/catalog.cattle.io.uiplugin" \
+curl -sk --fail-with-body -X POST "${RANCHER_URL}/v1/catalog.cattle.io.uiplugin" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{

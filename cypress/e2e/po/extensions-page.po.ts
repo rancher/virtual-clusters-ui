@@ -78,7 +78,10 @@ export default class ExtensionsPagePo extends BaseExtensionsPagePo {
     this.installModal().checkVisible();
     this.installModal().selectVersionLabel(version);
     this.installModal().installButton().click();
-    cy.wait(`@${ interceptAlias }`, MEDIUM_TIMEOUT_OPT).its('response.statusCode').should('be.oneOf', [200, 201]);
+    cy.wait(`@${ interceptAlias }`, MEDIUM_TIMEOUT_OPT).then(({ request, response }) => {
+      expect(response?.statusCode, 'install request').to.be.oneOf([200, 201]);
+      expect(request.body?.charts?.[0]?.version, 'installed version - the version filter matches partial text').to.eq(version);
+    });
     this.extensionReloadBanner().should('be.visible');
     this.extensionReloadClick();
   }

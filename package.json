@@ -21,7 +21,7 @@
     "eslint": "10.5.0",
     "@rancher/cypress": "1.0.7",
     "cypress": "15.19.0",
-    "eslint-plugin-cypress": "4.3.0",
+    "eslint-plugin-cypress": "7.0.2",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
     "eslint-plugin-node": "11.1.0",

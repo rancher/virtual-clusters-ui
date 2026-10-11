@@ -11,7 +11,7 @@
     "@rancher/shell": "v3.0.13",
     "@types/lodash": "4.14.196",
     "cache-loader": "4.1.0",
-    "core-js": "3.48.0",
+    "core-js": "3.50.0",
     "css-loader": "7.1.2",
     "node-polyfill-webpack-plugin": "4.1.0",
     "semver": "7.5.4"

@@ -7,7 +7,7 @@ import { RcSection } from '@components/RcSection';
 import CopyCode from '@shell/components/CopyCode';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
-import KeyValue from '@shell/components/form/KeyValue';
+import RcKeyValue from '@shell/components/form/RcKeyValue';
 import Select from '@shell/components/form/Select';
 import { _EDIT } from '@shell/config/query-params';
 
@@ -312,7 +312,7 @@ fetchAll();
               <p class="text-muted">
                 {{ t('k3k.hcp.advanced.labels.description') }}
               </p>
-              <KeyValue
+              <RcKeyValue
                 v-model:value="nodeLabels"
                 :mode="editMode"
                 :add-label="t('k3k.hcp.advanced.labels.add')"
@@ -333,7 +333,7 @@ fetchAll();
               <p class="text-muted">
                 {{ t('k3k.hcp.advanced.taints.description') }}
               </p>
-              <KeyValue
+              <RcKeyValue
                 v-model:value="taints"
                 :mode="editMode"
                 :as-map="false"
@@ -360,7 +360,7 @@ fetchAll();
                     @update:value="queueUpdate"
                   />
                 </template>
-              </KeyValue>
+              </RcKeyValue>
             </div>
           </RcSection>
         </div>
@@ -403,7 +403,7 @@ fetchAll();
   height: 40px;
 }
 
-:deep(.key-value .footer .rc-button.btn-small) {
+:deep(.rc-key-value .footer .rc-button.btn-small) {
   gap: 0px !important;
 }
 </style>

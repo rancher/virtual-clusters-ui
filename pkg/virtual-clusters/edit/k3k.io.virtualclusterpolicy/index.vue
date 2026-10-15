@@ -1,7 +1,7 @@
 <script>
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/components/form/Labels';
+import RcLabelsAndAnnotations from '@shell/components/RcLabelsAndAnnotations.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import { RcSection } from '@components/RcSection';
@@ -12,7 +12,7 @@ import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 
 import { set } from '@shell/utils/object';
 
@@ -42,7 +42,7 @@ export default {
     NameNsDescription,
     Mode,
     RcSection,
-    Labels,
+    RcLabelsAndAnnotations,
     ContainerResourceLimit,
     Quota,
     LabeledSelect,
@@ -52,7 +52,7 @@ export default {
     Banner,
     Sync,
     K3kVersionBanner,
-    KeyValue,
+    RcKeyValue,
     NotAllowed
   },
 
@@ -421,7 +421,7 @@ export default {
           v-if="showNodeSelector"
           class="input-row"
         >
-          <KeyValue
+          <RcKeyValue
             v-model:value="value.spec.defaultNodeSelector"
             :initial-empty-row="true"
             :mode="mode"
@@ -437,7 +437,7 @@ export default {
                 k="k3k.nodeSelector.tooltip"
               />
             </template>
-          </KeyValue>
+          </RcKeyValue>
         </div>
         <RcSection
           type="secondary"
@@ -509,21 +509,13 @@ export default {
             section="isolation"
           />
         </RcSection>
-        <RcSection
+        <RcLabelsAndAnnotations
+          :mode="mode"
+          :value="value"
           type="secondary"
-          :expandable="true"
-          mode="with-header"
-          :title="t('generic.labelsAndAnnotations', {}, true)"
+          :use-rc-button="true"
           :expanded="false"
-        >
-          <div class="rc-content">
-            <Labels
-              :mode="mode"
-              :value="value"
-              :use-rc="true"
-            />
-          </div>
-        </RcSection>
+        />
       </div>
     </RcSection>
   </CruResource>

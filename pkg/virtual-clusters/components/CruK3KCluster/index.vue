@@ -7,10 +7,10 @@ import NameNsDescription from '@shell/components/form/NameNsDescription';
 
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/components/form/Labels';
+import RcLabelsAndAnnotations from '@shell/components/RcLabelsAndAnnotations.vue';
 import ArrayList from '@shell/components/form/ArrayList';
 
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import { Banner } from '@components/Banner';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
@@ -119,11 +119,11 @@ export default {
     NameNsDescription,
     CruResource,
     Loading,
-    Labels,
+    RcLabelsAndAnnotations,
     ClusterMembershipEditor,
     Banner,
     LabeledInput,
-    KeyValue,
+    RcKeyValue,
     ClusterAppearance,
     InstallK3k,
     Networking,
@@ -904,7 +904,7 @@ export default {
               type="secondary"
               :title="t('k3k.servers.envVars.title')"
             >
-              <KeyValue
+              <RcKeyValue
                 v-model:value="k3kCluster.spec.serverEnvs"
                 key-name="name"
                 :as-map="false"
@@ -962,7 +962,7 @@ export default {
               type="secondary"
               :title="t('k3k.agents.envVars.title')"
             >
-              <KeyValue
+              <RcKeyValue
                 v-model:value="k3kCluster.spec.agentEnvs"
                 key-name="name"
                 :as-map="false"
@@ -986,7 +986,7 @@ export default {
           v-if="!policy"
           class="input-row"
         >
-          <KeyValue
+          <RcKeyValue
             v-model:value="k3kCluster.spec.nodeSelector"
             :initial-empty-row="true"
             :mode="mode"
@@ -1003,7 +1003,7 @@ export default {
                 k="k3k.nodeSelector.tooltip"
               />
             </template>
-          </KeyValue>
+          </RcKeyValue>
         </div>
       </div>
     </RcSection>
@@ -1079,19 +1079,13 @@ export default {
           :secret-mounts="k3kCluster.spec.secretMounts || []"
           @update:secret-mounts="k3kCluster.spec.secretMounts = $event"
         />
-        <RcSection
-          mode="with-header"
-          :expandable="true"
-          :expanded="false"
+        <RcLabelsAndAnnotations
+          v-model:value="localValue"
+          :mode="mode"
           type="secondary"
-          :title="t('component.resource.detail.metadata.labelsAndAnnotations')"
-        >
-          <Labels
-            v-model:value="localValue"
-            :mode="mode"
-            :use-rc="true"
-          />
-        </RcSection>
+          :expanded="false"
+          :use-rc-button="true"
+        />
       </div>
     </RcSection>
   </CruResource>

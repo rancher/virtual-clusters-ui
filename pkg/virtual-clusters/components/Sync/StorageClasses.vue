@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import ButtonGroup from '@shell/components/ButtonGroup';
 import { RcSection, RcSectionBadges } from '@components/RcSection';
 import { RcTag, RcCounterBadge } from '@components/Pill';
@@ -218,7 +218,7 @@ watch(storageClassSelector, (neu, old) => {
             <div class="text-muted">
               {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
             </div>
-            <KeyValue
+            <RcKeyValue
               v-model:value="storageClassSelector"
               :initial-empty-row="true"
               :mode="mode"

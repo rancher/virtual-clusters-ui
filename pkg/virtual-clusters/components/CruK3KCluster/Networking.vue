@@ -3,7 +3,7 @@ import { _CREATE } from '@shell/config/query-params';
 import ArrayList from '@shell/components/form/ArrayList';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import RadioButton from '@components/Form/Radio/RadioButton.vue';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import { RcSection } from '@components/RcSection';
 import cloneDeep from 'lodash/cloneDeep';
 import { MODES } from '../Mode.vue';
@@ -17,7 +17,7 @@ export default {
     LabeledInput,
     ArrayList,
     RadioButton,
-    KeyValue,
+    RcKeyValue,
     RcSection
   },
 
@@ -260,7 +260,7 @@ export default {
                   />
                 </div>
                 <div class="input-row">
-                  <KeyValue
+                  <RcKeyValue
                     v-model:value="expose.ingress.annotations"
                     :mode="mode"
                     :add-label="t('k3k.expose.ingress.annotations.add')"
@@ -273,7 +273,7 @@ export default {
                         {{ t('k3k.expose.ingress.annotations.label') }}
                       </h3>
                     </template>
-                  </KeyValue>
+                  </RcKeyValue>
                 </div>
               </div>
             </RcSection>

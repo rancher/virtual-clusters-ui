@@ -4,7 +4,7 @@
     flex-direction: column;
     gap: var(--gap-md);
 
-    & .key-value .footer .rc-button.btn-small, .array-list-main-container .footer .rc-button.btn-small {
+    & .rc-key-value .footer .rc-button.btn-small, .array-list-main-container .footer .rc-button.btn-small {
       gap: 0px !important;
     }
 }

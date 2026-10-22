@@ -8,17 +8,17 @@
   "dependencies": {
     "@babel/plugin-transform-class-static-block": "7.28.3",
     "@rancher/components": "0.3.0-alpha.4",
-    "@rancher/shell": "v3.0.13",
+    "@rancher/shell": "v3.0.15-rc.1",
     "@types/lodash": "4.14.196",
     "cache-loader": "4.1.0",
-    "core-js": "3.48.0",
+    "core-js": "3.50.0",
     "css-loader": "7.1.2",
     "node-polyfill-webpack-plugin": "4.1.0",
     "semver": "7.5.4"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "eslint": "10.5.0",
+    "eslint": "10.8.0",
     "@rancher/cypress": "1.0.7",
     "cypress": "15.19.0",
     "eslint-plugin-cypress": "4.3.0",
@@ -28,12 +28,12 @@
     "eslint-plugin-vue": "10.10.0",
     "globals": "17.7.0",
     "neostandard": "0.13.0",
-    "typescript-eslint": "8.62.0",
+    "typescript-eslint": "8.70.0",
     "@types/node": "25.3.3"
   },
   "resolutions": {
     "**/webpack": "5",
-    "typescript-eslint": "8.62.0"
+    "typescript-eslint": "8.70.0"
   },
   "scripts": {
     "dev": "NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",

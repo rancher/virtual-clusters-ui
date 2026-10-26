@@ -34,6 +34,24 @@ echo -e "${YELLOW}Creating k3d cluster '${CLUSTER_NAME}'..........${RESET}"
 k3d cluster create "$CLUSTER_NAME" --wait
 k3d kubeconfig get "$CLUSTER_NAME" > "$K3D_KUBECONFIG"
 
+# k3d --wait does not guarantee the apiserver answers through the k3d serverlb.
+# kubectl apply fails if /openapi/v2 times out (EOF / context deadline exceeded).
+echo -e "${YELLOW}Waiting for the k3d apiserver..........${RESET}"
+APISERVER_READY=""
+for i in $(seq 1 60); do
+  if KUBECONFIG="$K3D_KUBECONFIG" kubectl get --raw=/readyz --request-timeout=5s > /dev/null 2>&1; then
+    APISERVER_READY=1
+    break
+  fi
+  echo "  apiserver not ready yet... ($i/60)"
+  sleep 5
+done
+
+if [ -z "$APISERVER_READY" ]; then
+  echo -e "${RED}k3d apiserver did not become ready${RESET}"
+  exit 1
+fi
+
 echo -e "${YELLOW}Logging in to Rancher..........${RESET}"
 TOKEN=$(curl -sk -X POST "${TEST_BASE_URL}/v3-public/localProviders/local?action=login" \
   -H "Content-Type: application/json" \
@@ -89,7 +107,21 @@ if [ -z "$REGISTRATION_COMMAND" ]; then
 fi
 
 echo -e "${YELLOW}Registering the k3d cluster with Rancher..........${RESET}"
-KUBECONFIG="$K3D_KUBECONFIG" bash -c "$REGISTRATION_COMMAND"
+# kubectl apply is idempotent, so a partial apply is safe to repeat
+REGISTERED=""
+for i in $(seq 1 5); do
+  if KUBECONFIG="$K3D_KUBECONFIG" bash -c "set -o pipefail; $REGISTRATION_COMMAND"; then
+    REGISTERED=1
+    break
+  fi
+  echo "  Registration attempt $i/5 failed, retrying..."
+  sleep 10
+done
+
+if [ -z "$REGISTERED" ]; then
+  echo -e "${RED}Failed to apply the cluster registration manifest${RESET}"
+  exit 1
+fi
 
 echo -e "${YELLOW}Waiting for '${CLUSTER_NAME}' to become active..........${RESET}"
 for i in $(seq 1 60); do

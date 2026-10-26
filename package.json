@@ -8,7 +8,7 @@
   "dependencies": {
     "@babel/plugin-transform-class-static-block": "7.29.7",
     "@rancher/components": "0.3.0-alpha.4",
-    "@rancher/shell": "v3.0.15-rc.1",
+    "@rancher/shell": "v3.0.15-rc.4",
     "@types/lodash": "4.17.26",
     "cache-loader": "4.1.0",
     "core-js": "3.50.0",

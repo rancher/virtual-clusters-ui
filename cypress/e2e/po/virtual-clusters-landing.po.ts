@@ -42,7 +42,7 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     return new AsyncButtonPo('[data-testid="install-k3k-button"]', this.self());
   }
 
-  installSucceeded(): Cypress.Chainable {
+  k3kSuccessMessageVisible(): Cypress.Chainable {
     return this.self().contains('K3K installed');
   }
 }

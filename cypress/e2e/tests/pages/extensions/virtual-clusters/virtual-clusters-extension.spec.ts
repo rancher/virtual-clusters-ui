@@ -6,9 +6,10 @@ import ExtensionsPagePo from '../../../../po/extensions-page.po';
 import VirtualClustersLandingPagePo, { NAV_LABEL } from '../../../../po/virtual-clusters-landing.po';
 import VirtualClustersPolicyListPagePo, { POLICY_NAV_LABEL } from '../../../../po/virtual-clusters-policy-list.po';
 import {
-  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, deleteResource, createAwsHostCluster,
+  loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, createResource, deleteResource, createAwsHostCluster,
   uninstallK3k, waitForResourceState, waitForSchema, K3K_CHART_NAME, K3K_NAMESPACE, K3K_POLICY_TYPE
 } from '../../../../utils/rancher-api';
+import VirtualClusterPolicyPo from '~/cypress/e2e/po/virtual-cluster-policy.po';
 
 const EXTENSION_NAME = 'Virtual Clusters';
 // Which build of the extension to test:
@@ -46,6 +47,7 @@ const CLUSTER_ACTIVE_RETRIES = 800;
 // The agent connects shortly after the cluster goes active - ~5 min at 1.5s per poll.
 const CLUSTER_CONNECTED_RETRIES = 200;
 const K3K_DEPLOYED_RETRIES = 20;
+const POLICY_RESOURCE = 'k3k.io.virtualclusterpolicies';
 
 // The extension is Prime-only (catalog.cattle.io/prime-only) and every product it
 // registers is hidden behind isRancherPrime(), so fail fast with a clear message
@@ -134,68 +136,143 @@ describe('Virtual Clusters extension', { testIsolation: false, tags: ['@adminUse
       installPublishedExtension();
     }
   });
+  describe('Virtual Clusters Landing Page - K3K install', () => {
+    it('shows the Virtual Clusters navigation entry and landing page on the downstream cluster', () => {
+      VirtualClustersLandingPagePo.navTo(hostClusterId);
 
-  it('shows the Virtual Clusters navigation entry and landing page on the downstream cluster', () => {
-    VirtualClustersLandingPagePo.navTo(hostClusterId);
+      const landingPage = new VirtualClustersLandingPagePo(hostClusterId);
 
-    landingPage.waitForPage();
-    landingPage.title().should('be.visible');
-  });
-
-  it('installs the k3k controller with images from the SUSE registry', () => {
-    cy.intercept('POST', '**/catalog.cattle.io.ClusterRepo/*?action=install').as('installK3k');
-
-    VirtualClustersLandingPagePo.navTo(hostClusterId);
-    landingPage.waitForPage();
-    landingPage.installK3kButton().click();
-
-    cy.wait('@installK3k', EXTRA_LONG_TIMEOUT_OPT).then(({ request, response }) => {
-      removeK3k = true;
-
-      const chart = request.body?.charts?.[0];
-
-      expect(response?.statusCode, 'install request rejected').to.eq(201);
-      expect(request.body?.namespace, 'install targets the k3k namespace').to.eq(K3K_NAMESPACE);
-      expect(chart?.chartName, 'install targets the SUSE chart').to.eq(K3K_CHART_NAME);
-      expect(chart?.values?.controller?.image?.registry, 'controller image registry').to.eq(SUSE_REGISTRY);
-      expect(chart?.values?.agent?.shared?.image?.registry, 'kubelet image registry').to.eq(SUSE_REGISTRY);
+      landingPage.waitForPage();
+      landingPage.title().should('be.visible');
     });
 
-    landingPage.installSucceeded().should('be.visible');
+    it('installs the k3k controller with images from the SUSE registry', () => {
+      cy.intercept('POST', '**/catalog.cattle.io.ClusterRepo/*?action=install').as('installK3k');
 
-    // Wait for the k3k controller to be fully deployed and its CRDs to be available before proceeding.
-    waitForK3kReady();
-  });
+      VirtualClustersLandingPagePo.navTo(hostClusterId);
+      landingPage.waitForPage();
+      landingPage.installK3kButton().click();
 
-  it('stops offering the install button once k3k-system is occupied', () => {
-    VirtualClustersPolicyListPagePo.navTo(hostClusterId);
+      cy.wait('@installK3k', EXTRA_LONG_TIMEOUT_OPT).then(({ request, response }) => {
+        removeK3k = true;
 
-    policyListPage.waitForPage();
-    policyListPage.waitForList();
-    policyListPage.masthead().title().should('contain', POLICY_NAV_LABEL);
-    landingPage.installK3kButton().self().should('not.exist');
-  });
+        const chart = request.body?.charts?.[0];
 
-  // Nothing to uninstall when the extension was developer-loaded rather than installed.
-  (DEV_LOADED ? it.skip : it)('uninstalls the extension and removes the navigation entry', () => {
-    extensionsPage.goTo();
-    extensionsPage.waitForPage();
-    extensionsPage.extensionTabInstalledClick();
-    extensionsPage.waitForPage(undefined, 'installed');
+        expect(response?.statusCode, 'install request rejected').to.eq(201);
+        expect(request.body?.namespace, 'install targets the k3k namespace').to.eq(K3K_NAMESPACE);
+        expect(chart?.chartName, 'install targets the SUSE chart').to.eq(K3K_CHART_NAME);
+        expect(chart?.values?.controller?.image?.registry, 'controller image registry').to.eq(SUSE_REGISTRY);
+        expect(chart?.values?.agent?.shared?.image?.registry, 'kubelet image registry').to.eq(SUSE_REGISTRY);
+      });
 
-    extensionsPage.extensionCardUninstallClick(EXTENSION_NAME);
-    extensionsPage.extensionUninstallModal().should('be.visible');
-    extensionsPage.uninstallModalUninstallClick();
-    extensionsPage.extensionReloadBanner().should('be.visible');
-    extensionsPage.extensionReloadClick();
-    cy.then(() => {
-      removeExtension = false;
+      landingPage.k3kSuccessMessageVisible().should('be.visible');
+
+      // Wait for the k3k controller to be fully deployed and its CRDs to be available before proceeding.
+      waitForK3kReady();
     });
 
-    ClusterDashboardPagePo.goTo(hostClusterId);
-    new ClusterDashboardPagePo(hostClusterId).waitForPage();
+    it('stops offering the install button once k3k-system is occupied', () => {
+      VirtualClustersPolicyListPagePo.navTo(hostClusterId);
 
-    new ProductNavPo().navToSideMenuGroupByLabelExistence(NAV_LABEL, 'not.exist');
+      policyListPage.waitForPage();
+      policyListPage.waitForList();
+      policyListPage.masthead().title().should('contain', POLICY_NAV_LABEL);
+      landingPage.installK3kButton().self().should('not.exist');
+    });
+  });
+  describe('Create Virtual Cluster Policy validation', () => {
+    let policyName = '';
+
+    before(() => {
+      cy.createE2EResourceName('vc-policy').then((name: string) => {
+        policyName = name;
+
+        createResource(`k8s/clusters/${ hostClusterId }/v1`, POLICY_RESOURCE, {
+          type:     'k3k.io.virtualclusterpolicy',
+          metadata: { name },
+          spec:     {
+            allowedMode: 'Shared',
+            sync:        { storageClasses: { enabled: true } }
+          }
+        }).its('status').should('eq', 201);
+      });
+    });
+
+    it('Prevents creation of virtual policy with an empty name and shows the required-field error', () => {
+      VirtualClusterPolicyPo.goToCreate(hostClusterId);
+      const policyPo = new VirtualClusterPolicyPo(hostClusterId);
+
+      policyPo.waitForPage();
+      policyPo.name().self().focus().blur();
+      policyPo.name().validationMessage().should('contain', '"Value" is required');
+      policyPo.saveButton().expectToBeDisabled();
+    });
+
+    it('Validation Policies Form displays inline validation for a non-DNS-compliant name', () => {
+      VirtualClusterPolicyPo.goToCreate(hostClusterId);
+      const policyPo = new VirtualClusterPolicyPo(hostClusterId);
+
+      policyPo.waitForPage();
+      policyPo.name().set('Invalid Name_!');
+      policyPo.name().self().blur();
+      policyPo.name().validationMessage().should('not.be.empty');
+      policyPo.saveButton().expectToBeDisabled();
+    });
+
+    it('Keeps the name read-only when editing a policy', () => {
+      VirtualClusterPolicyPo.goToEdit(hostClusterId, policyName);
+      const policyPo = new VirtualClusterPolicyPo(hostClusterId, policyName);
+
+      policyPo.waitForPage();
+      policyPo.name().expectToBeDisabled();
+      policyPo.name().value().should('eq', policyName);
+    });
+
+    it('Rejects a CPU request larger than the CPU limit before submission', () => {
+      VirtualClusterPolicyPo.goToCreate(hostClusterId);
+      const policyPo = new VirtualClusterPolicyPo(hostClusterId);
+
+      policyPo.waitForPage();
+      policyPo.name().set('cpu-validation-policy');
+      policyPo.resourceAllocationTab().click();
+      policyPo.cpuLimit().setValue('1');
+      policyPo.cpuRequest().setValue('2');
+
+      policyPo.errorBanner().should('be.visible').and('contain', 'CPU');
+      policyPo.saveButton().expectToBeDisabled();
+    });
+
+    after(() => {
+      if (policyName) {
+        deleteResource(`k8s/clusters/${ hostClusterId }/v1`, POLICY_RESOURCE, policyName);
+      }
+    });
+  });
+
+  describe('Uninstall Virtual Clusters Extension', () => {
+    // Nothing to uninstall when the extension was developer-loaded rather than installed.
+    (DEV_LOADED ? it.skip : it)('uninstalls the extension and removes the navigation entry', () => {
+      const extensionsPo = new ExtensionsPagePo();
+
+      extensionsPo.goTo();
+      extensionsPo.waitForPage();
+      extensionsPo.extensionTabInstalledClick();
+      extensionsPo.waitForPage(undefined, 'installed');
+
+      extensionsPo.extensionCardUninstallClick(EXTENSION_NAME);
+      extensionsPo.extensionUninstallModal().should('be.visible');
+      extensionsPo.uninstallModalUninstallClick();
+      extensionsPo.extensionReloadBanner().should('be.visible');
+      extensionsPo.extensionReloadClick();
+      cy.then(() => {
+        removeExtension = false;
+      });
+
+      ClusterDashboardPagePo.goTo(hostClusterId);
+      new ClusterDashboardPagePo(hostClusterId).waitForPage();
+
+      new ProductNavPo().navToSideMenuGroupByLabelExistence(NAV_LABEL, 'not.exist');
+    });
   });
 
   after('clean up', () => {

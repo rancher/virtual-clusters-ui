@@ -205,6 +205,15 @@ export function uninstallK3k(clusterId: string) {
   return deleteResource(prefix, 'namespaces', K3K_NAMESPACE);
 }
 
+/** Create a resource through Rancher's authenticated API proxy. */
+export function createResource(prefix: string, resourceType: string, body: Record<string, unknown>) {
+  return apiRequest({
+    method: 'POST',
+    url:    `/${ prefix }/${ resourceType }`,
+    body,
+  });
+}
+
 export interface AwsHostClusterParams {
   name: string;
   namespace: string;

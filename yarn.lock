@@ -5655,10 +5655,10 @@ baseline-browser-mapping@^2.11.12:
   resolved "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.31.tgz#09d43ad2aafb3da96c82c8478e70e679ee1235a8"
   integrity sha512-b0k7wXlWjpuL/Uxb/pYlpjY0ej5BjAmurtPUk3eRGuloI4yjK32m8TiKUQ81l1ptcLjKS/KH2+uqIolZti1x4Q==
 
-basic-ftp@6.2.2, basic-ftp@^5.0.2:
-  version "6.2.2"
-  resolved "https://registry.npmjs.org/basic-ftp/-/basic-ftp-6.2.2.tgz#ac1968e4908bb1aa27f6a9a59add3131f26534ed"
-  integrity sha512-LIkJcf/F6bTTfvE3k2YcTxrJsLKKVXiEpHZYkQP6JoqTb7khng7c13ckRTDQbqRh5IkehVH3F00sSlAa2F6DwA==
+basic-ftp@6.2.3, basic-ftp@^5.0.2:
+  version "6.2.3"
+  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-6.2.3.tgz#452e25a101380a8c69cdf94d7da17e7fe7bccbaa"
+  integrity sha512-T7GYtQ2eKJUN5YORG7A8u2WfB9JMN0a4/wl3MI64qq2qTRfa3FXzoNq0DDojZDkDyStcL+TkfKsz4JHEZx5kGQ==
 
 batch@0.6.1:
   version "0.6.1"
@@ -8088,7 +8088,6 @@ eslint-plugin-jest@29.15.2:
 
 "eslint-plugin-local-rules@link:./eslint-plugin-local-rules":
   version "0.0.0"
-  uid ""
 
 eslint-plugin-n@17.24.0, eslint-plugin-n@^17.23.2:
   version "17.24.0"

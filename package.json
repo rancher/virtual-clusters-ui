@@ -36,7 +36,7 @@
     "typescript-eslint": "8.70.0",
     "@cypress/request": "4.0.1",
     "@tootallnate/once": "^2.0.1",
-    "basic-ftp": "6.2.2",
+    "basic-ftp": "6.2.3",
     "cookie": "0.7.2",
     "cross-spawn": "7.0.6",
     "**/diff2html/diff": "5.2.2",

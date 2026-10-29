@@ -296,8 +296,6 @@ export default {
   },
 
   data() {
-    const t = this.$store.getters['i18n/t'];
-
     return {
       SYNC_CONTEXT,
       k3kInstalled:                   false,
@@ -307,9 +305,9 @@ export default {
       parentCluster:                  {}, // provisioning cluster representing the "host cluster"
       parentClusterDisplayAnnotation: '',
       k3kCluster:                     {},
-      k3sVersions:      [],
-      supportsTopology: false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
-      fvFormRuleSets:   [
+      k3sVersions:                    [],
+      supportsTopology:               false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
+      fvFormRuleSets:                 [
         {
           path:  'metadata.name',
           rules: ['required']
@@ -391,6 +389,14 @@ export default {
 
     isSharedMode() {
       return this.k3kCluster?.spec?.mode === MODES.SHARED;
+    },
+
+    isVirtualMode() {
+      return this.k3kCluster?.spec?.mode === MODES.VIRTUAL;
+    },
+
+    isHcpMode() {
+      return this.k3kCluster?.spec?.mode === MODES.HCP;
     },
 
     doneLocationOverride() {
@@ -753,8 +759,6 @@ export default {
         },
       });
     },
-
-    isEmpty
   }
 };
 </script>
@@ -837,7 +841,7 @@ export default {
         </div>
 
         <template
-          v-if="!policy|| isEmpty(policy)"
+          v-if="!hasPolicy"
         >
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
@@ -865,7 +869,7 @@ export default {
     </RcSection>
 
     <RcSection
-      v-if="!policy || isEmpty(policy)"
+      v-if="!hasPolicy"
       mode="with-header"
       :expandable="true"
       :title="t('k3k.policy.tabs.resourceSync')"
@@ -949,14 +953,18 @@ export default {
         <RcSection
           mode="with-header"
           :expandable="true"
-          :expanded="isSharedMode"
+          :expanded="!isHcpMode"
           type="secondary"
           :title="t('k3k.agents.label')"
         >
+          <!-- k3k only runs agent pods in virtual and shared mode, and ignores the agent count in shared mode -->
           <RcContentGroup
-            v-if="isSharedMode"
+            v-if="!isHcpMode"
           >
-            <div class="input-row count-input">
+            <div
+              v-if="isVirtualMode"
+              class="input-row count-input"
+            >
               <LabeledInput
                 v-model:value.number="k3kCluster.spec.agents"
                 label-key="k3k.agents.number.label"
@@ -992,7 +1000,7 @@ export default {
         </RcSection>
 
         <div
-          v-if="!policy"
+          v-if="!hasPolicy"
           class="input-row"
         >
           <RcKeyValue
@@ -1018,7 +1026,7 @@ export default {
     </RcSection>
 
     <RcSection
-      v-if="!policy && supportsTopology"
+      v-if="!hasPolicy && supportsTopology"
       class="mmb-2"
       mode="with-header"
       :expandable="true"

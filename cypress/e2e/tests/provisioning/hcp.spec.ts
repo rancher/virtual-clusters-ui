@@ -138,14 +138,16 @@ describe('HCP mode', () => {
       return { metadata: { labels: { cluster: clusterName, role } }, spec: { nodeName } };
     }
 
+    // the k3k controller sets status.hostVersion on its first reconcile; the tab withholds the command without a version
     function stubHostResources({
-      services = [], k3kCluster = {}, nodes = [], pods = []
-    }: { services?: any[], k3kCluster?: any, nodes?: any[], pods?: any[] }) {
+      service, k3kCluster = {}, nodes = [], pods = []
+    }: { service?: any, k3kCluster?: any, nodes?: any[], pods?: any[] }) {
       const base = `/k8s/clusters/${ STUB_HOST }/v1`;
+      const reconciledCluster = { ...k3kCluster, status: { hostVersion: 'v1.33.1', ...k3kCluster.status } };
 
       cy.intercept({ method: 'GET', pathname: `${ base }/secrets/${ STUB_NAMESPACE }/k3k-${ clusterName }-token` }, { body: { data: { token: btoa(TOKEN) } } });
-      cy.intercept({ method: 'GET', pathname: `${ base }/k3k.io.clusters/${ STUB_NAMESPACE }/${ clusterName }` }, { body: k3kCluster });
-      cy.intercept({ method: 'GET', pathname: `${ base }/services/${ STUB_NAMESPACE }` }, { body: { data: services } });
+      cy.intercept({ method: 'GET', pathname: `${ base }/k3k.io.clusters/${ STUB_NAMESPACE }/${ clusterName }` }, { body: reconciledCluster });
+      cy.intercept({ method: 'GET', pathname: `${ base }/services/${ STUB_NAMESPACE }/k3k-${ clusterName }-service` }, service ? { body: service } : { statusCode: 404, body: {} });
       cy.intercept({ method: 'GET', pathname: `${ base }/nodes` }, { body: { data: nodes } });
       cy.intercept({ method: 'GET', pathname: `${ base }/pods/${ STUB_NAMESPACE }` }, { body: { data: pods } });
     }
@@ -183,7 +185,7 @@ describe('HCP mode', () => {
 
     it('uses the load balancer ip, ahead of the tls sans', () => {
       stubHostResources({
-        services:   [{ spec: { type: 'LoadBalancer', ports: [serverPort] }, status: { loadBalancer: { ingress: [{ ip: '203.0.113.10' }] } } }],
+        service:    { spec: { type: 'LoadBalancer', ports: [serverPort] }, status: { loadBalancer: { ingress: [{ ip: '203.0.113.10' }] } } },
         k3kCluster: { spec: { tlsSANs: [SAN_HOST] } },
       });
 
@@ -191,14 +193,14 @@ describe('HCP mode', () => {
     });
 
     it('uses the load balancer hostname when it has no ip', () => {
-      stubHostResources({ services: [{ spec: { type: 'LoadBalancer', ports: [serverPort] }, status: { loadBalancer: { ingress: [{ hostname: 'lb.example.com' }] } } }] });
+      stubHostResources({ service: { spec: { type: 'LoadBalancer', ports: [serverPort] }, status: { loadBalancer: { ingress: [{ hostname: 'lb.example.com' }] } } } });
 
       expectServerUrl('https://lb.example.com:6443');
     });
 
     it('uses the first non-loopback tls san with the node port', () => {
       stubHostResources({
-        services:   [nodePortService()],
+        service:    nodePortService(),
         k3kCluster: { spec: { tlsSANs: ['127.0.0.1', 'localhost', SAN_HOST] } },
       });
 
@@ -207,7 +209,7 @@ describe('HCP mode', () => {
 
     it('falls back to the port serving 6443 when no port is named k3s-server-port', () => {
       stubHostResources({
-        services:   [{ spec: { type: 'ClusterIP', ports: [{ name: 'https', port: 6443 }] }, status: {} }],
+        service:    { spec: { type: 'ClusterIP', ports: [{ name: 'https', port: 6443 }] }, status: {} },
         k3kCluster: { spec: { tlsSANs: [SAN_HOST] } },
       });
 
@@ -216,7 +218,7 @@ describe('HCP mode', () => {
 
     it('uses the internal ip of the node running a server pod when it is in the certificate', () => {
       stubHostResources({
-        services:   [nodePortService()],
+        service:    nodePortService(),
         k3kCluster: { spec: {}, status: { tlsSANs: ['10.0.0.5', '10.0.0.6'] } },
         nodes:      [node('node-a', '10.0.0.5'), node('node-b', '10.0.0.6')],
         // only the node running the server answers on the node port
@@ -228,7 +230,7 @@ describe('HCP mode', () => {
 
     it('does not use a server node whose address is not in the certificate', () => {
       stubHostResources({
-        services:   [nodePortService()],
+        service:    nodePortService(),
         k3kCluster: { spec: {}, status: { tlsSANs: ['10.0.0.6'] } },
         nodes:      [node('node-a', '10.0.0.5'), node('node-b', '10.0.0.6')],
         pods:       [pod('node-a', 'server')],
@@ -238,7 +240,13 @@ describe('HCP mode', () => {
     });
 
     it('warns when no service serves the k3s supervisor', () => {
-      stubHostResources({ k3kCluster: { spec: { tlsSANs: [SAN_HOST] } } });
+      stubHostResources({
+        // a missing Service means k3k has not created it yet, so the tab waits rather than warns
+        service: nodePortService([{
+          name: 'k3s-etcd-port', port: 2379, nodePort: 32379
+        }]),
+        k3kCluster: { spec: { tlsSANs: [SAN_HOST] } },
+      });
 
       expectNoServerUrl();
     });

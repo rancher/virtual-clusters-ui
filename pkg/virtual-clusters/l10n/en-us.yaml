@@ -192,7 +192,7 @@ k3k:
     label: Virtual cluster mode
     shared: 
       label: Shared
-      description: Default, better perfornace
+      description: Default, better performance
     virtual: 
       label: Virtual
       description: Advanced Isolation

@@ -392,15 +392,6 @@ fetchAll();
 </template>
 
 <style lang="scss" scoped>
-.node-inputs {
-  display: flex;
-  gap: var(--rc-content);
-
-  > * {
-    flex: 1;
-  }
-}
-
 .registration-command {
   display: block;
   overflow-wrap: anywhere;
@@ -410,7 +401,6 @@ fetchAll();
   }
 }
 
-// highlight the additional args user added via .node-inputs inputs
 .appended-arg {
   background-color: var(--accent-btn);
   border-radius: 2px;

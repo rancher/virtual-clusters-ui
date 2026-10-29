@@ -307,13 +307,6 @@ export default {
       parentCluster:                  {}, // provisioning cluster representing the "host cluster"
       parentClusterDisplayAnnotation: '',
       k3kCluster:                     {},
-      modeOptions:                    [{
-        label: t('k3k.mode.shared'),
-        value: MODES.SHARED
-      }, {
-        label: t('k3k.mode.virtual'),
-        value: MODES.VIRTUAL
-      }],
       k3sVersions:      [],
       supportsTopology: false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
       fvFormRuleSets:   [

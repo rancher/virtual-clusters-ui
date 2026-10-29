@@ -32,4 +32,8 @@ export default class VirtualClusterDetailPagePo extends ClusterManagerDetailPage
   noServerAddressWarning(): Cypress.Chainable {
     return this.self().contains('No server address reachable by external workers was found');
   }
+
+  pendingMessage(): Cypress.Chainable {
+    return this.self().contains('Waiting for the virtual cluster to provision');
+  }
 }

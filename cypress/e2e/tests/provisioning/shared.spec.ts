@@ -17,4 +17,16 @@ describe('shared mode', () => {
     cruK3k.modeOption('shared').click();
     cruK3k.self().contains(NOT_ALLOWED).should('not.exist');
   });
+
+  // k3k ignores spec.agents in shared mode, but passes spec.agentEnvs to the shared agent
+  it('offers agent env vars without an agent pod count', { tags: ['@adminUser', '@standardUser'] }, () => {
+    const cruK3k = openCreateForm();
+
+    cruK3k.modeOption('shared').click();
+
+    cruK3k.expandSection('Agents').within(() => {
+      cy.contains('Agent Pod Environment Variables').should('be.visible');
+      cy.contains('Number of Agent Pods').should('not.exist');
+    });
+  });
 });

@@ -71,6 +71,28 @@ export default class CruK3kPo extends PagePo {
     return this.self().find('[role="radiogroup"][aria-label="Virtual cluster mode"]');
   }
 
+  // matched on the whole title, so 'Agents' does not match 'Server and Agents'
+  section(title: string): Cypress.Chainable {
+    return this.self().contains('.rc-section > .section-header .title', new RegExp(`^\\s*${ title }\\s*$`)).closest('.rc-section');
+  }
+
+  // RcSection keeps collapsed content mounted but hidden, so open it before asserting visibility
+  expandSection(title: string): Cypress.Chainable {
+    return this.section(title).then(($section) => {
+      const $header = $section.children('.section-header');
+
+      if ($header.hasClass('collapsed')) {
+        cy.wrap($header).click();
+      }
+
+      return cy.wrap($section);
+    });
+  }
+
+  nodeSelectorTitle(): Cypress.Chainable {
+    return this.self().contains('h3', /^\s*Node Selector\s*$/);
+  }
+
   // CruResource puts the cru__toc class on TableOfContents' root element
   tableOfContents(): Cypress.Chainable {
     return this.self().find('.cru__toc');

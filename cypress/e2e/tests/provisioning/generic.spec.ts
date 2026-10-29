@@ -11,6 +11,7 @@ import {
 const HOST_CLUSTER = Cypress.env('hostCluster') || 'e2e-generic';
 const NO_POLICY = 'No policy';
 const RESOURCE_SYNC_SECTION = 'Resource Synchronization';
+const TOPOLOGY_SECTION = 'Topology';
 
 describe('cluster creation', () => {
   beforeEach(() => {
@@ -163,6 +164,29 @@ describe('cluster creation', () => {
 
       cruK3k.modeSection().should('be.visible');
       cruK3k.tocTopLevelLabels().should('include', RESOURCE_SYNC_SECTION);
+    });
+
+    // 'No policy' is stored as an empty policy object, which must count as no policy
+    // the installed k3k version is the newest, which supports the Topology fields
+    it('offers the scheduling configuration when no policy is selected', () => {
+      const cruK3k = openCreateForm();
+
+      cruK3k.selectHostCluster(HOST_CLUSTER);
+      cruK3k.waitForPolicyLoad();
+      cruK3k.policySelect().checkContainsOptionSelected(policyName);
+
+      cruK3k.tocTopLevelLabels().should('not.include', TOPOLOGY_SECTION);
+      cruK3k.nodeSelectorTitle().should('not.exist');
+
+      cruK3k.selectPolicy(NO_POLICY);
+
+      cruK3k.tocTopLevelLabels().should('include', TOPOLOGY_SECTION);
+      cruK3k.nodeSelectorTitle().should('be.visible');
+
+      cruK3k.modeOption('hcp').click();
+      cruK3k.expandSection(TOPOLOGY_SECTION).within(() => {
+        cy.contains('Server Scheduling').should('be.visible');
+      });
     });
 
     it('opens the selected policy in a drawer', () => {

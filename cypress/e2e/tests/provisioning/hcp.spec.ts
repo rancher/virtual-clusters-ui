@@ -20,6 +20,19 @@ describe('HCP mode', () => {
     cruK3k.self().contains(NOT_ALLOWED).should('exist');
   });
 
+  // k3k provisions no agent pods in hcp mode
+  it('replaces the agent configuration with a not available message', { tags: ['@adminUser', '@standardUser'] }, () => {
+    const cruK3k = openCreateForm();
+
+    cruK3k.modeOption('hcp').click();
+
+    cruK3k.expandSection('Agents').within(() => {
+      cy.contains(NOT_ALLOWED).should('be.visible');
+      cy.contains('Number of Agent Pods').should('not.exist');
+      cy.contains('Agent Pod Environment Variables').should('not.exist');
+    });
+  });
+
   /**
    * The HCP tab is gated on the mode annotation alone, so clusters with no k3k cluster
    * behind them are enough. Without parent cluster and namespace annotations the tab
@@ -139,17 +152,24 @@ describe('HCP mode', () => {
     }
 
     // the k3k controller sets status.hostVersion on its first reconcile; the tab withholds the command without a version
+    // listStatus fails the node and pod lists, as for a user who cannot list them
     function stubHostResources({
-      service, k3kCluster = {}, nodes = [], pods = []
-    }: { service?: any, k3kCluster?: any, nodes?: any[], pods?: any[] }) {
+      service, k3kCluster = {}, nodes = [], pods = [], listStatus
+    }: { service?: any, k3kCluster?: any, nodes?: any[], pods?: any[], listStatus?: number }) {
       const base = `/k8s/clusters/${ STUB_HOST }/v1`;
       const reconciledCluster = { ...k3kCluster, status: { hostVersion: 'v1.33.1', ...k3kCluster.status } };
+      const listResponse = (items: any[]) => (listStatus ? { statusCode: listStatus, body: { message: 'forbidden' } } : { body: { data: items } });
 
       cy.intercept({ method: 'GET', pathname: `${ base }/secrets/${ STUB_NAMESPACE }/k3k-${ clusterName }-token` }, { body: { data: { token: btoa(TOKEN) } } });
       cy.intercept({ method: 'GET', pathname: `${ base }/k3k.io.clusters/${ STUB_NAMESPACE }/${ clusterName }` }, { body: reconciledCluster });
       cy.intercept({ method: 'GET', pathname: `${ base }/services/${ STUB_NAMESPACE }/k3k-${ clusterName }-service` }, service ? { body: service } : { statusCode: 404, body: {} });
-      cy.intercept({ method: 'GET', pathname: `${ base }/nodes` }, { body: { data: nodes } });
-      cy.intercept({ method: 'GET', pathname: `${ base }/pods/${ STUB_NAMESPACE }` }, { body: { data: pods } });
+      cy.intercept({ method: 'GET', pathname: `${ base }/nodes` }, listResponse(nodes));
+      cy.intercept({ method: 'GET', pathname: `${ base }/pods/${ STUB_NAMESPACE }` }, listResponse(pods));
+    }
+
+    function expectInstallVersion(version: string) {
+      detailPage.goTo(undefined, HCP_TAB);
+      detailPage.registrationCommand().should('contain', `INSTALL_K3S_VERSION=${ version } `);
     }
 
     function expectServerUrl(url: string) {
@@ -249,6 +269,72 @@ describe('HCP mode', () => {
       });
 
       expectNoServerUrl();
+    });
+
+    it('brackets an ipv6 tls san', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: { tlsSANs: ['2001:db8::10'] } },
+      });
+
+      expectServerUrl(`https://[2001:db8::10]:${ NODE_PORT }`);
+    });
+
+    it('brackets an ipv6 load balancer address', () => {
+      stubHostResources({ service: { spec: { type: 'LoadBalancer', ports: [serverPort] }, status: { loadBalancer: { ingress: [{ ip: '2001:db8::20' }] } } } });
+
+      expectServerUrl('https://[2001:db8::20]:6443');
+    });
+
+    it('installs the k3s version set on the virtual cluster', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: { tlsSANs: [SAN_HOST], version: 'v1.32.5-k3s1' } },
+      });
+
+      expectInstallVersion('v1.32.5+k3s1');
+    });
+
+    // k3k resolves an unset version from status.hostVersion, not from the host's distribution
+    it('installs the host version k3k recorded when the virtual cluster sets none', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: { tlsSANs: [SAN_HOST] }, status: { hostVersion: 'v1.31.4' } },
+      });
+
+      expectInstallVersion('v1.31.4+k3s1');
+    });
+
+    it('withholds the command until k3k has recorded a version', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: { tlsSANs: [SAN_HOST] }, status: { hostVersion: '' } },
+      });
+
+      detailPage.goTo(undefined, HCP_TAB);
+      detailPage.pendingMessage().should('be.visible');
+      detailPage.registrationCommand().should('not.exist');
+    });
+
+    it('builds the command from a tls san when the host nodes cannot be listed', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: { tlsSANs: [SAN_HOST] } },
+        listStatus: 403,
+      });
+
+      expectServerUrl(`https://${ SAN_HOST }:${ NODE_PORT }`);
+    });
+
+    it('keeps the registration section when the host nodes cannot be listed', () => {
+      stubHostResources({
+        service:    nodePortService(),
+        k3kCluster: { spec: {}, status: { tlsSANs: ['10.0.0.5'] } },
+        listStatus: 403,
+      });
+
+      expectNoServerUrl();
+      detailPage.hcpRegistrationTitle().should('be.visible');
     });
 
     after('clean up', () => {

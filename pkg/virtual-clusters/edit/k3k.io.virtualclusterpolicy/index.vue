@@ -1,11 +1,11 @@
 <script>
 import CruResource from '@shell/components/CruResource';
 import Loading from '@shell/components/Loading';
-import Labels from '@shell/components/form/Labels';
+import RcLabelsAndAnnotations from '@shell/components/RcLabelsAndAnnotations.vue';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
-import Tab from '@shell/components/Tabbed/Tab';
-import Tabbed from '@shell/components/Tabbed';
+import { RcSection } from '@components/RcSection';
+import { RcContentGroup } from '@components/Layout';
 import NameNsDescription from '@shell/components/form/NameNsDescription';
 import ContainerResourceLimit from '@shell/components/ContainerResourceLimit';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
@@ -13,7 +13,7 @@ import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { clear } from '@shell/utils/array';
 import { Banner } from '@rancher/components';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 
 import { set } from '@shell/utils/object';
 
@@ -42,9 +42,9 @@ export default {
     Loading,
     NameNsDescription,
     Mode,
-    Tabbed,
-    Tab,
-    Labels,
+    RcSection,
+    RcContentGroup,
+    RcLabelsAndAnnotations,
     ContainerResourceLimit,
     Quota,
     LabeledSelect,
@@ -54,7 +54,7 @@ export default {
     Banner,
     Sync,
     K3kVersionBanner,
-    KeyValue,
+    RcKeyValue,
     NotAllowed
   },
 
@@ -214,6 +214,10 @@ export default {
       return this.value?.spec?.allowedMode === MODES.SHARED;
     },
 
+    isHcpMode() {
+      return this.value?.spec?.allowedMode === MODES.HCP;
+    },
+
     hasNodeSelector() {
       return !isEmpty(this.value?.spec?.defaultNodeSelector || {});
     },
@@ -287,6 +291,7 @@ export default {
     :resource="value"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
+    :show-toc="!parentCluster"
     @finish="saveOverride"
     @error="e=>errors=e"
   >
@@ -302,6 +307,8 @@ export default {
     />
     <NameNsDescription
       v-if="!isView"
+      :name-col-span="4"
+      :description-col-span="8"
       :mode="mode"
       :namespaced="false"
       :value="value"
@@ -309,15 +316,13 @@ export default {
       :rules="{name:fvGetAndReportPathRules('name')}"
     />
 
-    <Tabbed
-      :side-tabs="true"
-      :use-hash="false"
+    <RcSection
+      type="primary"
+      mode="with-header"
+      :expandable="true"
+      :title="t('k3k.policy.tabs.config')"
     >
-      <Tab
-        :weight="5"
-        name="config"
-        label-key="k3k.policy.tabs.config"
-      >
+      <RcContentGroup>
         <Projects
           ref="project-selector"
           :mode="mode"
@@ -330,60 +335,85 @@ export default {
           :mode="mode"
           @update:k3k-mode="sync = {}"
         />
-      </Tab>
+      </RcContentGroup>
+    </RcSection>
 
-      <Tab
-        :weight="4"
-        name="sync"
-        label-key="k3k.policy.tabs.resourceSync"
-      >
-        <Sync
-          v-if="isSharedMode"
-          v-model:ingresses="ingresses"
-          v-model:priority-classes="priorityClasses"
-          v-model:storage-classes="storageClasses"
-          :mode="mode"
-          :parent-cluster="parentCluster"
-          @error="errors.push($event)"
-        />
-        <NotAllowed v-else />
-      </Tab>
+    <RcSection
+      type="primary"
+      mode="with-header"
+      :expandable="true"
+      :title="t('k3k.policy.tabs.resourceSync')"
+    >
+      <Sync
+        v-if="isSharedMode"
+        v-model:ingresses="ingresses"
+        v-model:priority-classes="priorityClasses"
+        v-model:storage-classes="storageClasses"
+        :mode="mode"
+        :parent-cluster="parentCluster"
+        @error="errors.push($event)"
+      />
+      <NotAllowed
+        v-else
+        :mode="value.spec.allowedMode"
+        section="synchronization"
+      />
+    </RcSection>
 
-      <Tab
-        :weight="3"
-        name="resources"
-        label-key="k3k.policy.tabs.resourceAllocation"
-      >
-        <h3>{{ t('k3k.policy.headers.quotas') }}</h3>
-        <Quota
-          v-model:value="quota"
-          :mode="mode"
-          class="mb-20"
-        />
-        <h3>{{ t('k3k.policy.headers.resourceLimits') }}</h3>
-        <ContainerResourceLimit
-          v-model:value="defaultLimits"
-          :mode="mode"
-        />
-      </Tab>
-      <Tab
-        v-if="supportsTopology"
-        :weight="2"
-        name="affinity"
-        label-key="k3k.policy.tabs.topology"
-      >
-        <PolicyAffinity
-          v-model:server-affinity="value.spec.defaultServerAffinity"
-          v-model:agent-affinity="value.spec.defaultAgentAffinity"
-          :mode="mode"
-        />
-      </Tab>
-      <Tab
-        :weight="1"
+    <RcSection
+      type="primary"
+      :expandable="true"
+      mode="with-header"
+      :title="t('k3k.policy.tabs.resourceAllocation')"
+    >
+      <RcContentGroup>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.headers.quotas')"
+        >
+          <Quota
+            v-model:value="quota"
+            :mode="mode"
+          />
+        </RcSection>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.headers.resourceLimits')"
+        >
+          <ContainerResourceLimit
+            v-model:value="defaultLimits"
+            :mode="mode"
+          />
+        </RcSection>
+      </RcContentGroup>
+    </RcSection>
 
-        name="advanced"
-        label-key="k3k.policy.tabs.advanced"
-      >
+    <RcSection
+      v-if="supportsTopology"
+      type="primary"
+      :expandable="true"
+      mode="with-header"
+      :title="t('k3k.policy.tabs.topology')"
+    >
+      <PolicyAffinity
+        v-model:server-affinity="value.spec.defaultServerAffinity"
+        v-model:agent-affinity="value.spec.defaultAgentAffinity"
+        :mode="mode"
+        :k3k-mode="value.spec.allowedMode"
+      />
+    </RcSection>
+
+    <RcSection
+      type="primary"
+      :expandable="true"
+      mode="with-header"
+      :title="t('k3k.policy.tabs.advanced')"
+    >
+      <RcContentGroup>
         <Banner
           v-if="supportsTopology && hasNodeSelector"
           label-key="k3k.nodeSelector.warning"
@@ -391,93 +421,105 @@ export default {
         />
         <div
           v-if="showNodeSelector"
-          class="row mb-20"
+          class="input-row"
         >
-          <div class="col span-12">
-            <KeyValue
-              v-model:value="value.spec.defaultNodeSelector"
-              :initial-empty-row="true"
-              :mode="mode"
-              :read-allowed="false"
-              :title="t('k3k.nodeSelector.label')"
-              :add-label="t('k3k.nodeSelector.addLabel')"
-            >
-              <template #title>
-                <h3>{{ t('k3k.nodeSelector.label') }}</h3>
-                <t
-                  class="text-deemphasized"
-                  raw
-                  k="k3k.nodeSelector.tooltip"
-                />
-              </template>
-            </KeyValue>
-          </div>
+          <RcKeyValue
+            v-model:value="value.spec.defaultNodeSelector"
+            :initial-empty-row="true"
+            :mode="mode"
+            :read-allowed="false"
+            :title="t('k3k.nodeSelector.label')"
+            :add-label="t('k3k.nodeSelector.addLabel')"
+          >
+            <template #title>
+              <h3>{{ t('k3k.nodeSelector.label') }}</h3>
+              <t
+                class="text-deemphasized"
+                raw
+                k="k3k.nodeSelector.tooltip"
+              />
+            </template>
+          </RcKeyValue>
         </div>
-        <div class="row mb-10">
-          <div class="col span-12">
-            <h3>{{ t('k3k.policy.security.label') }}</h3>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :expanded="!isHcpMode"
+          :title="t('k3k.policy.security.label')"
+        >
+          <div v-if="!isHcpMode">
             <t
               class="text-deemphasized"
               k="k3k.policy.security.tooltip"
               raw
             />
+            <div class="input-row mmt-1">
+              <LabeledSelect
+                v-model:value="podSecurityAdmissionLevel"
+                class="half"
+                :mode="mode"
+                :options="[noneOption,'privileged', 'baseline', 'restricted']"
+                :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="podSecurityAdmissionLevel"
-              :mode="mode"
-              :options="[noneOption,'privileged', 'baseline', 'restricted']"
-              :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"
-            />
-          </div>
-        </div>
 
-        <div class="row mb-10">
-          <div class="col span-12">
-            <h3>{{ t('k3k.policy.isolation.label') }}</h3>
-            <t
-              class="text-deemphasized"
-              k="k3k.policy.isolation.tooltip"
-              raw
-            />
-            <a
-              aria-label="link to the K3K github repository"
-              href="https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy"
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-            >
+          <NotAllowed
+            v-else
+            :mode="value.spec.allowedMode"
+            section="security"
+          />
+        </RcSection>
+
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.isolation.label')"
+          :expanded="!isHcpMode"
+        >
+          <div v-if="!isHcpMode">
+            <div class="mmb-3">
               <t
-                k="k3k.policy.isolation.learnMore"
+                class="text-deemphasized"
+                k="k3k.policy.isolation.tooltip"
                 raw
               />
-              <i class="icon icon-sm icon-external-link" />
-            </a>
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-12">
+              <a
+                aria-label="link to the K3K github repository"
+                href="https://github.com/rancher/k3k/blob/main/docs/virtualclusterpolicy.md#4-managing-network-isolation-disablenetworkpolicy"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+              >
+                <t
+                  k="k3k.policy.isolation.learnMore"
+                  raw
+                />
+                <i class="icon icon-sm icon-external-link" />
+              </a>
+            </div>
             <Checkbox
               v-model:value="value.spec.disableNetworkPolicy"
               :mode="mode"
               :label="t('k3k.policy.isolation.checkbox')"
             />
           </div>
-        </div>
-      </Tab>
-
-      <Tab
-        :weight="0"
-        name="labels"
-        label-key="generic.labelsAndAnnotations"
-      >
-        <Labels
+          <NotAllowed
+            v-else
+            :mode="value.spec.allowedMode"
+            section="isolation"
+          />
+        </RcSection>
+        <RcLabelsAndAnnotations
           :mode="mode"
           :value="value"
+          type="secondary"
+          :use-rc-button="true"
+          :expanded="false"
         />
-      </Tab>
-    </Tabbed>
+      </RcContentGroup>
+    </RcSection>
   </CruResource>
 </template>
 

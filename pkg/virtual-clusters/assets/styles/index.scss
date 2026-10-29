@@ -1,21 +1,30 @@
-// rc-section CSS custom properties for compatibility with Rancher dashboard versions <2.15
-// that do not include them in their theme stylesheets
-// TODO nb this can be removed once we stop supporting 2.14
-BODY, .theme-light {
-  --rc-section-background-primary: #FFFFFF;
-  --rc-section-background-secondary: #F4F5FA;
-  --rc-section-action-color: #6C6C77;
+.rc-content-group {
+  // add icons in RcKeyValue and ArrayList have .mr-5 class
+  // too much space combined with gap: 8px on rcbuttons
+    & .rc-key-value .footer .rc-button.btn-small .icon, .array-list-main-container .footer .rc-button.btn-small .icon {
+      margin-right: 0px !important;
+    }
 }
 
-BODY, .theme-dark {
-  --rc-section-background-primary: #161C24;
-  --rc-section-background-secondary: #262831;
-  --rc-section-action-color: #B6B6C3;
-}
-
-// medium gap spacing for rc section content - to be replaced by some global component and/or style rules in a later Rancher release
-.gap-md {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-md);
+// space inputs evenly w/ 16px gap between
+.input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-md);
+  align-self: stretch;
+  &>* {
+    flex-grow: 1;
+    flex-basis: 50%;
+  }
+  // opt a single child out of using the entire row
+  // slightly less than half width to match the width of one input in a two-input row
+  &>.half {
+    flex-grow: 0;
+    flex-basis: calc(50% - var(--gap));
+    min-width: 0;
+  }
+  //  vertically center content within the row
+  .centered {
+    height: 100%;
+  }
 }

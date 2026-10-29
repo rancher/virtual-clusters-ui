@@ -1,13 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import NodeAffinity from '@shell/components/form/NodeAffinity';
 import PodAffinity from '@shell/components/form/PodAffinity';
+import { RcSection } from '@components/RcSection';
+import { RcContentGroup } from '@components/Layout';
 import type { AffinityValue } from '../../types/k3k';
+import NotAllowed, { NOT_ALLOWED_SECTIONS } from '../../components/Sync/NotAllowed.vue';
+import { MODES } from '../../utils/shared';
 
 const props = defineProps<{
   serverAffinity?: AffinityValue;
   agentAffinity?: AffinityValue;
+  /** Form mode - create/edit/view */
   mode: string;
+  /** Virtual cluster mode - shared/virtual/hcp */
+  k3kMode?: string;
 }>();
+
+/**
+ * HCP worker nodes are registered externally, so there are no agent pods on the
+ * host for these host-level scheduling rules to apply to.
+ */
+const agentSchedulingAllowed = computed(() => props.k3kMode !== MODES.HCP);
 
 // eslint-disable-next-line func-call-spacing
 const emit = defineEmits<{
@@ -41,42 +55,90 @@ const updateAgentPodAffinity = (value: { affinity: AffinityValue }) => {
 </script>
 
 <template>
-  <div>
-    <h3>{{ t('k3k.policy.affinity.serverNodeScheduling') }}</h3>
-
-    <div class="mb-20">
-      <NodeAffinity
-        :value="serverAffinity?.nodeAffinity || {}"
-        :mode="mode"
-        class="mb-20"
-        @update:value="updateServerNodeAffinity"
+  <RcContentGroup>
+    <RcSection
+      type="secondary"
+      mode="with-header"
+      :expandable="true"
+      :title="t('k3k.policy.affinity.serverNodeScheduling')"
+    >
+      <RcContentGroup>
+        <p class="text-deemphasized">
+          {{ t('k3k.policy.affinity.serverDescription') }}
+        </p>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.affinity.nodeSelectors')"
+        >
+          <NodeAffinity
+            :value="serverAffinity?.nodeAffinity || {}"
+            :mode="mode"
+            :use-rc="true"
+            @update:value="updateServerNodeAffinity"
+          />
+        </RcSection>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.affinity.podSelectors')"
+        >
+          <PodAffinity
+            :value="{affinity: serverAffinity}"
+            :mode="mode"
+            :use-rc="true"
+            @update="updateServerPodAffinity"
+          />
+        </RcSection>
+      </RcContentGroup>
+    </RcSection>
+    <RcSection
+      type="secondary"
+      mode="with-header"
+      :expandable="true"
+      :expanded="agentSchedulingAllowed"
+      :title="t('k3k.policy.affinity.agentNodeScheduling')"
+    >
+      <RcContentGroup
+        v-if="agentSchedulingAllowed"
+      >
+        <p class="text-deemphasized">
+          {{ t('k3k.policy.affinity.agentDescription') }}
+        </p>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.affinity.nodeSelectors')"
+        >
+          <NodeAffinity
+            :value="agentAffinity?.nodeAffinity || {}"
+            :mode="mode"
+            :use-rc="true"
+            @update:value="updateAgentNodeAffinity"
+          />
+        </RcSection>
+        <RcSection
+          type="secondary"
+          mode="with-header"
+          :expandable="true"
+          :title="t('k3k.policy.affinity.podSelectors')"
+        >
+          <PodAffinity
+            :value="{affinity: agentAffinity}"
+            :mode="mode"
+            :use-rc="true"
+            @update="updateAgentPodAffinity"
+          />
+        </RcSection>
+      </RcContentGroup>
+      <NotAllowed
+        v-else
+        :mode="k3kMode"
+        :section="NOT_ALLOWED_SECTIONS.AGENT_SCHEDULING"
       />
-    </div>
-    <div>
-      <PodAffinity
-        :value="{affinity: serverAffinity}"
-        :mode="mode"
-        @update="updateServerPodAffinity"
-      />
-    </div>
-  </div>
-  <div class="mt-40">
-    <h3>{{ t('k3k.policy.affinity.agentNodeScheduling') }}</h3>
-
-    <div class="mb-20">
-      <NodeAffinity
-        :value="agentAffinity?.nodeAffinity || {}"
-        :mode="mode"
-        class="mb-20"
-        @update:value="updateAgentNodeAffinity"
-      />
-    </div>
-    <div>
-      <PodAffinity
-        :value="{affinity: agentAffinity}"
-        :mode="mode"
-        @update="updateAgentPodAffinity"
-      />
-    </div>
-  </div>
+    </RcSection>
+  </RcContentGroup>
 </template>

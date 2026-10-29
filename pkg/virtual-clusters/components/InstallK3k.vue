@@ -12,6 +12,7 @@ import {
   K3K_REPO_URL,
   K3K_CHART_NAME,
   K3K_CHART_NAMESPACE,
+  K3K_VALUES,
   verifyK3kIsInstalled,
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
@@ -20,22 +21,6 @@ import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
-const K3K_VALUES = {
-  agent: {
-    shared: {
-      image: {
-        registry:   'registry.suse.com',
-        repository: 'rancher/appco-k3k-kubelet'
-      }
-    }
-  },
-  controller: {
-    image: {
-      registry:   'registry.suse.com',
-      repository: 'rancher/appco-k3k'
-    }
-  }
-};
 
 const INCLUDE_LOCAL = process.env.dev;
 
@@ -164,6 +149,10 @@ export default {
           this.$emit('update:parentCluster', value);
         });
       }
+    },
+
+    showingInstallationContent() {
+      return this.parentCluster && !isEmpty(this.parentCluster) && ((!this.k3kInstalled && this.isCreate) || this.didInstallK3k);
     }
   },
 
@@ -184,7 +173,7 @@ export default {
         const mgmt = pCluster.mgmt;
 
         // installk3k function will update k3kInstalled and canCreateK3kCluster properties when it successfully installs k3k
-        const [k3kInstalled, canInstallK3k, canCreateK3kClusters] = mgmt.isReady ? await Promise.all([
+        const [k3kInstalled, canInstallK3k, canCreateK3kClusters] = mgmt?.isReady ? await Promise.all([
           verifyK3kIsInstalled(this.$store, mgmt.id),
           verifyUserCanInstallK3k(this.$store, mgmt.id),
           verifyUserCanCreateK3kClusters(this.$store, mgmt.id)
@@ -362,13 +351,22 @@ export default {
 </script>
 
 <template>
-  <div class="row mb-20">
+  <div
+    class="input-row"
+    :class="{ half: !showingInstallationContent }"
+  >
     <div
       v-if="!showButtonOnly"
-      class="col span-6"
+      class="half"
     >
+      <t
+        raw
+        k="k3k.hostCluster.description"
+        class="text-deemphasized"
+      />
       <LabeledSelect
         v-model:value="selectedParentOption"
+        class="mmt-1"
         data-testid="k3k-host-cluster-select"
         label-key="k3k.hostCluster.label"
         :mode="mode"
@@ -382,7 +380,7 @@ export default {
     </div>
     <div
       v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
-      class="col span-6 centered text-label"
+      class="centered text-label"
     >
       <t
         v-if="!showButtonOnly"
@@ -400,7 +398,7 @@ export default {
     </div>
     <div
       v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
-      class="col span-6 centered"
+      class="centered"
     >
       <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
     </div>

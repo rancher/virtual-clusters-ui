@@ -3,9 +3,10 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import debounce from 'lodash/debounce';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
-import KeyValue from '@shell/components/form/KeyValue.vue';
+import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import ButtonGroup from '@shell/components/ButtonGroup';
 import { RcSection, RcSectionBadges } from '@components/RcSection';
+import { RcContentGroup } from '@components/Layout';
 import { RcTag, RcCounterBadge } from '@components/Pill';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
@@ -102,18 +103,12 @@ const storageClassSelectorOptions = [
 ];
 
 const targetedStorageClasses = ref(null);
-const totalStorageClassCount = ref(0);
 const fetchingMatchingClasses = ref(false);
 const allClassesSelected = computed(() => {
   return Object.keys(storageClassSelector.value).length === 0;
 });
 
 const matchedCount = computed(() => {
-  if (allClassesSelected.value) {
-    return totalStorageClassCount.value;
-  }
-
-  // Fall back to total count while the debounced fetch is still pending
   return targetedStorageClasses.value?.length || 0;
 });
 
@@ -169,33 +164,18 @@ const updateMatchingResources = debounce(async() => {
   }
 }, 5);
 
-const fetchTotalStorageClassCount = async() => {
-  if (!targetMgmtId.value) {
-    totalStorageClassCount.value = 0;
-
-    return;
-  }
-
-  try {
-    const count = await store.dispatch('management/request', {
-      url:    `/k8s/clusters/${ targetMgmtId.value }/v1/counts/count`,
-      method: 'GET',
-    });
-
-    totalStorageClassCount.value = count?.counts?.[STORAGE_CLASS]?.summary?.count || 0;
-  } catch {
-    totalStorageClassCount.value = 0;
-  }
-};
-
 watch(useStorageClassSelector, (neu) => {
   if (neu) {
-    fetchTotalStorageClassCount();
+    updateMatchingResources();
   }
 }, { immediate: true });
 
-watch(storageClassSelector, (neu) => {
-  if (neu && Object.keys(neu).length > 0) {
+watch(storageClassSelector, (neu, old) => {
+  // only re-run the selector query when the selector actually changes
+  // this avoids loading indicators when a new empty row is added
+  const filled = (obj) => JSON.stringify(Object.fromEntries(Object.entries(obj || {}).filter(([k]) => k)));
+
+  if (filled(neu) !== filled(old)) {
     updateMatchingResources();
   }
 }, { immediate: true });
@@ -234,37 +214,24 @@ watch(storageClassSelector, (neu) => {
         class="mt-20 storage-selectors"
         type="secondary"
       >
-        <div class="row storage-row">
-          <div class="col span-8">
-            <div class="row text-muted">
+        <div class="input-row storage-row">
+          <RcContentGroup>
+            <div class="text-muted">
               {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}
             </div>
-            <KeyValue
+            <RcKeyValue
               v-model:value="storageClassSelector"
               :initial-empty-row="true"
               :mode="mode"
               :key-placeholder="t('k3k.policy.synchronization.storageClass.selectorKeyPlaceholder')"
               :value-placeholder="t('k3k.policy.synchronization.storageClass.selectorValuePlaceholder')"
+              :add-label="t('k3k.policy.synchronization.storageClass.addSelectorLabel')"
               :read-allowed="false"
-            >
-              <template #add="{add}">
-                <RcButton
-                  v-if="!isView"
-                  size="small"
-                  variant="secondary"
-                  :class="[addClass]"
-                  data-testid="add_row_item_button"
-                  :disabled="loading || disabled || (keyOptions && filteredKeyOptions.length === 0)"
-                  :aria-label="t('generic.ariaLabel.addKeyValue')"
-                  left-icon="plus"
-                  @click="add()"
-                >
-                  {{ t('k3k.policy.synchronization.storageClass.addSelectorLabel') }}
-                </RcButton>
-              </template>
-            </KeyValue>
-          </div>
-          <div class="col span-4">
+              :use-rc-button="true"
+              add-icon="icon-plus"
+            />
+          </RcContentGroup>
+          <div class="selected-classes-col">
             <RcSection
               mode="with-header"
               :expandable="false"
@@ -282,11 +249,6 @@ watch(storageClassSelector, (neu) => {
                 v-if="fetchingMatchingClasses"
                 class="icon icon-spinner icon-spin icon-lg loading-spinner"
               />
-              <span
-                v-else-if="allClassesSelected"
-              >
-                {{ t('k3k.policy.synchronization.storageClass.addLabelsHint') }}
-              </span>
               <div
                 v-else
                 class="selected-classes-list"
@@ -318,35 +280,26 @@ watch(storageClassSelector, (neu) => {
   gap: 16px;
 }
 
-.storage-selectors :deep(.rc-status-badge.none) {
-  color: var(--body-text)
-}
-
-.theme-dark .storage-selectors :deep(.rc-status-badge.none) {
-  background: var(--rc-inactive-background);
-  border-color: var(--rc-inactive-border);
-}
-
-.theme-light .storage-selectors :deep(.rc-status-badge.none) {
-  background: var(--card-badge-text);
-  border-color: var(--card-badge-text);
-}
-
 .storage-row {
   position: relative;
+  display: flex;
 
-  .col.span-4 {
+  > .rc-content-group {
+    flex: 0 0 calc(66.66% - var(--gap-md) / 2);
+    min-width: 0;
+  }
+
+  .selected-classes-col {
     position: absolute;
     top: 0;
-    bottom: 0;
     right: 0;
-    width: 33.33%;
+    bottom: 0;
+    width: calc(33.33% - var(--gap-md) / 2);
     overflow-y: auto;
   }
 }
 
 .storage-selectors .selected-classes {
-  overflow-y: auto;
   position: relative;
 
   :deep(.title){

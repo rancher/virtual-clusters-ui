@@ -74,16 +74,21 @@ echo -e "${YELLOW}Setting up the Rancher Prime repo..........${RESET}"
 helm repo add $RANCHER_HELM_REPO_NAME $RANCHER_HELM_REPO_URL
 helm repo update
 
-# A single channel carries releases for every minor line
-# so we have to find the latest version that matches the major/minor specified in CHART_VERSION_PREFIX
-RANCHER_CHART_VERSION=$(helm search repo $RANCHER_HELM_REPO_NAME/rancher --versions --devel -o json \
-  | jq -r --arg prefix "${CHART_VERSION_PREFIX}." --arg repo "$RANCHER_HELM_REPO_URL" '
-      [.[] | select(.version | startswith($prefix))] as $matches
-      | if ($matches | length) == 0
-        then error("No chart version found on prefix \($prefix) in \($repo)")
-        else ($matches | first | .version)
-        end
-    ')
+# This one helm repo has releases from each minor line so we can't just take the latest release from it
+# we want the newest version that matches the major/minor specified in CHART_VERSION_PREFIX
+# head builds are versioned <x.y.z>-<commit sha>-head which means semver sorts them by sha, not age
+# read the created timestamp to pick one by age
+RANCHER_HELM_INDEX="$(helm env HELM_REPOSITORY_CACHE)/${RANCHER_HELM_REPO_NAME}-index.yaml"
+RANCHER_CHART_VERSION=$(PREFIX="${CHART_VERSION_PREFIX}." yq -r '
+    [.entries.rancher[] | select(.version | test("^" + strenv(PREFIX)))]
+    | sort_by(.created)
+    | reverse
+    | .[0].version // ""
+  ' "$RANCHER_HELM_INDEX")
+if [ -z "$RANCHER_CHART_VERSION" ]; then
+  echo -e "${RED}No chart version found on prefix ${CHART_VERSION_PREFIX}. in ${RANCHER_HELM_REPO_URL}${RESET}"
+  exit 1
+fi
 echo -e "${CYAN}Selected Rancher chart version: ${RANCHER_CHART_VERSION}${RESET}"
 
 echo -e "${YELLOW}Installing Rancher..........${RESET}"

@@ -43,7 +43,7 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
 </script>
 
 <template>
-  <div class="col span-6">
+  <div class="input-row">
     <LabeledSelect
       :value="secretName"
       label-key="k3k.secretMounts.secretName.label"
@@ -52,45 +52,47 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
       :loading="loadingSecrets"
       :mode="mode"
       :reduce="(s: string) => s"
+      class="half"
       @update:value="emit('update:secretName', $event)"
     />
   </div>
   <div>
-    <div class="col span-6">
+    <div class="input-row">
       <LabeledInput
         :value="mountPath"
         label-key="k3k.secretMounts.mountPath.label"
         placeholder-key="k3k.secretMounts.mountPath.placeholder"
         :mode="mode"
+        class="half mmb-1"
         @update:value="emit('update:mountPath', $event)"
       />
     </div>
-    <div class="input-description mmt-1">
-      <t
-        k="k3k.secretMounts.mountPath.description"
-        raw
-      />
-    </div>
+    <t
+      k="k3k.secretMounts.mountPath.description"
+      class="text-label"
+      raw
+    />
   </div>
+
   <div>
-    <div class="col span-6">
+    <div class="input-row">
       <LabeledInput
         :value="subPath"
         label-key="k3k.secretMounts.subPath.label"
         placeholder-key="k3k.secretMounts.subPath.placeholder"
         :mode="mode"
+        class="half mmb-1"
         @update:value="emit('update:subPath', $event)"
       />
     </div>
-    <div class="input-description mmt-1">
-      <t
-        k="k3k.secretMounts.subPath.description"
-        raw
-      />
-    </div>
+    <t
+      k="k3k.secretMounts.subPath.description"
+      class="text-label"
+      raw
+    />
   </div>
 
-  <div class="col span-12">
+  <div class="input-row">
     <RadioGroup
       :value="role || 'all'"
       label-key="k3k.secretMounts.role.label"
@@ -113,10 +115,6 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
 </template>
 
 <style scoped>
-.input-description {
-    font-size: 12px;
-}
-
 :deep(.radio-group h4),:deep(.radio-group.label){
     margin-bottom: 8px;
 }

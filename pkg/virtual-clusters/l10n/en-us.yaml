@@ -1,13 +1,35 @@
 k3k:
   group: Create a Virtual Cluster
   label: K3K
+  hcp:
+    registration:
+      title: Registration command
+      description: Run this command on each of the existing Linux machines you want to register. Since this is a virtual cluster in HCP mode, only worker nodes can be registered.
+      noServerAddress: No server address reachable by external workers was found. Add an address the workers can reach to the virtual cluster's TLS SANs.
+      pending: Waiting for the virtual cluster to provision. The command will be available when its token, K3s version and server address are ready.
+    advanced:
+      title: Advanced command options
+      description: Additional control over how the node will be registered. These values will often need to be different for each registered node.
+      nodeName: Node name
+      nodeExternalIp: Node public IP
+      nodeIp: Node private IP
+      insecure: 'Insecure: Select this to skip TLS verification when downloading the install script.'
+      labels:
+        title: Node labels
+        description: Key/value pairs attached to the node to identify its attributes and target it for specific workload scheduling.
+        add: Add node label
+      taints:
+        title: Taints
+        description: Restrictions that prevent pods from scheduling on this node without a matching toleration.
+        add: Add Taint
   policy:
     label: Virtual Cluster Policy
     placeholder: Select a policy
-    noneWarning: Clusters created without a policy should only be used for testing purposes.
+    noneWarning: Clusters created without a policy should only be used for testing purposes. 
+    description: Virtual clusters should be assigned to Virtual Cluster Policies. <br/>  <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/virtualclusterpolicy.html" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster policies <icon class="icon icon-external-link icon-sm"/></a>
     noneOption: No policy
     tabs:
-      config: Config
+      config: Configuration
       resourceSync: Resource Synchronization
       resourceAllocation: Resource Allocation
       advanced: Advanced
@@ -79,14 +101,24 @@ k3k:
       tooltip: 'Virtual clusters are isolated by default, able to communicate only with other virtual clusters within the same policy. This isolation is enforced by a default network policy. You can disable this cluster isolation, which allows the virtual cluster to communicate with virtual clusters outside of its policy. '
       learnMore: Learn more about virtual cluster network policies
       checkbox: Disable cluster isolation
+    notAllowed:
+      title: Not available in {mode} mode
+      synchronization:
+        virtual: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: In this mode, worker nodes run standard k3s agents that have their own CNI and storage configured at install time. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+      agents:
+        hcp: In this mode, worker nodes run standard k3s agents that you provide and manage yourself, so the number of agent pods is not configurable here. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+      security:
+        hcp: Host-level pod security policies do not apply to external worker nodes. Configure pod security directly within the virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+      agentScheduling:
+        hcp: Workload worker nodes are registered externally rather than deployed as agent pods on the host cluster. Host-level pod scheduling rules (affinity and anti-affinity) cannot be applied to external machines. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+      isolation:
+        hcp: Cluster isolation uses host-level Kubernetes network policies to separate virtual cluster workloads on the same host. Because HCP workloads execute on external nodes outside the host network, host-level network isolation settings do not apply. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
     synchronization:
       label: Resource Synchronization
       tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
       ingressCheckbox: Ingresses
       priorityClassCheckbox: Priority Classes
-      notAllowed:
-        title: Not available in virtual mode
-        description: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn mode about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       storageClass:
         title: Storage Classes
         tooltip: In <code>shared</code> mode, by default all storage classes are synchronized from the host to the virtual cluster. You can disable that. You can also use label selectors to sync only a subset of storage classes.
@@ -94,7 +126,7 @@ k3k:
         allStorageClasses: All storage classes
         manuallySelectStorageClasses: Select a subset
         selectorsTitle: Filter by Label
-        selectorsDescription: Add labels to filter down the storage classes you want to sync. Multiple labels will be ANDed.
+        selectorsDescription: By default, all storage classes are selected. Add labels to filter down the storage classes you want to sync. Multiple labels will be ANDed.
         addSelectorLabel: Add label
         selectorKeyPlaceholder: e.g. csi-driver
         selectorValuePlaceholder: e.g. aws-ebs
@@ -119,6 +151,10 @@ k3k:
     affinity:
       serverNodeScheduling: Server Scheduling
       agentNodeScheduling: Agent Scheduling
+      serverDescription: Add affinity and anti-affinity selectors for the server pods.
+      agentDescription: Add affinity and anti-affinity selectors for the agent pods.
+      nodeSelectors: Node Selectors
+      podSelectors: Pod Selectors
     listView:
       modeHeader: Mode
       projectHeader: Assigned Projects
@@ -146,7 +182,7 @@ k3k:
     createLabel: Create a new Namespace
   hostCluster:
     label: Host cluster
-    placeholder: The cluster that will host this virtual cluster
+    description: The host cluster that the virtual cluster will run in.
     tooltip: The host must have the K3K helm chart installed
     notInstalled: The K3K controller must be installed in each cluster to be used as a host for virtual clusters. Follow manual installation instructions <a aria-label='link to the K3K github repository' href='https://github.com/rancher/K3K/tree/main?tab=readme-ov-file#install-the-K3K-controller' target="_blank" rel="noopener noreferrer nofollow">here</a> or click below to install the K3K chart with default values.
     installK3k: Install K3K
@@ -154,10 +190,20 @@ k3k:
     k3kVersionMismatch: There is a newer version of the K3K controller compatible with this Rancher installation. Navigate to the host cluster's <a target="_blank" rel="nofollow noopener noreferrer" href="{url}"> Apps page</a> to upgrade the SUSE Virtual Cluster Engine app.
   mode:
     label: Virtual cluster mode
-    shared: Shared
-    virtual: Virtual
-    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation.
+    shared: 
+      label: Shared
+      description: Default, better performance
+    virtual: 
+      label: Virtual
+      description: Advanced Isolation
+    hcp:
+      label: HCP
+      description: Bring your own worker nodes
+    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+  tabs:
+    hcp: HCP
   agents:
+    label: Agents
     number:
       label: Number of Agent Pods
     envVars:
@@ -165,6 +211,7 @@ k3k:
       addLabel: Add Env Var
   servers:
     title: Server and Agents
+    label: Server
     number:
       label: Number of Server Pods
     envVars:
@@ -178,6 +225,9 @@ k3k:
     tooltip: Add a node selector to all server and agent pods. In <code>shared</code> mode, the node selector will also be applied to workloads.
     addLabel: Add Label
     warning: In SUSE Virtual Cluster Engine v1.1.0 and onwards, the 'Topology' tab is the recommended way to configure server and agent pod scheduling.
+  networking:
+    addresses:
+      label: Addressing
   clusterCIDR:
     label: Cluster CIDR
     placeholder: 10.42.0.0/16
@@ -189,7 +239,8 @@ k3k:
     label: Cluster DNS
     placeholder: "10.43.0.10"
   tlsSANs:
-    label: TLS Alternate Names
+    title: Certificates
+    label: TLS Subject Alternative Names
   k3sVersion:
     label: K3s Version
     default: Same k8s version as host
@@ -205,7 +256,7 @@ k3k:
         add: Add Annotation
       ingressClassName:
         label: Ingress Class Name
-        description: This option will make TLS Subject Alternative Names mandatory. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
+        description: This option will make TLS Subject Alternative Names mandatory. <br/> <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#expose">Learn more about exposing the API server using an Ingress <icon class="icon icon-external-link icon-sm"/></a> 
     loadbalancer:
       label: Load Balancer
       description: Set 0 or a negative value if you don't want to expose a port
@@ -227,7 +278,7 @@ k3k:
       label: Storage Request Size
     storageClass:
       label: Storage Class
-      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <br/> <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
   secretMounts:
     title: Mounting Secrets
     description: Mount secrets as single files inside agent or server pods to make them available for custom <a target="_blank" rel="nofollow noopener noreferrer" href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/how-tos-for-user/addons.html">add-ons <icon class="icon icon-external-link icon-sm"/></a>, <a target="_blank" rel="nofollow noopener noreferrer" href="https://scc.suse.com/rancher-docs/rancherprime/latest/en/suse-virtual-cluster/installation-and-upgrades/k3k-air-gap.html#_enforce_registry_in_virtual_clusters_using_registries_yaml" >registry configuration <icon class="icon icon-external-link icon-sm"/></a>, certificates, or other settings.

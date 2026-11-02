@@ -11,7 +11,10 @@ import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
 import { STORAGE_CLASS } from '@shell/config/types';
 import { RcButton } from '@components/RcButton';
+import { Banner } from '@components/Banner';
+import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { useI18n } from '@shell/composables/useI18n';
+import { SYNC_ENABLED } from '../../labels-annotations';
 
 const props = defineProps({
   mode: {
@@ -29,6 +32,11 @@ const props = defineProps({
     default: undefined
   },
 
+  defaultStorageClass: {
+    type:    String,
+    default: undefined
+  },
+
   /**
    * Provisioning cluster object. Required when this component is rendered inside a
    * Resource Drawer (e.g. policy form during cluster creation) where `currentCluster`
@@ -40,10 +48,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:enabled', 'update:selector', 'error']);
+const emit = defineEmits(['update:enabled', 'update:selector', 'update:defaultStorageClass', 'error']);
 
 const store = useStore();
-const tn = useI18n(store);
+const { t: tn } = useI18n(store);
 
 /**
  * Resolved management cluster ID – prefers parentCluster (drawer context) but
@@ -58,6 +66,21 @@ const targetMgmtId = computed(() => {
 const hasClusterStoreContext = computed(() => !!store.getters.currentCluster);
 
 const isView = computed(() => props.mode === _VIEW);
+
+const defaultStorageClassNoneOption = tn('k3k.policy.synchronization.storageClass.defaultStorageClass.noneOption');
+const hostStorageClassNames = ref([]);
+const loadingHostStorageClasses = ref(false);
+
+const defaultStorageClassOptions = computed(() => [defaultStorageClassNoneOption, ...hostStorageClassNames.value]);
+
+const defaultStorageClassValue = computed({
+  get: () => props.defaultStorageClass || defaultStorageClassNoneOption,
+  set: (neu) => {
+    emit('update:defaultStorageClass', neu === defaultStorageClassNoneOption ? undefined : neu);
+  }
+});
+
+const isSyncDisabledByLabel = (sc) => sc?.metadata?.labels?.[SYNC_ENABLED] === 'false';
 
 const storageClassEnabled = computed({
   get: () => props.enabled,
@@ -188,6 +211,29 @@ const fetchTotalStorageClassCount = async() => {
   }
 };
 
+const fetchHostStorageClassNames = async() => {
+  // the select is read-only in view mode, including the policy drawer in cluster creation
+  if (isView.value) {
+    return;
+  }
+
+  loadingHostStorageClasses.value = true;
+
+  try {
+    const storageClasses = await store.dispatch('cluster/findAll', { type: STORAGE_CLASS });
+
+    hostStorageClassNames.value = storageClasses.map((sc) => sc.metadata.name);
+  } catch (err) {
+    const message = err?.message || err?.data || String(err);
+
+    emit('error', `${ tn('k3k.policy.synchronization.storageClass.errorFetchingStorageClasses') } ${ message }`);
+  } finally {
+    loadingHostStorageClasses.value = false;
+  }
+};
+
+fetchHostStorageClassNames();
+
 watch(useStorageClassSelector, (neu) => {
   if (neu) {
     fetchTotalStorageClassCount();
@@ -208,7 +254,26 @@ watch(storageClassSelector, (neu) => {
     mode="with-header"
     :expandable="true"
     type="secondary"
+    class="storage-section"
   >
+    <div>
+      <div class="row">
+        <div class="col span-6">
+          <LabeledSelect
+            v-model:value="defaultStorageClassValue"
+            :mode="mode"
+            :loading="loadingHostStorageClasses"
+            :options="defaultStorageClassOptions"
+            :label="t('k3k.policy.synchronization.storageClass.defaultStorageClass.label')"
+            data-testid="k3k-policy-default-storage-class"
+          />
+        </div>
+      </div>
+      <div class="text-muted mmt-1">
+        {{ t('k3k.policy.synchronization.storageClass.defaultStorageClass.description') }}
+      </div>
+    </div>
+
     <t
       class="text-muted"
       k="k3k.policy.synchronization.storageClass.tooltip"
@@ -219,19 +284,29 @@ watch(storageClassSelector, (neu) => {
       :mode="mode"
       :label="t('k3k.policy.synchronization.storageClass.checkbox')"
     />
-    <div v-if="storageClassEnabled">
+    <Banner
+      v-if="!storageClassEnabled"
+      color="info"
+      :label="t('k3k.policy.synchronization.storageClass.defaultStorageClass.syncDisabledWarning')"
+    />
+    <template v-if="storageClassEnabled">
       <ButtonGroup
         v-model:value="useStorageClassSelector"
         :options="storageClassSelectorOptions"
         :disabled="isView"
         active-class="role-secondary"
       />
+      <Banner
+        v-if="useStorageClassSelector"
+        color="info"
+        :label="t('k3k.policy.synchronization.storageClass.defaultStorageClass.alwaysSyncedInfo', {}, true)"
+      />
       <RcSection
         v-if="useStorageClassSelector"
         :title="t('k3k.policy.synchronization.storageClass.selectorsTitle')"
         mode="with-header"
         :expandable="true"
-        class="mt-20 storage-selectors"
+        class="storage-selectors"
         type="secondary"
       >
         <div class="row storage-row">
@@ -295,8 +370,16 @@ watch(storageClassSelector, (neu) => {
                   v-for="(sc, i) in targetedStorageClasses || []"
                   :key="i"
                   type="inactive"
+                  :disabled="isSyncDisabledByLabel(sc)"
                 >
                   {{ sc.nameDisplay }}
+                  <i
+                    v-if="isSyncDisabledByLabel(sc)"
+                    v-clean-tooltip="t('k3k.policy.synchronization.storageClass.syncDisabledByLabel', {}, true)"
+                    class="icon icon-info"
+                    tabindex="0"
+                    :aria-label="t('k3k.policy.synchronization.storageClass.syncDisabledByLabel', {}, true)"
+                  />
                 </RcTag>
               </div>
             </RcSection>
@@ -309,11 +392,17 @@ watch(storageClassSelector, (neu) => {
           />
         </template>
       </RcSection>
-    </div>
+    </template>
   </RcSection>
 </template>
 
 <style lang="scss" scoped>
+
+.storage-section :deep(.banner) {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
 :deep(.section-content) {
   gap: 16px;
 }

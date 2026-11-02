@@ -210,6 +210,22 @@ export default {
       }
     },
 
+    defaultStorageClass: {
+      get() {
+        return this.value?.spec?.storage?.defaultStorageClassName;
+      },
+      set(neu) {
+        if (neu) {
+          set(this.value, 'spec.storage.defaultStorageClassName', neu);
+        } else if (this.value.spec.storage) {
+          delete this.value.spec.storage.defaultStorageClassName;
+          if (isEmpty(this.value.spec.storage)) {
+            delete this.value.spec.storage;
+          }
+        }
+      }
+    },
+
     isSharedMode() {
       return this.value?.spec?.allowedMode === MODES.SHARED;
     },
@@ -342,6 +358,7 @@ export default {
           v-model:ingresses="ingresses"
           v-model:priority-classes="priorityClasses"
           v-model:storage-classes="storageClasses"
+          v-model:default-storage-class="defaultStorageClass"
           :mode="mode"
           :parent-cluster="parentCluster"
           @error="errors.push($event)"

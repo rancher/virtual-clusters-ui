@@ -111,6 +111,13 @@ k3k:
           { count, plural,
             one {All storage classes selected}
             other {All {count} storage classes selected}}
+        syncDisabledByLabel: This storage class is restricted by the <code>k3k.io/sync-enabled=false</code> label. Remove it to allow synchronization.
+        defaultStorageClass:
+          label: Default storage class (optional)
+          description: Select the storage class to be used by default in persistent volume claims.
+          noneOption: Host default
+          syncDisabledWarning: The selected default storage class will still be synchronized, even when general storage class synchronization is disabled.
+          alwaysSyncedInfo: The default storage class is always synchronized; you don't need to select it.
     quota: 
       headers:
         resourceType: Resource Type

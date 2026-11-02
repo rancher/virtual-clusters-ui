@@ -12,7 +12,7 @@ export const SYNC_CONTEXT = {
 export default {
   name: 'K3kResourceSync',
 
-  emits: ['update:ingresses', 'update:priorityClasses', 'update:storageClasses', 'error'],
+  emits: ['update:ingresses', 'update:priorityClasses', 'update:storageClasses', 'update:defaultStorageClass', 'error'],
 
   components: {
     Checkbox,
@@ -38,6 +38,11 @@ export default {
     storageClasses: {
       type:    Object,
       default: () => ({})
+    },
+
+    defaultStorageClass: {
+      type:    String,
+      default: undefined
     },
 
     context: {
@@ -116,10 +121,12 @@ export default {
     v-if="isPolicyContext"
     :enabled="storageClasses?.enabled || false"
     :selector="storageClasses?.selector"
+    :default-storage-class="defaultStorageClass"
     :mode="mode"
     :parent-cluster="parentCluster"
     @update:enabled="$emit('update:storageClasses', { ...storageClasses, enabled: $event })"
     @update:selector="$emit('update:storageClasses', { ...storageClasses, selector: $event })"
+    @update:default-storage-class="$emit('update:defaultStorageClass', $event)"
     @error="$emit('error', $event)"
   />
 </template>

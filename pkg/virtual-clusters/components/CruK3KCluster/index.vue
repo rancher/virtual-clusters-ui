@@ -30,7 +30,9 @@ import { allHash } from '@shell/utils/promise';
 import { CLUSTER_BADGE } from '@shell/config/labels-annotations';
 
 import { K3K } from '../../types';
-import { PROVIDER, PARENT_CLUSTER, PARENT_CLUSTER_DISPLAY, K3K_NAMESPACE } from '../../labels-annotations';
+import {
+  PROVIDER, PARENT_CLUSTER, PARENT_CLUSTER_DISPLAY, K3K_NAMESPACE, K3K_MODE
+} from '../../labels-annotations';
 import InstallK3k from '../InstallK3k.vue';
 import Networking from './Networking.vue';
 import Storage from './Storage.vue';
@@ -584,6 +586,8 @@ export default {
 
           this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY] = this.parentCluster.displayName || this.parentCluster.name;
           this.value.metadata.annotations[K3K_NAMESPACE] = this.k3kCluster.metadata.namespace;
+          // copy mode into the Rancher cluster object so it can be easily read from detail view/telemetry w/o loading the host cluster's steve store
+          this.value.metadata.annotations[K3K_MODE] = this.k3kCluster.spec.mode;
         } else {
           // save existing k3kCluster
           await cluster.$dispatch('request', {

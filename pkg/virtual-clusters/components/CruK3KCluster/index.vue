@@ -591,7 +591,7 @@ export default {
 
           this.value.metadata.annotations[PARENT_CLUSTER_DISPLAY] = this.parentCluster.displayName || this.parentCluster.name;
           this.value.metadata.annotations[K3K_NAMESPACE] = this.k3kCluster.metadata.namespace;
-          // spec.mode lives in the host cluster; the copy here is readable from the management store
+          // copy mode into the Rancher cluster object so it can be easily read from detail view/telemetry w/o loading the host cluster's steve store
           this.value.metadata.annotations[K3K_MODE] = this.k3kCluster.spec.mode;
         } else {
           // save existing k3kCluster

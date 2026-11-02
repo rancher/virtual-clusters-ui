@@ -57,7 +57,6 @@ export default function(plugin: IPlugin): void {
   const fetchVersionData = async(store: any) => await versions.fetch({ store });
 
   plugin.addNavHooks(fetchVersionData, undefined, undefined, async(store: any) => {
-    // not awaited: login waits for every extension's onLogIn hook
     fetchTelemetryClusters(store);
 
     try {

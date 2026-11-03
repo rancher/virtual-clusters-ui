@@ -11,7 +11,6 @@ import { RcTag, RcCounterBadge } from '@components/Pill';
 import Checkbox from '@components/Form/Checkbox/Checkbox';
 import { matching } from '@shell/utils/selector-typed';
 import { STORAGE_CLASS } from '@shell/config/types';
-import { RcButton } from '@components/RcButton';
 import { useI18n } from '@shell/composables/useI18n';
 
 const props = defineProps({

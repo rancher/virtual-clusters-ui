@@ -163,9 +163,9 @@ export default {
         raw
         k="k3k.storage.storageClass.description"
       />
-      <div class="input-row mmt-1">
+      <div class="k3k-input-row mmt-1">
         <LabeledSelect
-          class="half"
+          class="k3k-half"
           :disabled="storageClassOptions.length === 1"
           :value="storageClassName || t('k3k.storage.noneOption')"
           :loading="loadingStorageClasses"
@@ -181,7 +181,7 @@ export default {
           output-modifier
           :value="storageRequestSize || ''"
           :mode="mode"
-          class="half"
+          class="k3k-half"
           label-key="k3k.storage.storageRequestSize.label"
           @update:value="$emit('update:storageRequestSize', $event)"
         />

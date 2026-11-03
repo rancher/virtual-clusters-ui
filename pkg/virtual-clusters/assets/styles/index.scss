@@ -7,7 +7,7 @@
 }
 
 // space inputs evenly w/ 16px gap between
-.input-row {
+.k3k-input-row {
   display: flex;
   align-items: flex-start;
   gap: var(--gap-md);
@@ -18,7 +18,7 @@
   }
   // opt a single child out of using the entire row
   // slightly less than half width to match the width of one input in a two-input row
-  &>.half {
+  &>.k3k-half {
     flex-grow: 0;
     flex-basis: calc(50% - var(--gap));
     min-width: 0;

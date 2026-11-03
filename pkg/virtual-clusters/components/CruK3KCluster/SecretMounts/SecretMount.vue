@@ -43,7 +43,7 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
 </script>
 
 <template>
-  <div class="input-row">
+  <div class="k3k-input-row">
     <LabeledSelect
       :value="secretName"
       label-key="k3k.secretMounts.secretName.label"
@@ -52,18 +52,18 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
       :loading="loadingSecrets"
       :mode="mode"
       :reduce="(s: string) => s"
-      class="half"
+      class="k3k-half"
       @update:value="emit('update:secretName', $event)"
     />
   </div>
   <div>
-    <div class="input-row">
+    <div class="k3k-input-row">
       <LabeledInput
         :value="mountPath"
         label-key="k3k.secretMounts.mountPath.label"
         placeholder-key="k3k.secretMounts.mountPath.placeholder"
         :mode="mode"
-        class="half mmb-1"
+        class="k3k-half mmb-1"
         @update:value="emit('update:mountPath', $event)"
       />
     </div>
@@ -75,13 +75,13 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
   </div>
 
   <div>
-    <div class="input-row">
+    <div class="k3k-input-row">
       <LabeledInput
         :value="subPath"
         label-key="k3k.secretMounts.subPath.label"
         placeholder-key="k3k.secretMounts.subPath.placeholder"
         :mode="mode"
-        class="half mmb-1"
+        class="k3k-half mmb-1"
         @update:value="emit('update:subPath', $event)"
       />
     </div>
@@ -92,7 +92,7 @@ const roleOptions: { label: string; value: SecretMountRole }[] = [
     />
   </div>
 
-  <div class="input-row">
+  <div class="k3k-input-row">
     <RadioGroup
       :value="role || 'all'"
       label-key="k3k.secretMounts.role.label"

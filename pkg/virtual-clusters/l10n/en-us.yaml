@@ -5,7 +5,7 @@ k3k:
     registration:
       title: Registration command
       description: Run this command on each of the existing Linux machines you want to register. Since this is a virtual cluster in HCP mode, only worker nodes can be registered.
-      noServerAddress: No server address reachable by external workers was found. Add an address the workers can reach to the virtual cluster's TLS SANs.
+      noServerAddress: No server address reachable by external workers was found. Expose the API server with an ingress, load balancer or node port, and add an address the workers can reach to the virtual cluster's TLS SANs.
       pending: Waiting for the virtual cluster to provision. The command will be available when its token, K3s version and server address are ready.
     advanced:
       title: Advanced command options
@@ -21,12 +21,11 @@ k3k:
       taints:
         title: Taints
         description: Restrictions that prevent pods from scheduling on this node without a matching toleration.
-        add: Add Taint
+        add: Add taint
   policy:
     label: Virtual Cluster Policy
     placeholder: Select a policy
-    noneWarning: Clusters created without a policy should only be used for testing purposes. 
-    description: Virtual clusters should be assigned to Virtual Cluster Policies. <br/>  <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/virtualclusterpolicy.html" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster policies <icon class="icon icon-external-link icon-sm"/></a>
+    description: Virtual clusters should be assigned to Virtual Cluster Policies. <br/>  <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/virtualclusterpolicy.html" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster policies <icon class="icon icon-external-link icon-sm"/></a>
     noneOption: No policy
     tabs:
       config: Configuration
@@ -104,16 +103,16 @@ k3k:
     notAllowed:
       title: Not available in {mode} mode
       synchronization:
-        virtual: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
-        hcp: In this mode, worker nodes run standard k3s agents that have their own CNI and storage configured at install time. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        virtual: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: In this mode, worker nodes run standard k3s agents that have their own CNI and storage configured at install time. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       agents:
-        hcp: In this mode, worker nodes run standard k3s agents that you provide and manage yourself, so the number of agent pods is not configurable here. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: In this mode, worker nodes run standard k3s agents that you provide and manage yourself, so the number of agent pods is not configurable here. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       security:
-        hcp: Host-level pod security policies do not apply to external worker nodes. Configure pod security directly within the virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: Host-level pod security policies do not apply to external worker nodes. Configure pod security directly within the virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       agentScheduling:
-        hcp: Workload worker nodes are registered externally rather than deployed as agent pods on the host cluster. Host-level pod scheduling rules (affinity and anti-affinity) cannot be applied to external machines. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: Workload worker nodes are registered externally rather than deployed as agent pods on the host cluster. Host-level pod scheduling rules (affinity and anti-affinity) cannot be applied to external machines. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       isolation:
-        hcp: Cluster isolation uses host-level Kubernetes network policies to separate virtual cluster workloads on the same host. Because HCP workloads execute on external nodes outside the host network, host-level network isolation settings do not apply. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow" href="" >Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: Cluster isolation uses host-level Kubernetes network policies to separate virtual cluster workloads on the same host. Because HCP workloads execute on external nodes outside the host network, host-level network isolation settings do not apply. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
     synchronization:
       label: Resource Synchronization
       tooltip: In <code>shared</code> mode, required resources are synchronized from the virtual cluster to the host cluster. You can also sync ingresses and priority classes.
@@ -138,7 +137,6 @@ k3k:
             one {1 storage class selected}
             other {{count} storage classes selected}}
         selectedClasses: Selected classes
-        addLabelsHint: Add labels to filter the available storage classes
         allStorageClassesSelected: |-
           { count, plural,
             one {All storage classes selected}
@@ -195,11 +193,11 @@ k3k:
       description: Default, better performance
     virtual: 
       label: Virtual
-      description: Advanced Isolation
+      description: Advanced isolation
     hcp:
       label: HCP
       description: Bring your own worker nodes
-    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+    tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation, or the HCP mode to run only the control plane in the host cluster and register your own worker nodes. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
   tabs:
     hcp: HCP
   agents:
@@ -223,6 +221,7 @@ k3k:
   nodeSelector:
     label: Node Selector
     tooltip: Add a node selector to all server and agent pods. In <code>shared</code> mode, the node selector will also be applied to workloads.
+    hcpTooltip: Add a node selector to all server pods. In HCP mode, workloads run on the registered worker nodes.
     addLabel: Add Label
     warning: In SUSE Virtual Cluster Engine v1.1.0 and onwards, the 'Topology' tab is the recommended way to configure server and agent pod scheduling.
   networking:
@@ -247,6 +246,7 @@ k3k:
   expose:
     label: Direct API Server Exposure
     description: Expose the virtual cluster's API server. By default, the API server is only exposed as a ClusterIP, which is relatively secure but difficult to access from outside the cluster.
+    hcpRequired: In HCP mode, worker nodes outside the host cluster must be able to reach the API server. Select Ingress, Load Balancer or Node Port.
     notExposed:
       label: Not Exposed
     ingress:

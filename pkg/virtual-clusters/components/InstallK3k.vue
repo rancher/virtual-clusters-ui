@@ -352,12 +352,12 @@ export default {
 
 <template>
   <div
-    class="input-row"
-    :class="{ half: !showingInstallationContent }"
+    class="k3k-input-row"
+    :class="{ 'k3k-half': !showingInstallationContent }"
   >
     <div
       v-if="!showButtonOnly"
-      class="half"
+      class="k3k-half"
     >
       <t
         raw
@@ -373,7 +373,6 @@ export default {
         :disabled="!isCreate"
         :options="parentClusterOptions"
         :loading="loadingClusters"
-        :placeholder="t('k3k.hostCluster.placeholder')"
         :rules="rules.hostCluster"
         required
       />

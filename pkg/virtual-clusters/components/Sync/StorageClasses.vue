@@ -214,7 +214,7 @@ watch(storageClassSelector, (neu, old) => {
         class="mt-20 storage-selectors"
         type="secondary"
       >
-        <div class="input-row storage-row">
+        <div class="k3k-input-row storage-row">
           <RcContentGroup>
             <div class="text-muted">
               {{ t('k3k.policy.synchronization.storageClass.selectorsDescription') }}

@@ -8,6 +8,7 @@ import { RcSection } from '@components/RcSection';
 import { RcContentGroup } from '@components/Layout';
 import cloneDeep from 'lodash/cloneDeep';
 import { MODES } from '../Mode.vue';
+import SectionError from '../SectionError.vue';
 
 export default {
   name: 'K3kClusterNetworking',
@@ -20,7 +21,8 @@ export default {
     RadioButton,
     RcKeyValue,
     RcSection,
-    RcContentGroup
+    RcContentGroup,
+    SectionError
   },
 
   props: {
@@ -83,7 +85,7 @@ export default {
       exposeMode = exposeModes.INGRESS;
     } else if (loadBalancer) {
       exposeMode = exposeModes.LOAD_BALANCER;
-    } else if (nodePort && ((nodePort.serverPort >= 30000 && nodePort.serverPort <= 32767) || (nodePort.etcdPort >= 30000 && nodePort.etcdPort <= 32767)) ) {
+    } else if (nodePort) {
       exposeMode = exposeModes.NODE_PORT;
     } else {
       exposeMode = exposeModes.NONE;
@@ -127,6 +129,10 @@ export default {
   computed: {
     isShared() {
       return this.virtualClusterMode === MODES.SHARED;
+    },
+
+    exposeError() {
+      return (this.rules?.expose || []).map((rule) => rule(this.expose)).find(Boolean) || '';
     }
   }
 
@@ -143,24 +149,24 @@ export default {
       :title="t('k3k.networking.addresses.label')"
     >
       <RcContentGroup>
-        <div class="input-row">
+        <div class="k3k-input-row">
           <LabeledInput
             :value="clusterCIDR"
             label-key="k3k.clusterCIDR.label"
             placeholder-key="k3k.clusterCIDR.placeholder"
             :mode="mode"
-            class="half"
+            class="k3k-half"
             @update:value="e=>$emit('update:clusterCIDR', e)"
           />
         </div>
         <div>
-          <div class="input-row">
+          <div class="k3k-input-row">
             <LabeledInput
               :value="serviceCIDR"
               label-key="k3k.serviceCIDR.label"
               placeholder-key="k3k.serviceCIDR.placeholder"
               :mode="mode"
-              class="half"
+              class="k3k-half"
               @update:value="e=>$emit('update:serviceCIDR', e)"
             />
           </div>
@@ -170,13 +176,13 @@ export default {
             class="text-label"
           />
         </div>
-        <div class="input-row">
+        <div class="k3k-input-row">
           <LabeledInput
             :value="clusterDNS"
             label-key="k3k.clusterDNS.label"
             placeholder-key="k3k.clusterDNS.placeholder"
             :mode="mode"
-            class="half"
+            class="k3k-half"
             @update:value="e=>$emit('update:clusterDNS', e)"
           />
         </div>
@@ -190,7 +196,7 @@ export default {
       :expanded="false"
       :title="t('k3k.tlsSANs.title')"
     >
-      <div class="input-row">
+      <div class="k3k-input-row">
         <ArrayList
           :value="tlsSANs"
           :protip="false"
@@ -220,6 +226,7 @@ export default {
           raw
           k="k3k.expose.description"
         />
+        <SectionError :message="exposeError" />
         <div>
           <div class="mmb-2">
             <RadioButton
@@ -247,12 +254,12 @@ export default {
             >
               <RcContentGroup>
                 <div>
-                  <div class="input-row">
+                  <div class="k3k-input-row">
                     <LabeledInput
                       v-model:value="expose.ingress.ingressClassName"
                       label-key="k3k.expose.ingress.ingressClassName.label"
                       :mode="mode"
-                      class="half"
+                      class="k3k-half"
                     />
                   </div>
                   <t
@@ -261,7 +268,7 @@ export default {
                     raw
                   />
                 </div>
-                <div class="input-row">
+                <div class="k3k-input-row">
                   <RcKeyValue
                     v-model:value="expose.ingress.annotations"
                     :mode="mode"
@@ -298,7 +305,7 @@ export default {
               :title="t('k3k.expose.loadbalancer.label')"
             >
               <RcContentGroup>
-                <div class="input-row">
+                <div class="k3k-input-row">
                   <div>
                     <LabeledInput
                       v-model:value.number="expose.loadBalancer.serverPort"
@@ -344,7 +351,7 @@ export default {
               :title="t('k3k.expose.nodePort.label')"
             >
               <RcContentGroup>
-                <div class="input-row">
+                <div class="k3k-input-row">
                   <div>
                     <LabeledInput
                       v-model:value.number="expose.nodePort.serverPort"

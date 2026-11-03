@@ -42,7 +42,7 @@ import NotAllowed from '../Sync/NotAllowed.vue';
 import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinity.vue';
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
-import { MODES } from '../../utils/shared';
+import { MODES, isApiServerExposed, resetModeSpecificSync } from '../../utils/shared';
 import { fieldIsSupported } from '../../utils/k3kInstalled';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
@@ -223,7 +223,11 @@ export default {
           rootObject: this.k3kCluster
         });
       } else {
-        this.fvFormRuleSets.splice(this.fvFormRuleSets.findIndex((r) => r.path === 'spec.tlsSANs'), 1);
+        const tlsSANsRule = this.fvFormRuleSets.findIndex((r) => r.path === 'spec.tlsSANs');
+
+        if (tlsSANsRule >= 0) {
+          this.fvFormRuleSets.splice(tlsSANsRule, 1);
+        }
       }
     },
 
@@ -329,6 +333,11 @@ export default {
           rules:          ['required'],
           translationKey: 'k3k.hostCluster.label'
         },
+        {
+          path:       'k3kCluster.spec.expose',
+          rootObject: this,
+          rules:      ['hcpExposed'],
+        },
       ],
       /**
        * store k3kCluster and provisioning cluster configuration immediately before saving/importing the cluster
@@ -354,6 +363,10 @@ export default {
       return {
         namespaceRequired: (ns) => {
           return !ns ? this.t('validation.required', { key: this.t('tableHeaders.namespace') }) : null;
+        },
+        // hcp worker nodes run outside the host cluster, so they cannot reach a server that is only on its ClusterIP
+        hcpExposed: (expose) => {
+          return this.isHcpMode && !isApiServerExposed(expose) ? this.t('k3k.expose.hcpRequired') : null;
         }
       };
     },
@@ -749,6 +762,10 @@ export default {
       }
     },
 
+    resetSync() {
+      this.k3kCluster.spec.sync = resetModeSpecificSync(this.k3kCluster.spec.sync);
+    },
+
     cancel() {
       this.$router.push({
         name:   'c-cluster-product-resource',
@@ -829,13 +846,13 @@ export default {
           :rules="{namespace:fvGetAndReportPathRules('metadata.namespace'), policy:fvGetAndReportPathRules('policyForValidation')}"
         />
 
-        <div class="input-row">
+        <div class="k3k-input-row">
           <LabeledSelect
             :value="k3kCluster.spec.version || defaultVersionLabel"
             label-key="k3k.k3sVersion.label"
             :options="k3sVersionOptions"
             :mode="mode"
-            class="half"
+            class="k3k-half"
             @update:value="updateVersion"
           />
         </div>
@@ -846,7 +863,7 @@ export default {
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
             :mode="mode"
-            @update:k3k-mode="k3kCluster.spec.sync = {}"
+            @update:k3k-mode="resetSync"
           />
         </template>
         <RcSection
@@ -904,7 +921,7 @@ export default {
           :title="t('k3k.servers.label')"
         >
           <RcContentGroup>
-            <div class="input-row count-input">
+            <div class="k3k-input-row count-input">
               <LabeledInput
                 v-model:value.number="k3kCluster.spec.servers"
                 label-key="k3k.servers.number.label"
@@ -963,7 +980,7 @@ export default {
           >
             <div
               v-if="isVirtualMode"
-              class="input-row count-input"
+              class="k3k-input-row count-input"
             >
               <LabeledInput
                 v-model:value.number="k3kCluster.spec.agents"
@@ -1001,7 +1018,7 @@ export default {
 
         <div
           v-if="!hasPolicy"
-          class="input-row"
+          class="k3k-input-row"
         >
           <RcKeyValue
             v-model:value="k3kCluster.spec.nodeSelector"
@@ -1017,7 +1034,7 @@ export default {
               <h3>{{ t('k3k.nodeSelector.label') }}</h3>
               <t
                 raw
-                k="k3k.nodeSelector.tooltip"
+                :k="isHcpMode ? 'k3k.nodeSelector.hcpTooltip' : 'k3k.nodeSelector.tooltip'"
               />
             </template>
           </RcKeyValue>
@@ -1053,7 +1070,10 @@ export default {
         v-model:tls-s-a-ns="k3kCluster.spec.tlsSANs"
         v-model:expose="k3kCluster.spec.expose"
         :virtual-cluster-mode="k3kCluster.spec.mode"
-        :rules="k3kCluster.spec.expose?.ingress ? {tlsSANs: fvGetAndReportPathRules('spec.tlsSANs')} : {}"
+        :rules="{
+          expose: fvGetAndReportPathRules('k3kCluster.spec.expose'),
+          ...(k3kCluster.spec.expose?.ingress ? {tlsSANs: fvGetAndReportPathRules('spec.tlsSANs')} : {})
+        }"
         :mode="mode"
       />
     </RcSection>

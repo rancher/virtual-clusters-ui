@@ -47,7 +47,7 @@ export default {
 </script>
 
 <template>
-  <div class="input-row">
+  <div class="k3k-input-row">
     <div>
       <h3>{{ t('k3k.mode.label') }}</h3>
       <h5 class="text-deemphasized">

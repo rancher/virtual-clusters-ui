@@ -6,7 +6,6 @@ import LabeledSelectWithCreate from '@shell/components/form/LabeledSelectWithCre
 import { LABELS, K3K } from '../../types';
 import { NAMESPACE } from '@shell/config/types';
 import { Banner } from '@rancher/components';
-import { RcContentGroup } from '@components/Layout';
 import { getProjectIds } from '../../models/k3k.io.virtualclusterpolicy';
 import PolicyDrawer from '../PolicyDrawer.vue';
 import { useDrawer } from '@shell/composables/drawer';
@@ -28,8 +27,7 @@ export default {
   components: {
     LabeledSelect,
     LabeledSelectWithCreate,
-    Banner,
-    RcContentGroup
+    Banner
   },
 
   props: {
@@ -350,16 +348,13 @@ export default {
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
-  <RcContentGroup>
-    <div :style="{'margin-bottom': '-12px' }">
-      <t
-        k="k3k.policy.description"
-        :raw="true"
-        class="text-label"
-      />
-    </div>
-
-    <div class="input-row">
+  <div>
+    <t
+      k="k3k.policy.description"
+      :raw="true"
+      class="text-label"
+    />
+    <div class="k3k-input-row mmt-1">
       <div>
         <LabeledSelect
           data-testid="k3k-policy-select"
@@ -387,7 +382,6 @@ export default {
       </div>
       <div>
         <LabeledSelectWithCreate
-          id="policy-namespace-create"
           :key="isPolicySelected"
           data-testid="k3k-target-namespace"
           :value="targetNamespace"
@@ -407,30 +401,13 @@ export default {
         />
       </div>
     </div>
-  </RcContentGroup>
+  </div>
 </template>
 
 <style lang="scss">
-.nonepolicy-warning {
-  margin-top: 4px;
-  display: flex;
-  & i {
-    margin-right: 3px;
-  }
-}
-
 .show-policy {
   padding-left: 0px;
   min-height: 1em;
   line-height: 1em;
-}
-
-#policy-namespace-create {
-  & :deep(.v-select .vs--single) {
-    display: flex !important;
-    &>*{
-      flex-grow: 1 !important;
-    }
-  }
 }
 </style>

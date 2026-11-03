@@ -16,8 +16,10 @@ const KUBE_API_PORT = 6443;
 const TAINT_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute'];
 const LOOPBACK = ['127.0.0.1', 'localhost', '::1', '0.0.0.0'];
 const POLL_INTERVAL = 5000;
+const MAX_POLL_INTERVAL = 60000;
 // retrying cannot fix a missing permission
-const TERMINAL_STATUSES = [401, 403];
+// the k3k cluster is created before the provisioning cluster, so a 404 for it means the cluster or its CRD is gone
+const TERMINAL_STATUSES = [401, 403, 404];
 
 const props = defineProps<{
   resource: Record<string, any>;
@@ -30,10 +32,9 @@ const parentClusterId = computed(() => props.resource?.metadata?.annotations?.[P
 const targetNamespace = computed(() => props.resource?.metadata?.annotations?.[K3K_NAMESPACE] || '');
 const clusterName = computed(() => props.resource?.metadata?.name || '');
 
-/**
- * Port of k3k controller.SafeConcatNameWithPrefix, which names the objects k3k creates for a cluster.
- * Names of 64 or more characters are cut and suffixed with part of their sha256 digest.
- */
+
+// Ported from k3k (SafeConcatNameWithPrefix) - this lets the UI reliably re-construct the names of objects created by k3k
+// eg the service name is *usually* k3k-<cluster name>-service, unless cluster name is so long that this would exceed service name limits
 function k3kName(...parts: string[]): string {
   const fullPath = ['k3k', ...parts].filter((p) => !!p).join('-');
 
@@ -43,7 +44,6 @@ function k3kName(...parts: string[]): string {
 
   const digest = sha256(fullPath, 'hex', undefined) as string;
 
-  // the cut must not leave a character that is invalid at the end of a k8s name
   return /[a-z0-9]/.test(fullPath[56]) ? `${ fullPath.slice(0, 57) }-${ digest.slice(0, 5) }` : `${ fullPath.slice(0, 56) }-${ digest.slice(0, 6) }`;
 }
 
@@ -55,9 +55,7 @@ const serverPods = ref<Record<string, any>[]>([]);
 const loaded = ref(false);
 const error = ref('');
 
-/**
- * spec.tokenSecretRef replaces the token Secret k3k would otherwise generate
- */
+// tokenSecretRef replaces the usual secret k3k would generate
 const tokenSecretPath = computed(() => {
   const ref = k3kCluster.value?.spec?.tokenSecretRef;
 
@@ -150,11 +148,7 @@ const serverUrl = computed(() => {
   return `https://${ host }:${ serverPort.value }`;
 });
 
-/**
- * Same resolution as k3k ResolveK3sVersion: spec.version, else status.hostVersion with a -k3s1 suffix.
- * k3k sets status.hostVersion on its first reconcile, so an empty value means the cluster is not reconciled yet.
- * get.k3s.io expects the release name, which uses '+' where the image tag uses '-'
- */
+// k3k cluster version is either explicitly set by spec.version or it is derived from host cluster version
 const installVersion = computed(() => {
   const hostVersion = k3kCluster.value?.status?.hostVersion;
   const version = k3kCluster.value?.spec?.version || (hostVersion ? `${ hostVersion }-k3s1` : '');
@@ -162,8 +156,13 @@ const installVersion = computed(() => {
   return version.replace('-', '+');
 });
 
-// everything the command needs exists except an address the workers can reach
-const missingServerAddress = computed(() => !!token.value && !!installVersion.value && !!serverService.value && !isLoadBalancer.value && !serverUrl.value);
+// k3k only makes the server reachable from outside the host cluster through an ingress, load balancer or node port
+// an ingress routes to a ClusterIP service, so the service type alone does not show that the server is exposed
+const isExposed = computed(() => serverService.value?.spec?.type !== 'ClusterIP' || !!k3kCluster.value?.spec?.expose?.ingress);
+
+// the server is not exposed, or everything the command needs exists except an address the workers can reach
+const missingServerAddress = computed(() => (!!serverService.value && !isExposed.value) ||
+  (!!token.value && !!installVersion.value && !!serverService.value && !isLoadBalancer.value && !serverUrl.value));
 
 
 const editMode = _EDIT;
@@ -175,9 +174,7 @@ const insecure = ref(false);
 const nodeLabels = ref<Record<string, string>>({});
 const taints = ref<Record<string, any>[]>([]);
 
-/**
- * encode advanced inputs into flags and append to registration command
- */
+// append advanced inputs to the registration command
 const advancedArgs = computed(() => {
   const args: string[] = [];
 
@@ -235,9 +232,7 @@ async function fetchParentResource(path: string) {
   });
 }
 
-/**
- * resolves to null for a resource the k3k controller has not created yet
- */
+
 async function fetchPendingResource(path: string) {
   try {
     return await fetchParentResource(path);
@@ -270,7 +265,7 @@ async function fetchServerNodes() {
 }
 
 async function fetchAll() {
-  k3kCluster.value = await fetchPendingResource(`k3k.io.clusters/${ targetNamespace.value }/${ clusterName.value }`);
+  k3kCluster.value = await fetchParentResource(`k3k.io.clusters/${ targetNamespace.value }/${ clusterName.value }`);
 
   if (!k3kCluster.value) {
     return;
@@ -284,16 +279,20 @@ async function fetchAll() {
   tokenSecret.value = secret;
   serverService.value = service;
 
-  if (service && !isLoadBalancer.value && !sanHost.value) {
+  if (service && isExposed.value && !isLoadBalancer.value && !sanHost.value) {
     await fetchServerNodes();
   }
 }
 
 /**
- * The tab can open while the cluster is still provisioning, before k3k has created the token Secret and
- * Service or a LoadBalancer has an address, so keep fetching until the command is complete.
+ * Users navigate directly from the create form to this tab so downstream resources may not exist yet.
+ * We're in the Management product and the host cluster steve store isn't loaded (loadCluster),
+ * so we are not listening to a websocket for resource updates, and we need to poll for them instead.
+ * The interval doubles after each attempt. Polling stops when the command is complete, when the server
+ * has no address workers can reach, or when the tab is unmounted.
  */
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
+let pollInterval = POLL_INTERVAL;
 let unmounted = false;
 
 async function poll() {
@@ -312,8 +311,9 @@ async function poll() {
 
   loaded.value = true;
 
-  if (!unmounted && !baseCommand.value) {
-    pollTimer = setTimeout(poll, POLL_INTERVAL);
+  if (!unmounted && !baseCommand.value && !missingServerAddress.value) {
+    pollTimer = setTimeout(poll, pollInterval);
+    pollInterval = Math.min(pollInterval * 2, MAX_POLL_INTERVAL);
   }
 }
 
@@ -392,7 +392,7 @@ if (parentClusterId.value && targetNamespace.value && clusterName.value) {
             {{ t('k3k.hcp.advanced.description') }}
           </p>
 
-          <div class="input-row">
+          <div class="k3k-input-row">
             <LabeledInput
               v-model:value="nodeName"
               :label="t('k3k.hcp.advanced.nodeName')"
@@ -507,9 +507,5 @@ if (parentClusterId.value && targetNamespace.value && clusterName.value) {
 
 .compact-select {
   height: 40px;
-}
-
-:deep(.rc-key-value .footer .rc-button.btn-small) {
-  gap: 0px !important;
 }
 </style>

@@ -505,7 +505,7 @@ export default {
       <h5 class="text-deemphasized">
         {{ t('k3k.policy.projects.subheader') }}
       </h5>
-      <div class="input-row">
+      <div class="k3k-input-row">
         <LabeledSelect
           v-model:value="selectedProjects"
           :label="t('k3k.policy.projects.label')"

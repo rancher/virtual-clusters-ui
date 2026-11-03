@@ -57,7 +57,7 @@ export default {
 };
 </script>
 <template>
-  <div class="input-row">
+  <div class="k3k-input-row">
     <UnabeledSelect
       :value="type"
       :mode="mode"

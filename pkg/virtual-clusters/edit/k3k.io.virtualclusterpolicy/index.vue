@@ -26,7 +26,7 @@ import NotAllowed from '../../components/Sync/NotAllowed.vue';
 
 import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
-import { MODES } from '../../utils/shared';
+import { MODES, resetModeSpecificSync } from '../../utils/shared';
 import K3kVersionBanner from '../../components/K3kVersionBanner.vue';
 import { fieldIsSupported } from '../../utils/k3kInstalled';
 
@@ -228,6 +228,10 @@ export default {
   },
 
   methods: {
+    resetSync() {
+      this.value.spec.sync = resetModeSpecificSync(this.value.spec.sync);
+    },
+
     annotatePolicyWithProjects(projects = []) {
       if (!projects.length) {
         this.value.setAnnotation([ANNOTATIONS.POLICY_ASSIGNED_TO], '');
@@ -333,7 +337,7 @@ export default {
         <Mode
           v-model:k3k-mode="value.spec.allowedMode"
           :mode="mode"
-          @update:k3k-mode="sync = {}"
+          @update:k3k-mode="resetSync"
         />
       </RcContentGroup>
     </RcSection>
@@ -421,7 +425,7 @@ export default {
         />
         <div
           v-if="showNodeSelector"
-          class="input-row"
+          class="k3k-input-row"
         >
           <RcKeyValue
             v-model:value="value.spec.defaultNodeSelector"
@@ -436,7 +440,7 @@ export default {
               <t
                 class="text-deemphasized"
                 raw
-                k="k3k.nodeSelector.tooltip"
+                :k="isHcpMode ? 'k3k.nodeSelector.hcpTooltip' : 'k3k.nodeSelector.tooltip'"
               />
             </template>
           </RcKeyValue>
@@ -454,10 +458,10 @@ export default {
               k="k3k.policy.security.tooltip"
               raw
             />
-            <div class="input-row mmt-1">
+            <div class="k3k-input-row mmt-1">
               <LabeledSelect
                 v-model:value="podSecurityAdmissionLevel"
-                class="half"
+                class="k3k-half"
                 :mode="mode"
                 :options="[noneOption,'privileged', 'baseline', 'restricted']"
                 :label="t('cluster.rke2.defaultPodSecurityAdmissionConfigurationTemplateName.label')"

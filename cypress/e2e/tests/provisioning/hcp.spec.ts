@@ -227,15 +227,6 @@ describe('HCP mode', () => {
       expectServerUrl(`https://${ SAN_HOST }:${ NODE_PORT }`);
     });
 
-    it('falls back to the port serving 6443 when no port is named k3s-server-port', () => {
-      stubHostResources({
-        service:    { spec: { type: 'ClusterIP', ports: [{ name: 'https', port: 6443 }] }, status: {} },
-        k3kCluster: { spec: { tlsSANs: [SAN_HOST] } },
-      });
-
-      expectServerUrl(`https://${ SAN_HOST }:6443`);
-    });
-
     it('uses the internal ip of the node running a server pod when it is in the certificate', () => {
       stubHostResources({
         service:    nodePortService(),

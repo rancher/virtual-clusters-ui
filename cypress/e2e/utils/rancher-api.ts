@@ -19,14 +19,30 @@ import { LoginPagePo } from '@rancher/cypress/e2e/po/pages/login-page.po';
 const api = () => Cypress.env('api');
 
 /**
- * Log in through the UI without cy.session(), navigating ourselves so that
- * cy.login()'s bootstrapped-only "Welcome to Rancher" assertion is skipped.
+ * Log in as the configured user through the local login form.
+ *
+ * Not cy.login():
+ * - it asserts "Welcome to Rancher", which only renders before bootstrap
+ * - it checks for the "use a local user" link once, without retrying
+ * - it asserts the exact login request body, which differs between Rancher versions
  */
 export function loginAsAdmin() {
-  LoginPagePo.goTo();
-  new LoginPagePo().checkIsCurrentPage();
+  cy.intercept('POST', '/v1-public/login*').as('localLogin');
 
-  return cy.login(undefined, undefined, false, true);
+  LoginPagePo.goTo();
+  const loginPage = new LoginPagePo();
+
+  loginPage.checkIsCurrentPage();
+
+  // with an external auth provider the local login link renders after the providers load
+  cy.get('[data-testid="login-useLocal"], [data-testid="login-submit"]').should('exist');
+  loginPage.switchToLocal();
+
+  loginPage.username().set(Cypress.env('username'));
+  loginPage.password().set(Cypress.env('password'));
+  loginPage.submit();
+
+  return cy.wait('@localLogin').its('response.statusCode').should('eq', 200);
 }
 
 /**
@@ -40,7 +56,7 @@ function csrf(): Cypress.Chainable<string> {
   });
 }
 
-function apiRequest(options: Partial<Cypress.RequestOptions> & { url: string }): Cypress.Chainable<Cypress.Response<any>> {
+export function apiRequest(options: Partial<Cypress.RequestOptions> & { url: string }): Cypress.Chainable<Cypress.Response<any>> {
   return csrf().then((value) => cy.request({
     ...options,
     url:     `${ api() }${ options.url }`,
@@ -203,6 +219,101 @@ export function uninstallK3k(clusterId: string) {
   deleteResource(prefix, 'catalog.cattle.io.clusterrepos', K3K_REPO_NAME);
 
   return deleteResource(prefix, 'namespaces', K3K_NAMESPACE);
+}
+
+/** Mirrors pkg/virtual-clusters/types.js. */
+export const POLICY_NAME_LABEL = 'policy.k3k.io/policy-name';
+export const POLICY_PROJECTS_ANNOTATION = 'policy.k3k.io/ui-project-ids';
+
+/** Mirrors pkg/virtual-clusters/labels-annotations.ts. */
+export const PROVIDER_ANNOTATION = 'ui.rancher/provider';
+export const PARENT_CLUSTER_ANNOTATION = 'ui.rancher/parent-cluster';
+export const K3K_NAMESPACE_ANNOTATION = 'ui.rancher/k3k-namespace';
+export const K3K_MODE_ANNOTATION = 'ui.rancher/k3k-mode';
+
+/** Resolves the v3 project id, `c-m-xxx:p-xxx`. */
+export function createProject(clusterId: string, name: string): Cypress.Chainable<string> {
+  return apiRequest({
+    method: 'POST',
+    url:    '/v3/projects',
+    body:   {
+      type: 'project', name, clusterId
+    },
+  }).then((resp) => {
+    expect(resp.status, `create project ${ name }`).to.eq(201);
+
+    return resp.body.id as string;
+  });
+}
+
+/**
+ * Namespace in `projectId` (v3 form), optionally labelled as governed by a policy.
+ */
+export function createNamespace(clusterId: string, name: string, projectId: string, policyName?: string) {
+  const labels: Record<string, string> = { 'field.cattle.io/projectId': projectId.split(':')[1] };
+
+  if (policyName) {
+    labels[POLICY_NAME_LABEL] = policyName;
+  }
+
+  return apiRequest({
+    method: 'POST',
+    url:    `/k8s/clusters/${ clusterId }/v1/namespaces`,
+    body:   {
+      type:     'namespace',
+      metadata: {
+        name, labels, annotations: { 'field.cattle.io/projectId': projectId }
+      },
+    },
+  }).then((resp) => {
+    expect(resp.status, `create namespace ${ name }`).to.eq(201);
+  });
+}
+
+/**
+ * The extension stores the projects a policy is assigned to in an annotation, in steve
+ * id form (`c-m-xxx/p-xxx`), and only offers the policy when one of those projects
+ * holds a namespace labelled with the policy name.
+ */
+export function createVirtualClusterPolicy(clusterId: string, name: string, projectId: string) {
+  return apiRequest({
+    method: 'POST',
+    url:    `/k8s/clusters/${ clusterId }/v1/${ K3K_POLICY_TYPE }`,
+    body:   {
+      type:       K3K_POLICY_TYPE,
+      apiVersion: 'k3k.io/v1beta1',
+      kind:       'VirtualClusterPolicy',
+      metadata:   {
+        name,
+        annotations: { [POLICY_PROJECTS_ANNOTATION]: projectId.replace(':', '/') }
+      },
+      spec: { allowedMode: 'shared' },
+    },
+  }).then((resp) => {
+    expect(resp.status, `create policy ${ name }`).to.eq(201);
+  });
+}
+
+/**
+ * A provisioning cluster annotated the way CruK3KCluster annotates a virtual cluster on save,
+ * with no k3k cluster behind it. Enough for the detail page and the extension's tab gating.
+ */
+export function createVirtualClusterStub(name: string, namespace: string, annotations: Record<string, string>) {
+  return apiRequest({
+    method: 'POST',
+    url:    '/v1/provisioning.cattle.io.clusters',
+    body:   {
+      type:     'provisioning.cattle.io.cluster',
+      metadata: {
+        name,
+        namespace,
+        annotations: { [PROVIDER_ANNOTATION]: 'k3k', ...annotations }
+      },
+      spec: {},
+    },
+  }).then((resp) => {
+    expect(resp.status, `create provisioning cluster ${ name }`).to.eq(201);
+  });
 }
 
 export interface AwsHostClusterParams {

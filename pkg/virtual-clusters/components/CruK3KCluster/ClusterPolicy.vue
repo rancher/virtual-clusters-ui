@@ -126,7 +126,7 @@ export default {
         policy:        drawerPolicy,
         parentCluster: this.hostCluster,
         showHeader:    false,
-        width:         '50%'
+        width:         'wide'
       });
     },
 
@@ -348,68 +348,66 @@ export default {
     color="error"
     :label="t('k3k.errors.loadingPolicies', {cluster:hostCluster?.displayName || hostCluster?.metadata?.name || '' })"
   />
-  <div class="row mmb-4">
-    <div
-      class="col span-6"
-    >
-      <LabeledSelect
-        :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
-        :loading="showLoadingSpinner"
-        :disabled="!hostClusterId || !k3kInstalled || !isCreate"
-        :mode="mode"
-        :label="t('k3k.policy.label')"
-        :placeholder="t('k3k.policy.placeholder')"
-        :options="policyOptions"
-        :rules="rules.policy"
-        required
-        @update:value="e=>$emit('update:policy', e)"
-      />
-      <span
-        v-if="isNoneSelected && !showLoadingSpinner"
-        class="nonepolicy-warning text-deemphasized"
-      ><i class="icon icon-warning" />{{ t('k3k.policy.noneWarning') }}</span>
-      <button
-        v-if="isPolicySelected"
-        type="button"
-        class="btn role-link show-policy"
-        data-testid="k3k-policy-open-drawer"
-        @click="openPolicyDrawer"
-      >
-        {{ t('k3k.policy.viewPolicy') }}
-      </button>
-    </div>
-    <div class="col span-6">
-      <LabeledSelectWithCreate
-        :key="isPolicySelected"
-        :value="targetNamespace"
-        :loading="showLoadingSpinner"
-        :mode="mode"
-        :disabled="!hostClusterId || !isCreate || isPolicyUnset"
-        :label="t('k3k.targetNamespace.label')"
-        :options="namespaceOptions"
-        :rules="rules.namespace"
-        :placeholder="t('k3k.targetNamespace.placeholder')"
-        :create-label="t('k3k.targetNamespace.createLabel')"
-        :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
-        required
-        @update:value="e=>$emit('update:targetNamespace', e)"
-        @creating="onNamespaceCreating"
-        @cancel="cancelCreateNamespace"
-      />
+  <div>
+    <t
+      k="k3k.policy.description"
+      :raw="true"
+      class="text-label"
+    />
+    <div class="k3k-input-row mmt-1">
+      <div>
+        <LabeledSelect
+          data-testid="k3k-policy-select"
+          :value="isPolicySelected ? policy : (isNoneSelected ? t('k3k.policy.noneOption') : null)"
+          :loading="showLoadingSpinner"
+          :disabled="!hostClusterId || !k3kInstalled || !isCreate"
+          :mode="mode"
+          :label="t('k3k.policy.label')"
+          :placeholder="t('k3k.policy.placeholder')"
+          :options="policyOptions"
+          :rules="rules.policy"
+          required
+          @update:value="e=>$emit('update:policy', e)"
+        />
+
+        <button
+          v-if="isPolicySelected"
+          type="button"
+          class="role-link show-policy mmt-1"
+          data-testid="k3k-policy-open-drawer"
+          @click="openPolicyDrawer"
+        >
+          {{ t('k3k.policy.viewPolicy') }}
+        </button>
+      </div>
+      <div>
+        <LabeledSelectWithCreate
+          :key="isPolicySelected"
+          data-testid="k3k-target-namespace"
+          :value="targetNamespace"
+          :loading="showLoadingSpinner"
+          :mode="mode"
+          :disabled="!hostClusterId || !isCreate || isPolicyUnset"
+          :label="t('k3k.targetNamespace.label')"
+          :options="namespaceOptions"
+          :rules="rules.namespace"
+          :placeholder="t('k3k.targetNamespace.placeholder')"
+          :create-label="t('k3k.targetNamespace.createLabel')"
+          :create-allowed="!isPolicySelected && canCreateInProjectlessNamespaces"
+          required
+          @update:value="e=>$emit('update:targetNamespace', e)"
+          @creating="onNamespaceCreating"
+          @cancel="cancelCreateNamespace"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss">
-.nonepolicy-warning {
-  margin-top: 4px;
-  display: flex;
-  & i {
-    margin-right: 3px;
-  }
-}
-
 .show-policy {
-  padding-left: 6px;
+  padding-left: 0px;
+  min-height: 1em;
+  line-height: 1em;
 }
 </style>

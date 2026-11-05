@@ -1,5 +1,5 @@
 import { importTypes } from '@rancher/auto-import';
-import { IPlugin, ModelExtensionConstructor, PanelLocation } from '@shell/core/types';
+import { IPlugin, ModelExtensionConstructor, PanelLocation, TabLocation } from '@shell/core/types';
 import { k3kProvisioner } from './provisioner';
 import './assets/styles/index.scss';
 import { VClusterModelExtension } from './model-extension/provisioning.cattle.io.cluster';
@@ -11,6 +11,8 @@ import versions from '@shell/utils/versions';
 import { isRancherPrime } from '@shell/config/version';
 import { NotificationLevel } from '@shell/types/notifications';
 import { K3K } from './types';
+import { K3K_MODE } from './labels-annotations';
+import { MODES } from './utils/shared';
 
 const createRoleIfNotFound = async(roleTemplate: any, store:any) => {
   const rolesMatching = await store.dispatch('management/findLabelSelector', {
@@ -81,4 +83,17 @@ export default function(plugin: IPlugin): void {
 
   plugin.addPanel(PanelLocation.RESOURCE_LIST, { resource: [K3K.POLICY, K3K.CLUSTER] },
     { component: () => import('./components/K3kVersionBanner.vue') });
+
+  // Only for HCP mode virtual clusters. The provisioning cluster detail page exposes the
+  // cluster's annotations as extension context, and context is matched as a subset, so the
+  // mode annotation alone is enough to gate the tab.
+  plugin.addTab(TabLocation.RESOURCE_DETAIL_PAGE, {
+    resource: ['provisioning.cattle.io.cluster'],
+    context:  { annotations: { [K3K_MODE]: MODES.HCP } }
+  }, {
+    name:      'hcp',
+    labelKey:  'k3k.tabs.hcp',
+    component: () => import('./components/HcpDetailTab.vue'),
+    weight:    99
+  });
 }

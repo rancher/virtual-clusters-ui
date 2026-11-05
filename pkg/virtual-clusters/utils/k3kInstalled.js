@@ -3,10 +3,13 @@ import { CATALOG, NAMESPACE } from '@shell/config/types';
 import { K3K } from '../types';
 import pkgjson from '../package.json';
 
-export const K3K_CHART_NAME = 'suse-virtual-cluster-engine';
-export const K3K_CHART_NAMESPACE = 'k3k-system';
-export const K3K_REPO_NAME = 'suse-virtual-cluster-engine';
-export const K3K_REPO_URL = 'oci://registry.suse.com/rancher/charts/appco-suse-virtual-cluster-engine';
+import { K3K_CHART_NAME, K3K_CHART_NAMESPACE } from './k3k-chart';
+
+// re-exported for existing consumers; the constants themselves live in k3k-chart.js so that they
+// can be imported without pulling in `@shell`
+export {
+  K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_REPO_NAME, K3K_REPO_URL, K3K_VALUES
+} from './k3k-chart';
 
 /**
  * This function retrieves the count resource for the target cluster and returns true if there is at least one catalog.cattle.io.app in the k3k-system namespace

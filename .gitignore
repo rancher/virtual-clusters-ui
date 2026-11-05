@@ -71,3 +71,7 @@ jspm_packages/
 Thumbs.db
 
 dist-pkg
+
+cypress/screenshots/
+cypress/reports/
+browser-logs/

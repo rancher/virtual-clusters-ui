@@ -5,6 +5,7 @@ import { NAME as PRODUCT_NAME } from '../config/k3k-explorer-product';
 import InstallK3k from '../components/InstallK3k.vue';
 import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCanInstallK3k } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
+import { RcContentGroup } from '@components/Layout';
 import { isRancherPrime } from '@shell/config/version';
 import { NAME as MGMT_NAME } from '@shell/config/product/manager';
 import { PARENT_CLUSTER } from '../labels-annotations';
@@ -14,7 +15,8 @@ export default {
 
   components: {
     InstallK3k,
-    Loading
+    Loading,
+    RcContentGroup
   },
 
   async fetch() {
@@ -92,8 +94,10 @@ export default {
 
 <template>
   <Loading v-if="$fetchState.pending" />
-  <div v-else>
-    <div class="header mb-20">
+  <RcContentGroup
+    v-else
+  >
+    <div class="header">
       <img
         height="100"
         width="100"
@@ -129,14 +133,16 @@ export default {
         v-else-if="!canInstallK3k"
         v-clean-html="t('k3k.landingPage.permission', null, true)"
       />
-      <div v-else>
-        <div class="mb-20">
+      <RcContentGroup
+        v-else
+      >
+        <div>
           {{ t('k3k.landingPage.description') }}
         </div>
         <div class="steps">
           <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
           <ol>
-            <li class="mb-20">
+            <li>
               <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
               <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
               <InstallK3k
@@ -146,11 +152,11 @@ export default {
                 :show-button-only="true"
               />
             </li>
-            <li class="mb-20">
+            <li>
               <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
               <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
             </li>
-            <li class="mb-20">
+            <li>
               <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
               <ol class="provisioning-steps">
                 <li>
@@ -166,9 +172,9 @@ export default {
             </li>
           </ol>
         </div>
-      </div>
+      </RcContentGroup>
     </div>
-  </div>
+  </RcContentGroup>
 </template>
 
 <style lang="scss" scoped>
@@ -187,6 +193,12 @@ export default {
         & img {
            margin-right: 10px;
         }
+    }
+
+    // an ol can't use RcContentGroup - flex items lose display: list-item and the
+    // step numbers with it - so space the steps here instead
+    .steps>ol>li:not(:last-child) {
+        margin-bottom: var(--gap-md);
     }
 
     .provisioning-steps {

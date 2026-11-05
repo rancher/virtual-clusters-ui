@@ -45,6 +45,7 @@ watch(targetMgmtId, async(neu) => {
 <template>
   <Banner
     v-if="showK3kVersionBanner && chartsUrl"
+    data-testid="k3k-version-banner"
     color="info"
   >
     <t

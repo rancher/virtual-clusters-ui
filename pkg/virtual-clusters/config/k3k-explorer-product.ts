@@ -13,7 +13,7 @@ export async function init($plugin:any, store:any) {
     headers
   } = $plugin.DSL(store, NAME);
 
-  if (isRancherPrime() || true) { // eslint-disable-line no-constant-condition -- TODO nb remove
+  if (isRancherPrime()) {
     product({
       inStore:             'cluster',
       inExplorer:          true,

@@ -20,7 +20,7 @@ export default {
   },
 
   async fetch() {
-    this.isPrime = isRancherPrime() || true; // TODO nb remove
+    this.isPrime = isRancherPrime();
     if (this.isPrime) {
       const currentCluster = this.$store.getters['currentCluster'];
       const provClusterId = currentCluster.provClusterId;

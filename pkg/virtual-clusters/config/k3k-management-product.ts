@@ -3,7 +3,7 @@ import { isRancherPrime } from '@shell/config/version';
 export async function init($plugin:any, store:any) {
   const { configureType } = $plugin.DSL(store, 'manager');
 
-  if (isRancherPrime() || true) { // eslint-disable-line no-constant-condition -- TODO nb remove
+  if (isRancherPrime()) {
     configureType('provisioning.cattle.io.cluster', {
       listGroups: [
         {

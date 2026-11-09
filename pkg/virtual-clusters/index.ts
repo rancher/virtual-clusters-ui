@@ -60,7 +60,7 @@ export default function(plugin: IPlugin): void {
   plugin.addNavHooks(fetchVersionData, undefined, undefined, async(store: any) => {
     try {
       await fetchVersionData(store);
-      if (isRancherPrime()) {
+      if (isRancherPrime() || true) { // eslint-disable-line no-constant-condition -- TODO nb remove
         await Promise.all([store.dispatch('management/loadSchemas'), store.dispatch('rancher/loadSchemas')]);
         const roleSchema = store.getters['management/byId'](SCHEMA, MANAGEMENT.ROLE_TEMPLATE );
 
@@ -92,8 +92,9 @@ export default function(plugin: IPlugin): void {
     context:  { annotations: { [K3K_MODE]: MODES.HCP } }
   }, {
     name:      'hcp',
-    labelKey:  'k3k.tabs.hcp',
+    labelKey:  'k3k.tabs.registration',
     component: () => import('./components/HcpDetailTab.vue'),
-    weight:    99
+    // same position as the built-in registration tab, which the k3k provisioner hides
+    weight:    2
   });
 }

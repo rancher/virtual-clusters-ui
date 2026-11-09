@@ -82,35 +82,36 @@ export const verifyUserCanCreateK3kClusters = async(store, mgmtId) => {
 };
 
 /**
+ * Read the version of the k3k app on a host cluster
+ * the app is read by name because the virtual cluster roles grant get on apps, but not list
+ * @returns semver | null - null if the version can't be read (eg user lacks permission to see k3k app)
+ */
+const fetchK3kVersion = async(store, mgmtId) => {
+  const appSchema = await store.dispatch('management/request', {
+    url:    `/k8s/clusters/${ mgmtId }/v1/schemas/${ CATALOG.APP }`,
+    method: 'GET',
+  });
+
+  if (!appSchema || !(appSchema.resourceMethods || []).includes('GET')) {
+    return null;
+  }
+
+  const k3kApp = await store.dispatch('management/request', {
+    url:    `/k8s/clusters/${ mgmtId }/v1/${ CATALOG.APP }s/${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }`,
+    method: 'GET'
+  });
+
+  return semver.coerce(k3kApp?.spec?.chart?.metadata?.appVersion);
+};
+
+/**
  * Compare the virtual clusters ui extension version to the k3k app version
  * @returns bool | null - true if major/minor versions match; false if they do not; null if one or both versions can't be read (eg user lacks permission to see k3k app)
  */
 export const verifyK3kVersionMatches = async(store, mgmtId) => {
   try {
-    const extensionVersion = pkgjson?.version;
-
-    const appSchema = await store.dispatch('management/request', {
-      url:    `/k8s/clusters/${ mgmtId }/v1/schemas/${ CATALOG.APP }`,
-      method: 'GET',
-    });
-
-    if (!appSchema || !(appSchema.resourceMethods || []).includes('GET')) {
-      return null;
-    }
-
-    const k3kApp = await store.dispatch('management/request', {
-      url:    `/k8s/clusters/${ mgmtId }/v1/${ CATALOG.APP }s/${ K3K_CHART_NAMESPACE }/${ K3K_CHART_NAME }`,
-      method: 'GET'
-    });
-
-    const k3kVersion = k3kApp?.spec?.chart?.metadata?.appVersion;
-
-    if (!k3kApp || !k3kVersion) {
-      return null;
-    }
-
-    const coercedExtensionVersion = semver.coerce(extensionVersion);
-    const coercedK3kVersion = semver.coerce(k3kVersion);
+    const coercedExtensionVersion = semver.coerce(pkgjson?.version);
+    const coercedK3kVersion = await fetchK3kVersion(store, mgmtId);
 
     if (!coercedExtensionVersion || !coercedK3kVersion) {
       return null;
@@ -140,4 +141,23 @@ export const fieldIsSupported = async(store, mgmtId, type, field) => {
   const definitionPaths = Object.keys(schemaDefinition?.definitions || {});
 
   return definitionPaths.includes(`${ definitionType }.${ field }`);
+};
+
+// the first k3k release with hcp mode
+const HCP_MIN_K3K_VERSION = '1.2.0';
+
+/**
+ * Check whether the k3k version on a host cluster accepts hcp mode.
+ * a version that cannot be read counts as supported: k3k may not be installed yet, and new installs support hcp
+ * @param {*} store vuex store ie component this.$store
+ * @param {*} mgmtId string id of the cluster to look for k3k in
+ */
+export const hcpIsSupported = async(store, mgmtId) => {
+  try {
+    const k3kVersion = await fetchK3kVersion(store, mgmtId);
+
+    return !k3kVersion || semver.gte(k3kVersion, HCP_MIN_K3K_VERSION);
+  } catch {
+    return true;
+  }
 };

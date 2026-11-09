@@ -11,27 +11,27 @@ export const getProjectIds = (policy) => {
 
 export default class VirtualClusterPolicy extends SteveModel {
   get canEdit() {
-    return super.canEdit && isRancherPrime();
+    return super.canEdit && (isRancherPrime() || true); // TODO nb remove
   }
 
   get canDelete() {
-    return super.canDelete && isRancherPrime();
+    return super.canDelete && (isRancherPrime() || true); // TODO nb remove
   }
 
   get canClone() {
-    return super.canClone && isRancherPrime();
+    return super.canClone && (isRancherPrime() || true); // TODO nb remove
   }
 
   get canUpdate() {
-    return super.canUpdate && isRancherPrime();
+    return super.canUpdate && (isRancherPrime() || true); // TODO nb remove
   }
 
   get canCustomEdit() {
-    return super.canCustomEdit && isRancherPrime();
+    return super.canCustomEdit && (isRancherPrime() || true); // TODO nb remove
   }
 
   get canCreate() {
-    return super.canCreate && isRancherPrime();
+    return super.canCreate && (isRancherPrime() || true); // TODO nb remove
   }
 
   get projectIds() {

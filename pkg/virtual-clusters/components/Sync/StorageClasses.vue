@@ -300,6 +300,7 @@ watch(storageClassSelector, (neu, old) => {
 
 .storage-selectors .selected-classes {
   position: relative;
+  min-height: 100%;
 
   :deep(.title){
     align-items: center;

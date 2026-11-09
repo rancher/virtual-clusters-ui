@@ -28,7 +28,7 @@ import Quota from './Quota.vue';
 import isEmpty from 'lodash/isEmpty';
 import { MODES, resetModeSpecificSync } from '../../utils/shared';
 import K3kVersionBanner from '../../components/K3kVersionBanner.vue';
-import { fieldIsSupported } from '../../utils/k3kInstalled';
+import { fieldIsSupported, hcpIsSupported } from '../../utils/k3kInstalled';
 
 const CONTAINER_LIMIT_TYPE = 'Container';
 
@@ -87,6 +87,8 @@ export default {
     } catch {
       this.supportsTopology = false;
     }
+
+    this.supportsHcp = await hcpIsSupported(this.$store, mgmtId);
   },
 
   data() {
@@ -96,7 +98,8 @@ export default {
         path:  'name',
         rules: ['required'],
       }],
-      supportsTopology: false // Only k3k >= 1.1.0 supports the fields in the 'Topology' tab
+      supportsTopology: false, // Only k3k >= 1.1.0 supports the fields in the 'Topology' tab
+      supportsHcp:      true // k3k < 1.2.0 rejects hcp mode
     };
   },
 
@@ -337,6 +340,7 @@ export default {
         <Mode
           v-model:k3k-mode="value.spec.allowedMode"
           :mode="mode"
+          :hcp-supported="supportsHcp"
           @update:k3k-mode="resetSync"
         />
       </RcContentGroup>

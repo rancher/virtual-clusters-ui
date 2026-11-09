@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useStore } from 'vuex';
 import cloneDeep from 'lodash/cloneDeep';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
@@ -32,9 +31,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:expose': [expose: Record<string, any>];
 }>();
-
-const store = useStore();
-const t = (key: string) => store.getters['i18n/t'](key);
 
 // expose can have one of ingress, loadBalancer, or node port defined
 function initialExposeMode(): string {

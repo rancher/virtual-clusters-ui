@@ -385,6 +385,7 @@ if (parentClusterId.value && targetNamespace.value && clusterName.value) {
         mode="with-header"
         background="secondary"
         expandable
+        :expanded="false"
         :title="t('k3k.hcp.advanced.title')"
       >
         <RcContentGroup>

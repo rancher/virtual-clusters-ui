@@ -43,7 +43,7 @@ import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinit
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
 import { MODES, isApiServerExposed, resetModeSpecificSync } from '../../utils/shared';
-import { fieldIsSupported } from '../../utils/k3kInstalled';
+import { fieldIsSupported, hcpIsSupported } from '../../utils/k3kInstalled';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
@@ -211,7 +211,11 @@ export default {
 
   created() {
     this.registerAfterHook(this.saveRoleBindings, 'save-role-bindings');
-    this.registerAfterHook(this.importCluster, 'import-cluster');
+
+    // a virtual cluster is imported once, when it is created
+    if (this.isCreate) {
+      this.registerAfterHook(this.importCluster, 'import-cluster');
+    }
   },
 
   watch: {
@@ -261,6 +265,12 @@ export default {
    */
     policy: {
       handler(neu) {
+        // the policy cannot be changed after creation, and spec.mode is immutable
+        // on edit, the saved values must not be replaced by defaults
+        if (!this.isCreate) {
+          return;
+        }
+
         const applyPolicyOverrides = (policySpec = {}) => {
           for (const [clusterKey, policyKey] of Object.entries(POLICY_OVERRIDES)) {
             const policyValue = policySpec[policyKey];
@@ -280,6 +290,7 @@ export default {
 
       if (!mgmtId) {
         this.supportsTopology = false;
+        this.supportsHcp = true;
 
         return;
       }
@@ -288,6 +299,15 @@ export default {
         this.supportsTopology = await fieldIsSupported(this.$store, mgmtId, K3K.CLUSTER, 'spec.serverAffinity');
       } catch {
         this.supportsTopology = false;
+      }
+
+      this.supportsHcp = await hcpIsSupported(this.$store, mgmtId);
+    },
+
+    supportsHcp(neu) {
+      if (!neu && this.isCreate && this.isHcpMode) {
+        this.k3kCluster.spec.mode = MODES.SHARED;
+        this.resetSync();
       }
     },
 
@@ -311,6 +331,7 @@ export default {
       k3kCluster:                     {},
       k3sVersions:                    [],
       supportsTopology:               false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
+      supportsHcp:                    true, // k3k < 1.2.0 rejects hcp mode
       fvFormRuleSets:                 [
         {
           path:  'metadata.name',
@@ -863,6 +884,7 @@ export default {
           <Mode
             v-model:k3k-mode="k3kCluster.spec.mode"
             :mode="mode"
+            :hcp-supported="supportsHcp"
             @update:k3k-mode="resetSync"
           />
         </template>

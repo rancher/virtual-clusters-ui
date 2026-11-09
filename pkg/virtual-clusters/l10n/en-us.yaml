@@ -188,18 +188,21 @@ k3k:
     k3kVersionMismatch: There is a newer version of the K3K controller compatible with this Rancher installation. Navigate to the host cluster's <a target="_blank" rel="nofollow noopener noreferrer" href="{url}"> Apps page</a> to upgrade the SUSE Virtual Cluster Engine app.
   mode:
     label: Virtual cluster mode
-    shared: 
+    shared:
       label: Shared
+      shortLabel: Shared
       description: Default, better performance
-    virtual: 
+    virtual:
       label: Virtual
+      shortLabel: Virtual
       description: Advanced isolation
     hcp:
-      label: HCP
+      label: HCP (Hosted Control Plane)
+      shortLabel: HCP
       description: Bring your own worker nodes
     tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation, or the HCP mode to run only the control plane in the host cluster and register your own worker nodes. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
   tabs:
-    hcp: HCP
+    registration: Registration
   agents:
     label: Agents
     number:

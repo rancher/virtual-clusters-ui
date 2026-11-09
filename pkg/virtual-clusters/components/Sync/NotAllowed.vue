@@ -29,7 +29,7 @@ export default {
 
 <template>
   <div>
-    <h4>{{ t('k3k.policy.notAllowed.title', {mode: t(`k3k.mode.${mode}.label`)}) }}</h4>
+    <h4>{{ t('k3k.policy.notAllowed.title', {mode: t(`k3k.mode.${mode}.shortLabel`)}) }}</h4>
     <t
       class="text-deemphasized"
       raw

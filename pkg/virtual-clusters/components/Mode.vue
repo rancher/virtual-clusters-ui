@@ -23,6 +23,11 @@ export default {
     k3kMode: {
       type:    String,
       default: MODES.SHARED
+    },
+
+    hcpSupported: {
+      type:    Boolean,
+      default: true
     }
   },
 
@@ -40,7 +45,8 @@ export default {
     },
 
     modeOptions() {
-      return Object.values(MODES);
+      // a saved hcp resource keeps its option so the form can show its mode
+      return Object.values(MODES).filter((option) => option !== MODES.HCP || this.hcpSupported || this.k3kMode === MODES.HCP);
     }
   }
 };
@@ -74,7 +80,7 @@ export default {
         >
           <template #label>
             <span class="text">{{ t(`k3k.mode.${option}.label`) }}</span>
-            <div class="text-deemphasized">
+            <div class="text-deemphasized description">
               {{ t(`k3k.mode.${option}.description`) }}
             </div>
           </template>
@@ -92,6 +98,10 @@ export default {
 
   .text {
     color: var(--body-text);
+  }
+
+  .description {
+    font-size: 12px;
   }
 
   & :deep(.radio-container) {

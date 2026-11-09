@@ -7,6 +7,7 @@ k3k:
       description: Run this command on each of the existing Linux machines you want to register. Since this is a virtual cluster in HCP mode, only worker nodes can be registered.
       noServerAddress: No server address reachable by external workers was found. Expose the API server with an ingress, load balancer or node port, and add an address the workers can reach to the virtual cluster's TLS SANs.
       pending: Waiting for the virtual cluster to provision. The command will be available when its token, K3s version and server address are ready.
+      noHostAccess: You do not have access to the host cluster, so the registration command cannot be shown
     advanced:
       title: Advanced command options
       description: Additional control over how the node will be registered. These values will often need to be different for each registered node.
@@ -104,9 +105,9 @@ k3k:
       title: Not available in {mode} mode
       synchronization:
         virtual: In this mode, virtual clusters manage their own isolated resources. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_shared_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
-        hcp: In this mode, worker nodes run standard k3s agents that have their own CNI and storage configured at install time. Switch to shared mode to synchronize resources between the host and virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: Worker nodes are managed externally and do not share compute resources with the host cluster; therefore, resource synchronization between the host and virtual cluster is not applicable. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       agents:
-        hcp: In this mode, worker nodes run standard k3s agents that you provide and manage yourself, so the number of agent pods is not configurable here. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+        hcp: Agent pods are not deployed on the host cluster. Worker node capacity and environment variables must be managed directly on your external nodes. <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       security:
         hcp: Host-level pod security policies do not apply to external worker nodes. Configure pod security directly within the virtual cluster. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html#_hcp_mode" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
       agentScheduling:
@@ -201,6 +202,7 @@ k3k:
       shortLabel: HCP
       description: Bring your own worker nodes
     tooltip: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation, or the HCP mode to run only the control plane in the host cluster and register your own worker nodes. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
+    tooltipNoHcp: By default virtual clusters are provisioned using the shared mode. You can use the virtual mode for more advanced isolation. <br/> <a href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/architecture.html" target="_blank" rel="noopener noreferrer nofollow">Learn more about virtual cluster modes <icon class="icon icon-external-link icon-sm"/></a>
   tabs:
     registration: Registration
   agents:
@@ -232,17 +234,25 @@ k3k:
       label: Addressing
   clusterCIDR:
     label: Cluster CIDR
-    placeholder: 10.42.0.0/16
+    placeholder:
+      shared: "Default: 10.42.0.0/16"
+      virtual: "Default: 10.52.0.0/16"
   serviceCIDR:
     label: Service CIDR
-    placeholder: 10.43.0.0/16
+    placeholder:
+      shared: "Default: 10.43.0.0/16"
+      virtual: "Default: 10.53.0.0/16"
     tooltip: In shared mode the service CIDR needs to be the same as the host cluster.
   clusterDNS:
     label: Cluster DNS
-    placeholder: "10.43.0.10"
+    placeholder:
+      shared: e.g. 10.43.0.10
+      virtual: e.g. 10.53.0.10
   tlsSANs:
     title: Certificates
     label: TLS Subject Alternative Names
+    placeholder: e.g. *.example.com
+    addLabel: Add alternative name
   k3sVersion:
     label: K3s Version
     default: Same k8s version as host

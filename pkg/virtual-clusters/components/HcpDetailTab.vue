@@ -10,6 +10,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import Select from '@shell/components/form/Select.vue';
+import Banner from '@components/Banner/Banner.vue';
 import { _EDIT } from '@shell/config/query-params';
 
 const KUBE_API_PORT = 6443;
@@ -17,9 +18,10 @@ const TAINT_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute'];
 const LOOPBACK = ['127.0.0.1', 'localhost', '::1', '0.0.0.0'];
 const POLL_INTERVAL = 5000;
 const MAX_POLL_INTERVAL = 60000;
+const NO_ACCESS_STATUSES = [401, 403];
 // retrying cannot fix a missing permission
 // the k3k cluster is created before the provisioning cluster, so a 404 for it means the cluster or its CRD is gone
-const TERMINAL_STATUSES = [401, 403, 404];
+const TERMINAL_STATUSES = [...NO_ACCESS_STATUSES, 404];
 
 const props = defineProps<{
   resource: Record<string, any>;
@@ -54,6 +56,7 @@ const nodes = ref<Record<string, any>[]>([]);
 const serverPods = ref<Record<string, any>[]>([]);
 const loaded = ref(false);
 const error = ref('');
+const noHostAccess = ref(false);
 
 // tokenSecretRef replaces the usual secret k3k would generate
 const tokenSecretPath = computed(() => {
@@ -227,8 +230,11 @@ function errorMessage(err: any): string {
 
 async function fetchParentResource(path: string) {
   return store.dispatch('management/request', {
-    url:    `/k8s/clusters/${ parentClusterId.value }/v1/${ path }`,
-    method: 'GET',
+    url:                  `/k8s/clusters/${ parentClusterId.value }/v1/${ path }`,
+    method:               'GET',
+    // members of a virtual cluster may have no access to its host cluster, which returns 401
+    // by default the shell treats a 401 as an expired session and logs the user out
+    redirectUnauthorized: false,
   });
 }
 
@@ -300,9 +306,12 @@ async function poll() {
     await fetchAll();
     error.value = '';
   } catch (err) {
-    error.value = errorMessage(err);
+    const status = errorStatus(err) as number;
 
-    if (TERMINAL_STATUSES.includes(errorStatus(err) as number)) {
+    noHostAccess.value = NO_ACCESS_STATUSES.includes(status);
+    error.value = noHostAccess.value ? '' : errorMessage(err);
+
+    if (TERMINAL_STATUSES.includes(status)) {
       loaded.value = true;
 
       return;
@@ -334,6 +343,11 @@ if (parentClusterId.value && targetNamespace.value && clusterName.value) {
     <div v-if="!loaded">
       {{ t('generic.loading') }}
     </div>
+    <Banner
+      v-else-if="noHostAccess"
+      color="error"
+      label-key="k3k.hcp.registration.noHostAccess"
+    />
     <RcContentGroup
       v-else
     >
@@ -353,12 +367,11 @@ if (parentClusterId.value && targetNamespace.value && clusterName.value) {
           <p class="text-muted">
             {{ t('k3k.hcp.registration.description') }}
           </p>
-          <p
+          <Banner
             v-if="missingServerAddress"
-            class="text-warning"
-          >
-            {{ t('k3k.hcp.registration.noServerAddress') }}
-          </p>
+            color="error"
+            label-key="k3k.hcp.registration.noServerAddress"
+          />
           <p
             v-else-if="!baseCommand"
             class="text-muted"

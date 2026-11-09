@@ -50,6 +50,8 @@ useReportInvalidToSection(invalid);
       :rules="rules"
       :required="rules.length > 0"
       :title="t('k3k.tlsSANs.label')"
+      :value-placeholder="t('k3k.tlsSANs.placeholder')"
+      :add-label="t('k3k.tlsSANs.addLabel')"
       add-icon="icon-plus"
       use-rc-button
       @update:value="emit('update:value', $event)"

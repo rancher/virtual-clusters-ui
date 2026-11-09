@@ -68,6 +68,11 @@ export default {
   computed: {
     isShared() {
       return this.virtualClusterMode === MODES.SHARED;
+    },
+
+    // k3k applies its virtual mode defaults to every mode except shared
+    defaultsMode() {
+      return this.isShared ? MODES.SHARED : MODES.VIRTUAL;
     }
   }
 
@@ -88,7 +93,7 @@ export default {
           <LabeledInput
             :value="clusterCIDR"
             label-key="k3k.clusterCIDR.label"
-            placeholder-key="k3k.clusterCIDR.placeholder"
+            :placeholder-key="`k3k.clusterCIDR.placeholder.${ defaultsMode }`"
             :mode="mode"
             class="k3k-half"
             @update:value="e=>$emit('update:clusterCIDR', e)"
@@ -99,7 +104,7 @@ export default {
             <LabeledInput
               :value="serviceCIDR"
               label-key="k3k.serviceCIDR.label"
-              placeholder-key="k3k.serviceCIDR.placeholder"
+              :placeholder-key="`k3k.serviceCIDR.placeholder.${ defaultsMode }`"
               :mode="mode"
               class="k3k-half"
               @update:value="e=>$emit('update:serviceCIDR', e)"
@@ -115,7 +120,7 @@ export default {
           <LabeledInput
             :value="clusterDNS"
             label-key="k3k.clusterDNS.label"
-            placeholder-key="k3k.clusterDNS.placeholder"
+            :placeholder-key="`k3k.clusterDNS.placeholder.${ defaultsMode }`"
             :mode="mode"
             class="k3k-half"
             @update:value="e=>$emit('update:clusterDNS', e)"

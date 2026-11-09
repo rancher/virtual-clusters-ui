@@ -47,6 +47,10 @@ export default {
     modeOptions() {
       // a saved hcp resource keeps its option so the form can show its mode
       return Object.values(MODES).filter((option) => option !== MODES.HCP || this.hcpSupported || this.k3kMode === MODES.HCP);
+    },
+
+    tooltipKey() {
+      return this.modeOptions.includes(MODES.HCP) ? 'k3k.mode.tooltip' : 'k3k.mode.tooltipNoHcp';
     }
   }
 };
@@ -58,7 +62,7 @@ export default {
       <h3>{{ t('k3k.mode.label') }}</h3>
       <h5 class="text-deemphasized">
         <t
-          k="k3k.mode.tooltip"
+          :k="tooltipKey"
           :raw="true"
         />
       </h5>

@@ -5,7 +5,9 @@ import SecretMountItem from './SecretMount.vue';
 import type { SecretMount } from '../../../types/k3k';
 import { _VIEW } from '@shell/config/query-params';
 import { RcSection, RcSectionActions } from '@components/RcSection';
+import { RcContentGroup } from '@components/Layout';
 import { RcButton } from '@components/RcButton';
+import { RcCounterBadge } from '@components/Pill';
 
 defineOptions({ name: 'K3kSecretMounts' });
 
@@ -29,6 +31,16 @@ const emit = defineEmits<{
 }>();
 
 const isView = computed(() => props.mode === _VIEW);
+
+const mountsWithSecretsDefined = computed(() => props.secretMounts.filter((mount) => !!mount.secretName));
+
+// track mounts provided as props (while editing a cluster) vs newly added mounts
+// the latter will be expanded by default
+let initialMountIndexes = new Set(props.secretMounts.map((_, i) => i));
+
+function isNewMount(index: number): boolean {
+  return !initialMountIndexes.has(index);
+}
 
 const secrets = ref<string[]>([]);
 const loadingSecrets = ref(false);
@@ -62,10 +74,12 @@ async function fetchSecrets() {
   loadingSecrets.value = false;
 }
 
+// reset mounts when parent cluster or namespace changes, since available secrets will change
 watch(
   () => [props.parentCluster, props.targetNamespace],
   () => {
-    emit('update:secretMounts', [{ ...DEFAULT_MOUNT }]);
+    initialMountIndexes = new Set();
+    emit('update:secretMounts', []);
     fetchSecrets();
   }
 );
@@ -80,6 +94,14 @@ function removeMount(index: number) {
   const updated = [...props.secretMounts];
 
   updated.splice(index, 1);
+
+  // shift indexes above the removed one down by one so remaining initial mounts stay correctly categorized
+  initialMountIndexes = new Set(
+    [...initialMountIndexes]
+      .filter((i) => i !== index)
+      .map((i) => (i > index ? i - 1 : i))
+  );
+
   emit('update:secretMounts', updated);
 }
 
@@ -116,71 +138,87 @@ function mountTitle(mount: SecretMount): {name: string, path?: string} {
 </script>
 
 <template>
-  <div
-    v-if="secretErrors.length"
-    class="banner bg-error mb-10"
+  <RcSection
+    mode="with-header"
+    :expandable="true"
+    :expanded="true"
+    type="secondary"
+    :title="t('k3k.secretMounts.title')"
   >
-    {{ secretErrors.join('. ') }}
-  </div>
-  <t
-    k="k3k.secretMounts.description"
-    raw
-    class="text-deemphasized"
-  />
-  <template
-    v-for="(mount, i) in secretMounts"
-    :key="i"
-  >
-    <RcSection
-      type="secondary"
-      :expandable="true"
-      :expanded="true"
-      :title="mountTitle(mount)"
-      mode="with-header"
-      class="secret-mount"
-    >
-      <template #title>
-        <span class="mount-title">
-          <span class="title-name">{{ mountTitle(mount).name }}</span>
-          <span
-            v-if="mountTitle(mount).path"
-            class="title-path"
-          >&nbsp; — &nbsp;{{ mountTitle(mount).path }}</span>
-        </span>
-      </template>
-      <div class="gap-md">
-        <SecretMountItem
-          :mode="mode"
-          :secret-name="mount.secretName || ''"
-          :mount-path="mount.mountPath || ''"
-          :sub-path="mount.subPath || ''"
-          :role="mount.role || 'all'"
-          :secrets="secrets"
-          :loading-secrets="loadingSecrets"
-          @update:secret-name="updateField(i, 'secretName', $event)"
-          @update:mount-path="updateField(i, 'mountPath', $event)"
-          @update:sub-path="updateField(i, 'subPath', $event)"
-          @update:role="updateField(i, 'role', $event)"
-        />
+    <template #counter>
+      <RcCounterBadge
+        :count="mountsWithSecretsDefined.length"
+        type="inactive"
+      />
+    </template>
+    <RcContentGroup>
+      <div
+        v-if="secretErrors.length"
+        class="banner bg-error"
+      >
+        {{ secretErrors.join('. ') }}
       </div>
-      <template #actions>
-        <RcSectionActions
-          :actions="[{ icon: 'trash', ariaLabel: t('generic.remove') , action: ()=>removeMount(i) }]"
-        />
+      <t
+        k="k3k.secretMounts.description"
+        raw
+        class="text-deemphasized"
+      />
+      <template
+        v-for="(mount, i) in secretMounts"
+        :key="i"
+      >
+        <RcSection
+          type="secondary"
+          :expandable="true"
+          :expanded="isNewMount(i)"
+          :title="mountTitle(mount).name"
+          mode="with-header"
+          class="secret-mount"
+        >
+          <template #title>
+            <span class="mount-title">
+              <span class="title-name">{{ mountTitle(mount).name }}</span>
+              <span
+                v-if="mountTitle(mount).path"
+                class="title-path"
+              >&nbsp; — &nbsp;{{ mountTitle(mount).path }}</span>
+            </span>
+          </template>
+          <RcContentGroup>
+            <SecretMountItem
+              :mode="mode"
+              :secret-name="mount.secretName || ''"
+              :mount-path="mount.mountPath || ''"
+              :sub-path="mount.subPath || ''"
+              :role="mount.role || 'all'"
+              :secrets="secrets"
+              :loading-secrets="loadingSecrets"
+              @update:secret-name="updateField(i, 'secretName', $event)"
+              @update:mount-path="updateField(i, 'mountPath', $event)"
+              @update:sub-path="updateField(i, 'subPath', $event)"
+              @update:role="updateField(i, 'role', $event)"
+            />
+          </RcContentGroup>
+          <template #actions>
+            <RcSectionActions
+              :actions="[{ icon: 'trash', ariaLabel: t('generic.remove') , action: ()=>removeMount(i) }]"
+            />
+          </template>
+        </RcSection>
       </template>
-    </RcSection>
-  </template>
-  <div>
-    <RcButton
-      v-if="!isView"
-      size="small"
-      variant="secondary"
-      left-icon="plus"
-      @click="addMount"
-    >
-      {{ t('k3k.secretMounts.addLabel') }}
-    </RcButton>
-  </div>
+      <div>
+        <RcButton
+          v-if="!isView"
+          size="small"
+          variant="secondary"
+          left-icon="plus"
+          @click="addMount"
+        >
+          {{ t('k3k.secretMounts.addLabel') }}
+        </RcButton>
+      </div>
+    </RcContentGroup>
+  </RcSection>
 </template>
 
 <style lang="scss" scoped>
@@ -194,7 +232,6 @@ function mountTitle(mount: SecretMount): {name: string, path?: string} {
 }
 
 .secret-mount :deep(.section-header .left-wrapper) {
-  overflow: hidden;
   min-width: 0;
   width: 0;
   flex: 1 1 0%;

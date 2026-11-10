@@ -39,6 +39,7 @@ export class k3kProvisioner implements IClusterProvisioner {
       related:      true,
       events:       false,
       conditions:   false,
+      autoscaler:   false
     };
   }
 

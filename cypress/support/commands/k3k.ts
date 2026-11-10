@@ -1,5 +1,5 @@
 import {
-  K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_REPO_NAME, K3K_REPO_URL, K3K_VALUES
+  K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_MAX_VERSION, K3K_REPO_NAME, K3K_REPO_URL, K3K_VALUES, k3kIndexCharts, k3kChartToInstall
 } from '../../../pkg/virtual-clusters/utils/k3k-chart';
 import {
   apiRequest, waitForResource, waitForResourceState, waitForSchema, K3K_POLICY_TYPE
@@ -39,16 +39,22 @@ function addK3kRepo(prefix: string) {
   });
 }
 
-/** Newest version in the repo index, which is what the Install K3k button installs. */
-function latestK3kVersion(prefix: string): Cypress.Chainable<string> {
+interface IndexChart { name: string, version: string }
+
+/**
+ * Index entry to install, as the Install K3k button picks it.
+ * @param version exact version; defaults to the newest in the repo index at or below K3K_MAX_VERSION
+ */
+function k3kChart(prefix: string, version?: string): Cypress.Chainable<IndexChart> {
   return apiRequest({ url: `/${ prefix }/${ REPO_TYPE }/${ K3K_REPO_NAME }` })
     .then((repoResp) => cy.request({ url: repoResp.body.links.index, headers: { Accept: 'application/json' } }))
     .then((indexResp) => {
-      const version = indexResp.body?.entries?.[K3K_CHART_NAME]?.[0]?.version;
+      const charts = k3kIndexCharts(indexResp.body) as IndexChart[];
+      const chart = k3kChartToInstall(charts, version) as IndexChart | null;
 
-      expect(version, `${ K3K_CHART_NAME } in the ${ K3K_REPO_NAME } index`).to.be.a('string');
+      expect(chart, `${ K3K_CHART_NAME } ${ version || `<= ${ K3K_MAX_VERSION }` } in the ${ K3K_REPO_NAME } index (${ charts.map((c) => c.version).join(', ') })`).to.be.an('object');
 
-      return version as string;
+      return chart as IndexChart;
     });
 }
 
@@ -77,7 +83,7 @@ function requestInstall(prefix: string, body: object, remaining = INSTALL_MAX_TR
  * and the k3k CRDs to be served. Does nothing if k3k-system already has an app.
  *
  * @param clusterId management id of the host cluster (c-m-xxxxxxxx)
- * @param version chart version; defaults to the newest in the repo
+ * @param version chart version; defaults to the newest in the repo at or below K3K_MAX_VERSION
  */
 Cypress.Commands.add('installK3k', (clusterId: string, version?: string) => {
   const prefix = `k8s/clusters/${ clusterId }/v1`;
@@ -99,16 +105,16 @@ Cypress.Commands.add('installK3k', (clusterId: string, version?: string) => {
       expect(downloaded, 'k3k cluster repo downloaded').to.eq(true);
     });
 
-    (version ? cy.wrap(version, { log: false }) : latestK3kVersion(prefix)).then((chartVersion) => {
+    k3kChart(prefix, version).then((chart) => {
       requestInstall(prefix, {
         charts: [{
           annotations: {
             'catalog.cattle.io/ui-source-repo':      K3K_REPO_NAME,
             'catalog.cattle.io/ui-source-repo-type': 'cluster'
           },
-          chartName:   K3K_CHART_NAME,
+          chartName:   chart.name,
           releaseName: K3K_CHART_NAME,
-          version:     chartVersion,
+          version:     chart.version,
           values:      K3K_VALUES
         }],
         disableOpenAPIValidation: false,

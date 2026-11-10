@@ -17,6 +17,7 @@ import {
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
 } from '../utils/k3kInstalled';
+import { K3K_MAX_VERSION, k3kIndexCharts, k3kChartToInstall } from '../utils/k3k-chart';
 import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
@@ -245,7 +246,7 @@ export default {
         let fetched = false;
         let tries = 0;
 
-        let latestK3kChartVersion = '';
+        let k3kChart = null;
 
         while (!fetched) {
           k3kRepo = await this.$store.dispatch('management/request', {
@@ -257,20 +258,24 @@ export default {
           const downloaded = downloadedCondition?.status === 'True';
 
           if (downloaded) {
-            // get the latest version of the chart
             const indexUrl = k3kRepo?.links?.index;
             const repoReq = await this.$store.dispatch('management/request', {
               url:    `${ indexUrl }`,
               method: 'GET',
             });
+            const charts = k3kIndexCharts(repoReq);
 
-            if (repoReq?.entries?.[K3K_CHART_NAME] && repoReq?.entries?.[K3K_CHART_NAME].length) {
-              latestK3kChartVersion = (repoReq?.entries?.[K3K_CHART_NAME] || [])[0]?.version;
+            if (charts.length) {
+              k3kChart = k3kChartToInstall(charts);
+
+              if (!k3kChart) {
+                throw new Error(this.t('k3k.errors.noSupportedK3kVersion', {
+                  repo: K3K_REPO_NAME, maxVersion: K3K_MAX_VERSION, versions: charts.map((chart) => chart.version).join(', ')
+                }));
+              }
               // eslint-disable-next-line no-console
-              console.log('Installing k3k version...', latestK3kChartVersion);
+              console.log('Installing k3k version...', k3kChart.version);
               fetched = true;
-            } else {
-              fetched = false;
             }
           }
 
@@ -292,9 +297,9 @@ export default {
                 'catalog.cattle.io/ui-source-repo':      K3K_REPO_NAME,
                 'catalog.cattle.io/ui-source-repo-type': 'cluster'
               },
-              chartName:   K3K_CHART_NAME,
+              chartName:   k3kChart.name,
               releaseName: K3K_CHART_NAME,
-              version:     latestK3kChartVersion || '1.0.0',
+              version:     k3kChart.version,
               values:      K3K_VALUES
             }
           ],

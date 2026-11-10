@@ -276,7 +276,7 @@ k3k:
       serverPort:
         label: Server Port
         placeholder: 'Default: 443'
-        hcpUnsupported: The K3K controller on this host cluster does not support a custom server port in HCP mode. Upgrade the SUSE Virtual Cluster Engine app to at least version {version} to use a server port other than the default.
+        unsupported: The K3K controller on this host cluster does not support a custom server port. Upgrade the SUSE Virtual Cluster Engine app to at least version {version} to use a server port other than the default.
       etcdPort:
         label: etcd Port
         placeholder: 'Default: 2379'

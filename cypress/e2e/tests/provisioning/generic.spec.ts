@@ -4,7 +4,7 @@ import CruK3kPo from '../../po/cru-k3k.po';
 import { HOST_CLUSTER, openCreateForm } from '../../utils/provisioning';
 import {
   loginAsAdmin, clusterIdByName, deleteResource, uninstallK3k, createProject, createNamespace,
-  createVirtualClusterPolicy, K3K_POLICY_TYPE
+  createVirtualClusterPolicy, K3K_POLICY_TYPE, K3K_NAMESPACE, K3K_CHART_NAME
 } from '../../utils/rancher-api';
 
 const { NO_POLICY } = CruK3kPo;
@@ -80,6 +80,114 @@ describe('cluster creation', () => {
       const { top } = $el[0].getBoundingClientRect();
 
       expect(top, 'section header is in the viewport').to.be.within(0, Cypress.config('viewportHeight'));
+    });
+  });
+
+  /**
+   * k3k < 1.3.0 does not handle a non-default load balancer server port
+   * (https://github.com/rancher/k3k/issues/1309), so the form disables that input in every mode.
+   * The form reads the k3k version from the k3k app on the host cluster; each test stubs that app,
+   * so these tests do not depend on whether k3k is installed.
+   */
+  describe('load balancer server port', { tags: ['@adminUser'] }, () => {
+    const K3K_MODES = ['shared', 'virtual', 'hcp'] as const;
+    let hostClusterId = '';
+
+    before(() => {
+      loginAsAdmin();
+
+      clusterIdByName(HOST_CLUSTER).then((id) => {
+        hostClusterId = id;
+      });
+    });
+
+    function k3kAppRoute() {
+      return { method: 'GET', pathname: `/k8s/clusters/${ hostClusterId }/v1/catalog.cattle.io.apps/${ K3K_NAMESPACE }/${ K3K_CHART_NAME }` };
+    }
+
+    // no appVersion fails the request, as for a user who cannot read the app
+    function k3kAppResponse(appVersion?: string) {
+      return appVersion ? { body: { spec: { chart: { metadata: { appVersion } } } } } : { statusCode: 404, body: {} };
+    }
+
+    function openLoadBalancerForm(): CruK3kPo {
+      const cruK3k = openCreateForm();
+
+      cruK3k.selectHostCluster(HOST_CLUSTER);
+      cruK3k.ensureNoPolicy();
+      cruK3k.expandSection('Networking');
+      cruK3k.expandSection('Direct API Server Exposure');
+      cruK3k.exposeOption('Load Balancer').click();
+
+      return cruK3k;
+    }
+
+    // K3kVersionBanner and the form each read the app when the host cluster is selected
+    // waiting for both keeps an 'enabled' assertion from passing before the form has the version
+    function waitForK3kApp() {
+      cy.wait('@k3kApp');
+      cy.wait('@k3kApp');
+    }
+
+    K3K_MODES.forEach((mode) => {
+      it(`disables the server port and shows a warning in ${ mode } mode when k3k is older than 1.3.0`, () => {
+        cy.intercept(k3kAppRoute(), k3kAppResponse('v1.2.1')).as('k3kApp');
+
+        const cruK3k = openLoadBalancerForm();
+
+        waitForK3kApp();
+        cruK3k.modeOption(mode).click();
+
+        cruK3k.loadBalancerServerPortBanner().scrollIntoView().should('be.visible').and('contain', '1.3.0');
+        cruK3k.loadBalancerServerPort().should('be.disabled');
+        cruK3k.loadBalancerEtcdPort().should('be.enabled');
+      });
+
+      it(`allows a server port in ${ mode } mode when k3k is 1.3.0`, () => {
+        cy.intercept(k3kAppRoute(), k3kAppResponse('v1.3.0')).as('k3kApp');
+
+        const cruK3k = openLoadBalancerForm();
+
+        waitForK3kApp();
+        cruK3k.modeOption(mode).click();
+
+        cruK3k.loadBalancerServerPort().should('be.enabled');
+        cruK3k.loadBalancerServerPortBanner().should('not.exist');
+      });
+    });
+
+    // k3k may not be installed yet, and a new install is >= 1.3.0
+    it('allows a server port when the k3k version cannot be read', () => {
+      cy.intercept(k3kAppRoute(), k3kAppResponse()).as('k3kApp');
+
+      const cruK3k = openLoadBalancerForm();
+
+      waitForK3kApp();
+
+      cruK3k.loadBalancerServerPort().should('be.enabled');
+      cruK3k.loadBalancerServerPortBanner().should('not.exist');
+    });
+
+    // the input is enabled while the version is unknown
+    // the app response is held until a port is typed, then released
+    it('clears a server port typed before the k3k version is known', () => {
+      let releaseK3kApp: () => void = () => undefined;
+      const k3kAppHeld = new Promise<void>((resolve) => {
+        releaseK3kApp = () => resolve();
+      });
+
+      cy.intercept(k3kAppRoute(), (req) => k3kAppHeld.then(() => req.reply(k3kAppResponse('v1.2.1')))).as('k3kApp');
+
+      const cruK3k = openLoadBalancerForm();
+
+      cruK3k.loadBalancerServerPort().type('6443');
+      cruK3k.loadBalancerServerPort().should('have.value', '6443');
+
+      // the store merges identical in-flight GETs, so both readers share one held request
+      cy.then(() => releaseK3kApp());
+      cy.wait('@k3kApp');
+
+      cruK3k.loadBalancerServerPort().should('be.disabled').and('have.value', '');
     });
   });
 

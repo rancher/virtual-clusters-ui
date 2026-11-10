@@ -9,7 +9,6 @@ import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import { Banner } from '@components/Banner';
 import { RcSection, useReportInvalidToSection } from '@components/RcSection';
 import { RcContentGroup } from '@components/Layout';
-import { MODES } from '../Mode.vue';
 
 type ExposeRule = (expose: Record<string, any>) => string | null | undefined;
 
@@ -21,20 +20,18 @@ const EXPOSE_MODES = {
 };
 
 // https://github.com/rancher/k3k/issues/1309
-const HCP_LB_SERVER_PORT_MIN_K3K_VERSION = '1.3.0';
+const LB_SERVER_PORT_MIN_K3K_VERSION = '1.3.0';
 
 const props = withDefaults(defineProps<{
   expose?: Record<string, any>;
   mode?: string;
   rules?: ExposeRule[];
   installedVersion?: string;
-  virtualClusterMode?: string;
 }>(), {
-  expose:             () => ({}),
-  mode:               _CREATE,
-  rules:              () => [],
-  installedVersion:   '',
-  virtualClusterMode: MODES.SHARED,
+  expose:           () => ({}),
+  mode:             _CREATE,
+  rules:            () => [],
+  installedVersion: '',
 });
 
 const emit = defineEmits<{
@@ -94,7 +91,7 @@ useReportInvalidToSection(computed(() => !!errorMessage.value));
 const lbServerPortUnsupported = computed(() => {
   const version = semver.coerce(props.installedVersion);
 
-  return props.virtualClusterMode === MODES.HCP && !!version && semver.lt(version, HCP_LB_SERVER_PORT_MIN_K3K_VERSION);
+  return !!version && semver.lt(version, LB_SERVER_PORT_MIN_K3K_VERSION);
 });
 
 // in create mode, clear the serverPort input when it becomes disabled
@@ -203,7 +200,7 @@ watch(lbServerPortUnsupported, (neu) => {
               v-if="lbServerPortUnsupported"
               data-testid="k3k-expose-lb-server-port-unsupported"
               color="warning"
-              :label="t('k3k.expose.loadbalancer.serverPort.hcpUnsupported', { version: HCP_LB_SERVER_PORT_MIN_K3K_VERSION })"
+              :label="t('k3k.expose.loadbalancer.serverPort.unsupported', { version: LB_SERVER_PORT_MIN_K3K_VERSION })"
             />
             <div class="k3k-input-row">
               <div>

@@ -159,7 +159,6 @@ export default {
     >
       <Expose
         :installed-version="installedVersion"
-        :virtual-cluster-mode="virtualClusterMode"
         :expose="expose"
         :mode="mode"
         :rules="rules.expose || []"

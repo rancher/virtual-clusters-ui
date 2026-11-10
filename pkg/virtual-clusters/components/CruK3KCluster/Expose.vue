@@ -201,6 +201,7 @@ watch(lbServerPortUnsupported, (neu) => {
           <RcContentGroup>
             <Banner
               v-if="lbServerPortUnsupported"
+              data-testid="k3k-expose-lb-server-port-unsupported"
               color="warning"
               :label="t('k3k.expose.loadbalancer.serverPort.hcpUnsupported', { version: HCP_LB_SERVER_PORT_MIN_K3K_VERSION })"
             />
@@ -208,6 +209,7 @@ watch(lbServerPortUnsupported, (neu) => {
               <div>
                 <LabeledInput
                   v-model:value.number="expose.loadBalancer.serverPort"
+                  data-testid="k3k-expose-lb-server-port"
                   type="number"
                   label-key="k3k.expose.loadbalancer.serverPort.label"
                   :placeholder="t('k3k.expose.loadbalancer.serverPort.placeholder')"
@@ -224,6 +226,7 @@ watch(lbServerPortUnsupported, (neu) => {
 
               <LabeledInput
                 v-model:value.number="expose.loadBalancer.etcdPort"
+                data-testid="k3k-expose-lb-etcd-port"
                 type="number"
                 label-key="k3k.expose.loadbalancer.etcdPort.label"
                 :placeholder="t('k3k.expose.loadbalancer.etcdPort.placeholder')"

@@ -11,6 +11,9 @@ export default class CruK3kPo extends PagePo {
   // k3kProvisioner.ID (pkg/virtual-clusters/provisioner.ts)
   static readonly SUB_TYPE = 'k3k';
 
+  // k3k.policy.noneOption
+  static readonly NO_POLICY = 'No policy';
+
   static goToCreate(clusterId = '_'): CruK3kPo {
     ClusterManagerCreatePagePo.goTo(clusterId, `type=${ CruK3kPo.SUB_TYPE }`);
 
@@ -55,6 +58,21 @@ export default class CruK3kPo extends PagePo {
     return this.policySelect().clickOptionWithLabel(label);
   }
 
+  // host cluster and policy will be preselected if defined, and that changes the rest of the form
+  // ensuring no policy is set makes tests more independent of the host cluster's state
+  ensureNoPolicy(): Cypress.Chainable {
+    this.waitForPolicyLoad();
+
+    this.policySelect().self().then(($select) => {
+      if (!$select.hasClass('vs--disabled')) {
+        this.selectPolicy(CruK3kPo.NO_POLICY);
+      }
+    });
+
+    // the mode radios render only when no policy is selected
+    return this.modeSection().should('exist');
+  }
+
   viewPolicyButton(): Cypress.Chainable {
     return this.self().find('[data-testid="k3k-policy-open-drawer"]');
   }
@@ -87,6 +105,24 @@ export default class CruK3kPo extends PagePo {
 
       return cy.wrap($section);
     });
+  }
+
+  // RadioButton puts its label in the input's data-testid
+  exposeOption(label: 'Not Exposed' | 'Ingress' | 'Load Balancer' | 'Node Port'): Cypress.Chainable {
+    return this.section('Direct API Server Exposure').find(`input[type="radio"][data-testid="${ label }"]`).closest('label.radio-container');
+  }
+
+  // LabeledInput binds $attrs, including data-testid, to its input element
+  loadBalancerServerPort(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-expose-lb-server-port"]');
+  }
+
+  loadBalancerEtcdPort(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-expose-lb-etcd-port"]');
+  }
+
+  loadBalancerServerPortBanner(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-expose-lb-server-port-unsupported"]');
   }
 
   nodeSelectorTitle(): Cypress.Chainable {

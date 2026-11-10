@@ -1,15 +1,13 @@
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 
 import CruK3kPo from '../../po/cru-k3k.po';
-import { openCreateForm } from '../../utils/provisioning';
+import { HOST_CLUSTER, openCreateForm } from '../../utils/provisioning';
 import {
   loginAsAdmin, clusterIdByName, deleteResource, uninstallK3k, createProject, createNamespace,
   createVirtualClusterPolicy, K3K_POLICY_TYPE
 } from '../../utils/rancher-api';
 
-// CI imports a k3d cluster with this name (scripts/e2e-import-generic-cluster.sh)
-const HOST_CLUSTER = Cypress.env('hostCluster') || 'e2e-generic';
-const NO_POLICY = 'No policy';
+const { NO_POLICY } = CruK3kPo;
 const RESOURCE_SYNC_SECTION = 'Resource Synchronization';
 const TOPOLOGY_SECTION = 'Topology';
 
@@ -58,6 +56,7 @@ describe('cluster creation', () => {
   it('renders a table of contents of the form sections', { tags: ['@adminUser', '@standardUser'] }, () => {
     const cruK3k = openCreateForm();
 
+    cruK3k.ensureNoPolicy();
     cruK3k.tableOfContents().should('be.visible');
 
     // Member Roles depends on the user's permissions and Topology on the host's k3k version,

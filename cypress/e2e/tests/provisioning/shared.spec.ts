@@ -10,6 +10,8 @@ describe('shared mode', () => {
   it('allows agent and sync configuration', { tags: ['@adminUser', '@standardUser'] }, () => {
     const cruK3k = openCreateForm();
 
+    cruK3k.ensureNoPolicy();
+
     // shared is the default, so leave it first for the notice to have something to disappear from
     cruK3k.modeOption('virtual').click();
     cruK3k.self().contains(NOT_ALLOWED).should('exist');
@@ -22,6 +24,7 @@ describe('shared mode', () => {
   it('offers agent env vars without an agent pod count', { tags: ['@adminUser', '@standardUser'] }, () => {
     const cruK3k = openCreateForm();
 
+    cruK3k.ensureNoPolicy();
     cruK3k.modeOption('shared').click();
 
     cruK3k.expandSection('Agents').within(() => {

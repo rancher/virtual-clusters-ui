@@ -15,7 +15,10 @@ if (!baseUrl.endsWith('/dashboard') && !isLocalDevServer) {
 }
 
 export default extendConfig({
-  env: { extensionUrl: process.env.EXTENSION_URL },
+  env: {
+    extensionUrl: process.env.EXTENSION_URL,
+    hostCluster:  process.env.TEST_HOST_CLUSTER,
+  },
   e2e: {
     baseUrl,
     specPattern: 'cypress/e2e/tests/**/*.spec.ts',

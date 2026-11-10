@@ -1,8 +1,9 @@
+import CruK3kPo from '../../po/cru-k3k.po';
 import VirtualClusterDetailPagePo, { HCP_TAB, RELATED_TAB } from '../../po/virtual-cluster-detail.po';
-import { NOT_ALLOWED, openCreateForm } from '../../utils/provisioning';
+import { HOST_CLUSTER, NOT_ALLOWED, openCreateForm } from '../../utils/provisioning';
 import {
-  loginAsAdmin, deleteResource, waitForResource, createVirtualClusterStub, K3K_MODE_ANNOTATION,
-  PARENT_CLUSTER_ANNOTATION, K3K_NAMESPACE_ANNOTATION
+  loginAsAdmin, deleteResource, waitForResource, createVirtualClusterStub, clusterIdByName, K3K_MODE_ANNOTATION,
+  PARENT_CLUSTER_ANNOTATION, K3K_NAMESPACE_ANNOTATION, K3K_NAMESPACE, K3K_CHART_NAME
 } from '../../utils/rancher-api';
 
 const CLUSTER_NAMESPACE = 'fleet-default';
@@ -16,6 +17,7 @@ describe('HCP mode', () => {
   it('marks agent and sync configuration as not available', { tags: ['@adminUser', '@standardUser'] }, () => {
     const cruK3k = openCreateForm();
 
+    cruK3k.ensureNoPolicy();
     cruK3k.modeOption('hcp').click();
     cruK3k.self().contains(NOT_ALLOWED).should('exist');
   });
@@ -24,12 +26,106 @@ describe('HCP mode', () => {
   it('replaces the agent configuration with a not available message', { tags: ['@adminUser', '@standardUser'] }, () => {
     const cruK3k = openCreateForm();
 
+    cruK3k.ensureNoPolicy();
     cruK3k.modeOption('hcp').click();
 
     cruK3k.expandSection('Agents').within(() => {
       cy.contains(NOT_ALLOWED).should('be.visible');
       cy.contains('Number of Agent Pods').should('not.exist');
       cy.contains('Agent Pod Environment Variables').should('not.exist');
+    });
+  });
+
+  /**
+   * k3k < 1.3.0 does not handle a non-default load balancer server port in hcp mode
+   * (https://github.com/rancher/k3k/issues/1309), so the form disables that input.
+   * The form reads the k3k version from the k3k app on the host cluster; each test stubs that app.
+   */
+  describe('load balancer server port', { tags: ['@adminUser'] }, () => {
+    let hostClusterId = '';
+
+    before(() => {
+      loginAsAdmin();
+
+      clusterIdByName(HOST_CLUSTER).then((id) => {
+        hostClusterId = id;
+      });
+    });
+
+    // no appVersion fails the request, as for a user who cannot read the app
+    function stubK3kApp(appVersion?: string) {
+      const pathname = `/k8s/clusters/${ hostClusterId }/v1/catalog.cattle.io.apps/${ K3K_NAMESPACE }/${ K3K_CHART_NAME }`;
+      const response = appVersion ? { body: { spec: { chart: { metadata: { appVersion } } } } } : { statusCode: 404, body: {} };
+
+      cy.intercept({ method: 'GET', pathname }, response).as('k3kApp');
+    }
+
+    // K3kVersionBanner and the form each read the app when the host cluster is selected
+    // waiting for both keeps an 'enabled' assertion from passing before the form has the version
+    function openLoadBalancerForm(appVersion?: string): CruK3kPo {
+      stubK3kApp(appVersion);
+
+      const cruK3k = openCreateForm();
+
+      cruK3k.selectHostCluster(HOST_CLUSTER);
+      cy.wait('@k3kApp');
+      cy.wait('@k3kApp');
+      cruK3k.ensureNoPolicy();
+
+      cruK3k.expandSection('Networking');
+      cruK3k.expandSection('Direct API Server Exposure');
+      cruK3k.exposeOption('Load Balancer').click();
+
+      return cruK3k;
+    }
+
+    it('disables the server port and shows a warning when k3k is older than 1.3.0', () => {
+      const cruK3k = openLoadBalancerForm('v1.2.1');
+
+      cruK3k.modeOption('hcp').click();
+
+      cruK3k.loadBalancerServerPortBanner().scrollIntoView().should('be.visible').and('contain', '1.3.0');
+      cruK3k.loadBalancerServerPort().should('be.disabled');
+      cruK3k.loadBalancerEtcdPort().should('be.enabled');
+    });
+
+    it('allows a server port when k3k is 1.3.0', () => {
+      const cruK3k = openLoadBalancerForm('v1.3.0');
+
+      cruK3k.modeOption('hcp').click();
+
+      cruK3k.loadBalancerServerPort().should('be.enabled');
+      cruK3k.loadBalancerServerPortBanner().should('not.exist');
+    });
+
+    it('allows a server port outside hcp mode when k3k is older than 1.3.0', () => {
+      const cruK3k = openLoadBalancerForm('v1.2.1');
+
+      cruK3k.modeOption('shared').click();
+
+      cruK3k.loadBalancerServerPort().should('be.enabled');
+      cruK3k.loadBalancerServerPortBanner().should('not.exist');
+    });
+
+    // k3k may not be installed yet, and a new install is >= 1.3.0
+    it('allows a server port when the k3k version cannot be read', () => {
+      const cruK3k = openLoadBalancerForm();
+
+      cruK3k.modeOption('hcp').click();
+
+      cruK3k.loadBalancerServerPort().should('be.enabled');
+      cruK3k.loadBalancerServerPortBanner().should('not.exist');
+    });
+
+    it('clears a server port set before switching to hcp mode', () => {
+      const cruK3k = openLoadBalancerForm('v1.2.1');
+
+      cruK3k.loadBalancerServerPort().type('6443');
+      cruK3k.loadBalancerServerPort().should('have.value', '6443');
+
+      cruK3k.modeOption('hcp').click();
+
+      cruK3k.loadBalancerServerPort().should('be.disabled').and('have.value', '');
     });
   });
 

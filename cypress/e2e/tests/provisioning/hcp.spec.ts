@@ -181,7 +181,7 @@ describe('HCP mode', () => {
 
     function expectNoServerUrl() {
       detailPage.goTo(undefined, HCP_TAB);
-      detailPage.noServerAddressWarning().should('be.visible');
+      detailPage.noServerAddressWarning().scrollIntoView().should('be.visible');
       detailPage.registrationCommand().should('not.exist');
     }
 

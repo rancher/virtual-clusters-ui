@@ -93,7 +93,7 @@ echo -e "${CYAN}Selected Rancher chart version: ${RANCHER_CHART_VERSION}${RESET}
 
 echo -e "${YELLOW}Installing Rancher..........${RESET}"
 kubectl create ns cattle-system
-helm install rancher $RANCHER_HELM_REPO_NAME/rancher \
+helm install rancher $RANCHER_HELM_REPO_NAME/rancher-server \
   --namespace cattle-system \
   --version "$RANCHER_CHART_VERSION" \
   --devel \

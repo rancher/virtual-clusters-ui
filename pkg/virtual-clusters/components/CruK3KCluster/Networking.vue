@@ -51,7 +51,12 @@ export default {
       default: () => {
         return {};
       },
+    },
 
+    // which version of k3k is installed in the currently-selected host cluster
+    installedVersion: {
+      type:    String,
+      default: ''
     },
 
     virtualClusterMode: {
@@ -73,7 +78,7 @@ export default {
     // k3k applies its virtual mode defaults to every mode except shared
     defaultsMode() {
       return this.isShared ? MODES.SHARED : MODES.VIRTUAL;
-    }
+    },
   }
 
 };
@@ -153,6 +158,8 @@ export default {
       :title="t('k3k.expose.label')"
     >
       <Expose
+        :installed-version="installedVersion"
+        :virtual-cluster-mode="virtualClusterMode"
         :expose="expose"
         :mode="mode"
         :rules="rules.expose || []"

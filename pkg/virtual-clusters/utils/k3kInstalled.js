@@ -83,8 +83,7 @@ export const verifyUserCanCreateK3kClusters = async(store, mgmtId) => {
 
 /**
  * Read the version of the k3k app on a host cluster
- * the app is read by name because the virtual cluster roles grant get on apps, but not list
- * @returns semver | null - null if the version can't be read (eg user lacks permission to see k3k app)
+ * @returns semver | null - null if the version can't be read (insufficient permission to see the app)
  */
 const fetchK3kVersion = async(store, mgmtId) => {
   const appSchema = await store.dispatch('management/request', {
@@ -143,21 +142,37 @@ export const fieldIsSupported = async(store, mgmtId, type, field) => {
   return definitionPaths.includes(`${ definitionType }.${ field }`);
 };
 
+/**
+ * Read the version of the k3k app on a host cluster
+ * @param {*} store vuex store ie component this.$store
+ * @param {*} mgmtId string id of the cluster to look for k3k in
+ * @returns string - coerced version, or '' if the version can't be read
+ */
+export const getK3kVersion = async(store, mgmtId) => {
+  try {
+    return (await fetchK3kVersion(store, mgmtId))?.version || '';
+  } catch {
+    return '';
+  }
+};
+
 // the first k3k release with hcp mode
 const HCP_MIN_K3K_VERSION = '1.2.0';
 
 /**
- * Check whether the k3k version on a host cluster accepts hcp mode.
+ * Check whether a k3k version accepts hcp mode.
  * a version that cannot be read counts as supported: k3k may not be installed yet, and new installs support hcp
+ * @param {*} k3kVersion string version, as returned by getK3kVersion
+ */
+export const versionSupportsHcp = (k3kVersion) => {
+  return !k3kVersion || semver.gte(k3kVersion, HCP_MIN_K3K_VERSION);
+};
+
+/**
+ * Check whether the k3k version on a host cluster accepts hcp mode.
  * @param {*} store vuex store ie component this.$store
  * @param {*} mgmtId string id of the cluster to look for k3k in
  */
 export const hcpIsSupported = async(store, mgmtId) => {
-  try {
-    const k3kVersion = await fetchK3kVersion(store, mgmtId);
-
-    return !k3kVersion || semver.gte(k3kVersion, HCP_MIN_K3K_VERSION);
-  } catch {
-    return true;
-  }
+  return versionSupportsHcp(await getK3kVersion(store, mgmtId));
 };

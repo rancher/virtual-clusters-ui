@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import cloneDeep from 'lodash/cloneDeep';
+import semver from 'semver';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import RadioButton from '@components/Form/Radio/RadioButton.vue';
@@ -8,6 +9,7 @@ import RcKeyValue from '@shell/components/form/RcKeyValue.vue';
 import { Banner } from '@components/Banner';
 import { RcSection, useReportInvalidToSection } from '@components/RcSection';
 import { RcContentGroup } from '@components/Layout';
+import { MODES } from '../Mode.vue';
 
 type ExposeRule = (expose: Record<string, any>) => string | null | undefined;
 
@@ -18,14 +20,21 @@ const EXPOSE_MODES = {
   NONE:          'none'
 };
 
+// https://github.com/rancher/k3k/issues/1309
+const HCP_LB_SERVER_PORT_MIN_K3K_VERSION = '1.3.0';
+
 const props = withDefaults(defineProps<{
   expose?: Record<string, any>;
   mode?: string;
   rules?: ExposeRule[];
+  installedVersion?: string;
+  virtualClusterMode?: string;
 }>(), {
-  expose: () => ({}),
-  mode:   _CREATE,
-  rules:  () => [],
+  expose:             () => ({}),
+  mode:               _CREATE,
+  rules:              () => [],
+  installedVersion:   '',
+  virtualClusterMode: MODES.SHARED,
 });
 
 const emit = defineEmits<{
@@ -80,6 +89,24 @@ watch(exposeMode, (neu) => {
 const errorMessage = computed(() => (props.mode === _VIEW ? '' : props.rules.map((rule) => rule(props.expose)).filter(Boolean).join(', ')));
 
 useReportInvalidToSection(computed(() => !!errorMessage.value));
+
+// malformed or missing k3kVersion is treated as not affected (serverPort input remains enabled)
+const lbServerPortUnsupported = computed(() => {
+  const version = semver.coerce(props.installedVersion);
+
+  return props.virtualClusterMode === MODES.HCP && !!version && semver.lt(version, HCP_LB_SERVER_PORT_MIN_K3K_VERSION);
+});
+
+// in create mode, clear the serverPort input when it becomes disabled
+watch(lbServerPortUnsupported, (neu) => {
+  if (!neu || props.mode !== _CREATE || props.expose?.loadBalancer?.serverPort === undefined) {
+    return;
+  }
+  const out = cloneDeep(props.expose);
+
+  delete out.loadBalancer.serverPort;
+  emit('update:expose', out);
+}, { immediate: true });
 </script>
 
 <template>
@@ -172,6 +199,11 @@ useReportInvalidToSection(computed(() => !!errorMessage.value));
           :title="t('k3k.expose.loadbalancer.label')"
         >
           <RcContentGroup>
+            <Banner
+              v-if="lbServerPortUnsupported"
+              color="warning"
+              :label="t('k3k.expose.loadbalancer.serverPort.hcpUnsupported', { version: HCP_LB_SERVER_PORT_MIN_K3K_VERSION })"
+            />
             <div class="k3k-input-row">
               <div>
                 <LabeledInput
@@ -180,6 +212,7 @@ useReportInvalidToSection(computed(() => !!errorMessage.value));
                   label-key="k3k.expose.loadbalancer.serverPort.label"
                   :placeholder="t('k3k.expose.loadbalancer.serverPort.placeholder')"
                   :mode="mode"
+                  :disabled="lbServerPortUnsupported"
                   class="mmb-1"
                 />
                 <t

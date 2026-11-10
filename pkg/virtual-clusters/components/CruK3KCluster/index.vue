@@ -43,7 +43,7 @@ import PolicyAffinity from '../../edit/k3k.io.virtualclusterpolicy/PolicyAffinit
 import K3kVersionBanner from '../K3kVersionBanner.vue';
 
 import { MODES, isApiServerExposed, resetModeSpecificSync } from '../../utils/shared';
-import { fieldIsSupported, hcpIsSupported } from '../../utils/k3kInstalled';
+import { fieldIsSupported, getK3kVersion, versionSupportsHcp } from '../../utils/k3kInstalled';
 
 import importConfigMapTemplate from '../../resources/import-configmap.json';
 import importJobTemplate from '../../resources/import-job.json';
@@ -291,6 +291,7 @@ export default {
       if (!mgmtId) {
         this.supportsTopology = false;
         this.supportsHcp = true;
+        this.k3kVersion = '';
 
         return;
       }
@@ -301,7 +302,8 @@ export default {
         this.supportsTopology = false;
       }
 
-      this.supportsHcp = await hcpIsSupported(this.$store, mgmtId);
+      this.k3kVersion = await getK3kVersion(this.$store, mgmtId);
+      this.supportsHcp = versionSupportsHcp(this.k3kVersion);
     },
 
     supportsHcp(neu) {
@@ -332,6 +334,7 @@ export default {
       k3sVersions:                    [],
       supportsTopology:               false, // k3k < 1.1.0 does not support fields configured in the 'Topology' tab
       supportsHcp:                    true, // k3k < 1.2.0 rejects hcp mode
+      k3kVersion:                     '', // '' when k3k is not installed or its app cannot be read
       fvFormRuleSets:                 [
         {
           path:  'metadata.name',
@@ -1092,6 +1095,7 @@ export default {
         v-model:tls-s-a-ns="k3kCluster.spec.tlsSANs"
         v-model:expose="k3kCluster.spec.expose"
         :virtual-cluster-mode="k3kCluster.spec.mode"
+        :installed-version="k3kVersion"
         :rules="{
           expose: fvGetAndReportPathRules('k3kCluster.spec.expose'),
           ...(k3kCluster.spec.expose?.ingress ? {tlsSANs: fvGetAndReportPathRules('spec.tlsSANs')} : {})

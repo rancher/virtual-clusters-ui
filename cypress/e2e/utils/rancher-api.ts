@@ -207,6 +207,7 @@ export const K3K_CHART_NAME = 'suse-virtual-cluster-engine';
 export const K3K_REPO_NAME = 'suse-virtual-cluster-engine';
 export const K3K_NAMESPACE = 'k3k-system';
 export const K3K_POLICY_TYPE = 'k3k.io.virtualclusterpolicy';
+export const K3K_CLUSTER_TYPE = 'k3k.io.cluster';
 
 /**
  * Best effort, like deleteResource. The namespace goes last because deleting it first

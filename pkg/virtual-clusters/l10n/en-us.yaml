@@ -325,7 +325,6 @@ k3k:
     loadingStorageClasses: 'Error loading storage classes from {cluster}: '
     storageClassSchema: 'you may not have permission to view them.'
     installingK3k: Error installing K3K
-    noSupportedK3kVersion: 'The {repo} repository has no K3K version at or below {maxVersion}. Available versions: {versions}'
     importingCluster: Error importing virtual cluster
     loadingPolicies: Error fetching virtual cluster policies from {cluster}
     loadingNamespaces: Error fetching namespaces from {cluster}

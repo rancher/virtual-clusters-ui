@@ -17,7 +17,7 @@ import {
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
 } from '../utils/k3kInstalled';
-import { K3K_MAX_VERSION, k3kIndexCharts, k3kChartToInstall } from '../utils/k3k-chart';
+import { k3kIndexCharts, k3kChartToInstall } from '../utils/k3k-chart';
 import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
@@ -263,16 +263,10 @@ export default {
               url:    `${ indexUrl }`,
               method: 'GET',
             });
-            const charts = k3kIndexCharts(repoReq);
 
-            if (charts.length) {
-              k3kChart = k3kChartToInstall(charts);
+            k3kChart = k3kChartToInstall(k3kIndexCharts(repoReq));
 
-              if (!k3kChart) {
-                throw new Error(this.t('k3k.errors.noSupportedK3kVersion', {
-                  repo: K3K_REPO_NAME, maxVersion: K3K_MAX_VERSION, versions: charts.map((chart) => chart.version).join(', ')
-                }));
-              }
+            if (k3kChart) {
               // eslint-disable-next-line no-console
               console.log('Installing k3k version...', k3kChart.version);
               fetched = true;

@@ -42,6 +42,19 @@ export default class CruK3kPo extends PagePo {
     return new AsyncButtonPo('[data-testid="install-k3k-button"]', this.self());
   }
 
+  installSucceeded(): Cypress.Chainable {
+    return this.self().contains('K3K installed');
+  }
+
+  versionsTooHighBanner(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-versions-too-high-banner"]');
+  }
+
+  // CruResource renders each error in its own banner
+  errorBanner(options?: Partial<Cypress.Timeoutable>): Cypress.Chainable {
+    return this.self().find('#cru-errors [data-testid^="error-banner"]', options);
+  }
+
   policySelect(): LabeledSelectPo {
     return new LabeledSelectPo('[data-testid="k3k-policy-select"]', this.self());
   }

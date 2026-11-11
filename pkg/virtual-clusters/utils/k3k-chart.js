@@ -63,3 +63,29 @@ export const k3kChartToInstall = (charts, version) => {
 
   return matches.find((chart) => chart.name === K3K_CHART_NAME) || matches[0] || null;
 };
+
+/**
+ * Why k3kChartToInstall(charts) returned null
+ * 'tooHigh': every valid version is above K3K_MAX_VERSION, ie the extension is too old for the repo
+ * the other values are keys under k3k.errors
+ * semver.gtr is not used: it counts a prerelease of a supported minor (eg 1.3.1-rc1) as above the range
+ * @param {object[]} charts entries from k3kIndexCharts
+ * @returns 'noK3kCharts' | 'noValidK3kVersions' | 'tooHigh' | 'onlyPrereleaseK3kVersions'
+ */
+export const k3kNoChartReason = (charts) => {
+  const versions = charts.map((chart) => chart.version).filter((version) => semver.valid(version));
+
+  if (!charts.length) {
+    return 'noK3kCharts';
+  }
+
+  if (!versions.length) {
+    return 'noValidK3kVersions';
+  }
+
+  if (versions.every((version) => !semver.satisfies(version, `<=${ K3K_MAX_VERSION }`, { includePrerelease: true }))) {
+    return 'tooHigh';
+  }
+
+  return 'onlyPrereleaseK3kVersions';
+};

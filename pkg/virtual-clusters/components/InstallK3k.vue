@@ -4,6 +4,7 @@ import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
+import { Banner } from '@components/Banner';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
@@ -17,7 +18,7 @@ import {
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
 } from '../utils/k3kInstalled';
-import { k3kIndexCharts, k3kChartToInstall } from '../utils/k3k-chart';
+import { K3K_MAX_VERSION, k3kIndexCharts, k3kChartToInstall, k3kNoChartReason } from '../utils/k3k-chart';
 import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
@@ -32,7 +33,8 @@ export default {
 
   components: {
     LabeledSelect,
-    AsyncButton
+    AsyncButton,
+    Banner
   },
 
   props: {
@@ -94,6 +96,7 @@ export default {
       localParentCluster:      this.parentCluster,
       allParentClusterOptions: [],
       loadingClusters:         false,
+      versionsTooHigh:         false,
     };
   },
 
@@ -216,6 +219,7 @@ export default {
     async installK3k(cb) {
       // tell the parent component to remove any installation error messages from the error array
       this.$emit('error', false);
+      this.versionsTooHigh = false;
 
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
@@ -242,46 +246,61 @@ export default {
 
         await normanCluster.doAction('importYaml', { yaml: repoYaml });
 
-        // wait for the repo to be downloaded
-        let fetched = false;
+        // wait for rancher to process the repo spec applied above
+        let downloaded = false;
         let tries = 0;
 
-        let k3kChart = null;
-
-        while (!fetched) {
+        while (!downloaded) {
           k3kRepo = await this.$store.dispatch('management/request', {
             url:    k3kRepoUrl,
             method: 'GET',
           });
           const downloadedCondition = k3kRepo.status?.conditions?.find((s) => s.type === 'OCIDownloaded');
+          // the condition describes an earlier spec until observedGeneration catches up
+          const processed = downloadedCondition && k3kRepo.status?.observedGeneration >= k3kRepo.metadata?.generation;
 
-          const downloaded = downloadedCondition?.status === 'True';
-
-          if (downloaded) {
-            const indexUrl = k3kRepo?.links?.index;
-            const repoReq = await this.$store.dispatch('management/request', {
-              url:    `${ indexUrl }`,
-              method: 'GET',
-            });
-
-            k3kChart = k3kChartToInstall(k3kIndexCharts(repoReq));
-
-            if (k3kChart) {
-              // eslint-disable-next-line no-console
-              console.log('Installing k3k version...', k3kChart.version);
-              fetched = true;
+          if (processed) {
+            if (downloadedCondition.status !== 'True') {
+              // fail at once: rancher retries most download failures only after 24h or a spec change
+              throw new Error(this.t('k3k.errors.repoDownloadFailed', { repo: K3K_REPO_NAME, message: downloadedCondition.message }));
             }
-          }
-
-          if (!fetched) {
+            downloaded = true;
+          } else {
             tries++;
 
             if (tries > DOWNLOAD_MAX_RETRIES) {
-              throw new Error('Failed to add Helm Chart Repository');
+              throw new Error(this.t('k3k.errors.repoNotDownloaded', { repo: K3K_REPO_NAME }));
             }
             await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT));
           }
         }
+
+        // rancher writes the index before it marks the repo downloaded, so one read is final
+        const repoReq = await this.$store.dispatch('management/request', {
+          url:    k3kRepo.links?.index,
+          method: 'GET',
+        });
+        const charts = k3kIndexCharts(repoReq);
+        // find the latest k3k chart that does not exceed the extension's major/minor version
+        const k3kChart = k3kChartToInstall(charts);
+
+        if (!k3kChart) {
+          const reason = k3kNoChartReason(charts);
+
+          if (reason === 'tooHigh') {
+            this.versionsTooHigh = true;
+            cb(false);
+
+            return;
+          }
+
+          throw new Error(this.t(`k3k.errors.${ reason }`, {
+            repo: K3K_REPO_NAME, maxVersion: K3K_MAX_VERSION, versions: charts.map((chart) => chart.version).join(', ')
+          }));
+        }
+
+        // eslint-disable-next-line no-console
+        console.log('Installing k3k version...', k3kChart.version);
 
         // install k3k chart
         const installRequest = {
@@ -392,6 +411,12 @@ export default {
         mode="install"
         :action-label="t('k3k.hostCluster.installK3k')"
         @click="installK3k"
+      />
+      <Banner
+        v-if="versionsTooHigh"
+        data-testid="k3k-versions-too-high-banner"
+        color="warning"
+        label-key="k3k.hostCluster.k3kVersionsTooHigh"
       />
     </div>
     <div

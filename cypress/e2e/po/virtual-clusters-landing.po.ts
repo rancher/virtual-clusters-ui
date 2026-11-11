@@ -45,4 +45,17 @@ export default class VirtualClustersLandingPagePo extends PagePo {
   installSucceeded(): Cypress.Chainable {
     return this.self().contains('K3K installed');
   }
+
+  versionsTooHighBanner(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-versions-too-high-banner"]');
+  }
+
+  // pages/index.vue renders the local, virtual and permission notices here, with no test id
+  notice(): Cypress.Chainable {
+    return this.self().find('.description-container');
+  }
+
+  quickGuideSteps(): Cypress.Chainable {
+    return this.self().find('.steps > ol > li');
+  }
 }

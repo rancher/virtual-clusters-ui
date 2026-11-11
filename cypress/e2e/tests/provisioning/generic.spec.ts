@@ -1,6 +1,11 @@
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 
+import { K3K_MAX_VERSION, K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
 import CruK3kPo from '../../po/cru-k3k.po';
+import {
+  stubK3kInstalled, stubK3kInstallRequests, removeK3k, createK3kRepo, k3kChartFromIndex, waitForK3kDeployed,
+  K3K_INSTALL_URL, K3K_OLDER_TAGS_KEY, K3K_REPO_URL_WITHOUT_CHARTS, K3K_VERSIONS
+} from '../../utils/k3k-install';
 import { HOST_CLUSTER, openCreateForm } from '../../utils/provisioning';
 import {
   loginAsAdmin, clusterIdByName, deleteResource, uninstallK3k, createProject, createNamespace,
@@ -8,6 +13,8 @@ import {
 } from '../../utils/rancher-api';
 
 const { NO_POLICY } = CruK3kPo;
+// rancher downloads the repo index before the button sends the install request
+const REPO_DOWNLOAD_TIMEOUT = 60000;
 const RESOURCE_SYNC_SECTION = 'Resource Synchronization';
 const TOPOLOGY_SECTION = 'Topology';
 
@@ -200,6 +207,175 @@ describe('cluster creation', () => {
       releaseVersionRead();
 
       cruK3k.loadBalancerServerPort().should('be.disabled').and('have.value', '');
+    });
+  });
+
+  describe('installing k3k from the Install K3k button', { tags: ['@adminUser'] }, () => {
+    let hostClusterId = '';
+
+    before(() => {
+      loginAsAdmin();
+
+      clusterIdByName(HOST_CLUSTER).then((id) => {
+        hostClusterId = id;
+      });
+    });
+
+    function clickInstallK3k(): CruK3kPo {
+      const cruK3k = openCreateForm();
+
+      cruK3k.selectHostCluster(HOST_CLUSTER);
+      cruK3k.installK3kButton().click();
+
+      return cruK3k;
+    }
+
+    /**
+     * Each test stubs the ClusterRepo, index and install responses for the state it needs.
+     * Stubbed versions are relative to K3K_MAX_VERSION, which comes from the extension's package.json.
+     */
+    describe('with stubbed repo responses', () => {
+      // the button polls the repo 11 times, 1s apart, before it gives up
+      const POLLING_TIMEOUT = 20000;
+
+      beforeEach(() => {
+        stubK3kInstalled(hostClusterId, false);
+      });
+
+      it('installs the newest stable version at or below the extension major.minor', () => {
+        stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMinor, K3K_VERSIONS.prerelease, K3K_VERSIONS.supported, K3K_VERSIONS.olderSupported] } });
+
+        const cruK3k = clickInstallK3k();
+
+        cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_CHART_NAME, version: K3K_VERSIONS.supported });
+        cruK3k.installSucceeded().should('be.visible');
+      });
+
+      it('sends the index key of an older tag as the chart name', () => {
+        stubK3kInstallRequests(hostClusterId, {
+          index: {
+            [K3K_CHART_NAME]:     [K3K_VERSIONS.nextMinor],
+            [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.supported, K3K_VERSIONS.olderSupported]
+          }
+        });
+
+        clickInstallK3k();
+
+        cy.wait('@k3kInstall').its('request.body.charts.0').should('include', {
+          chartName: K3K_OLDER_TAGS_KEY, releaseName: K3K_CHART_NAME, version: K3K_VERSIONS.supported
+        });
+      });
+
+      it('warns that the extension must be upgraded when every version is above the supported range', () => {
+        stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor], [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.nextMinor] } });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.versionsTooHighBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
+        cy.get('@k3kInstall.all').should('have.length', 0);
+      });
+
+      it('reports an index with only prerelease versions at or below the supported range', () => {
+        stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMinor], [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.prerelease] } });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.errorBanner().should('contain', `has only prerelease K3K versions at or below ${ K3K_MAX_VERSION }`);
+        cy.get('@k3kInstall.all').should('have.length', 0);
+      });
+
+      it('reports an index with no valid semver versions', () => {
+        stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: ['latest'] } });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.errorBanner().should('contain', 'index has no valid semver versions. Index versions: latest');
+        cy.get('@k3kInstall.all').should('have.length', 0);
+      });
+
+      it('reports a repo download failure from rancher without polling again', () => {
+        stubK3kInstallRequests(hostClusterId, { statuses: [{ downloaded: false, message: 'error 404: Not Found' }] });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.errorBanner().should('contain', `Error installing K3K: The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
+        cy.get('@k3kRepo.all').should('have.length', 1);
+        cy.get('@k3kIndex.all').should('have.length', 0);
+      });
+
+      it('waits for rancher to process the applied repo spec before reading the index', () => {
+        stubK3kInstallRequests(hostClusterId, {
+          statuses: [{ processed: false }, { processed: false }, {}],
+          index:    { [K3K_CHART_NAME]: [K3K_VERSIONS.supported] }
+        });
+
+        clickInstallK3k();
+
+        cy.wait('@k3kInstall');
+        cy.get('@k3kRepo.all').should('have.length', 3);
+        cy.get('@k3kIndex.all').should('have.length', 1);
+      });
+
+      it('reports a repo that rancher does not process before polling ends', () => {
+        stubK3kInstallRequests(hostClusterId, { statuses: [{ processed: false }] });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.errorBanner({ timeout: POLLING_TIMEOUT }).should('contain', `The ${ K3K_REPO_NAME } repository did not finish downloading.`);
+        cy.get('@k3kRepo.all').should('have.length', 11);
+        cy.get('@k3kIndex.all').should('have.length', 0);
+      });
+    });
+
+    /**
+     * Each test removes k3k and sets up the ClusterRepo state it needs, then installs k3k from registry.suse.com.
+     * The extension's package.json version must be at or above the oldest k3k minor in the registry.
+     */
+    describe('from the k3k registry', () => {
+      beforeEach(() => {
+        removeK3k(hostClusterId);
+      });
+
+      function installK3kAndCheck() {
+        cy.intercept({ method: 'POST', url: K3K_INSTALL_URL }).as('k3kInstall');
+
+        const cruK3k = clickInstallK3k();
+
+        cy.wait('@k3kInstall', { timeout: REPO_DOWNLOAD_TIMEOUT }).then(({ request, response }) => {
+          expect(response?.statusCode, 'k3k install request').to.eq(201);
+
+          k3kChartFromIndex(hostClusterId).then((chart) => {
+            expect(chart, `a k3k chart at or below ${ K3K_MAX_VERSION } in the index`).to.not.eq(null);
+            expect(request.body.charts[0]).to.include({
+              chartName: chart?.name, releaseName: K3K_CHART_NAME, version: chart?.version
+            });
+          });
+        });
+
+        cruK3k.installSucceeded().should('be.visible');
+        waitForK3kDeployed(hostClusterId);
+      }
+
+      it('installs k3k when the cluster has no k3k repo', () => {
+        installK3kAndCheck();
+      });
+
+      // the button applies the correct spec, so it must wait for rancher to process that spec
+      it('installs k3k when the k3k repo exists but has not downloaded', () => {
+        createK3kRepo(hostClusterId, K3K_REPO_URL_WITHOUT_CHARTS).should('eq', 'False');
+
+        installK3kAndCheck();
+      });
+
+      it('installs k3k when the k3k repo exists and has downloaded', () => {
+        createK3kRepo(hostClusterId).should('eq', 'True');
+
+        installK3kAndCheck();
+      });
+
+      after(() => {
+        uninstallK3k(hostClusterId);
+      });
     });
   });
 

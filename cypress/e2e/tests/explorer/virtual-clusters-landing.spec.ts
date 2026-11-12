@@ -36,9 +36,12 @@ describe('virtual clusters landing page', () => {
       stubK3kInstalled(hostClusterId, false);
 
       // mocking the parent cluster annotation tells the ui this cluster is a virtual cluster
-      cy.intercept({ method: 'GET', url: new RegExp(`/v1/provisioning\\.cattle\\.io\\.clusters/[^/?]+/${ HOST_CLUSTER }(\\?|$)`) }, (req) => {
+      // matched on status.clusterName: the provisioning cluster of a cluster created through /v3 is named after its management id, not its display name
+      cy.intercept({ method: 'GET', url: /\/v1\/provisioning\.cattle\.io\.clusters\/[^/?]+\/[^/?]+(\?|$)/ }, (req) => {
         req.continue((res) => {
-          res.body.metadata.annotations = { ...res.body.metadata.annotations, [PARENT_CLUSTER_ANNOTATION]: 'c-m-parent' };
+          if (res.body?.status?.clusterName === hostClusterId) {
+            res.body.metadata.annotations = { ...res.body.metadata.annotations, [PARENT_CLUSTER_ANNOTATION]: 'c-m-parent' };
+          }
         });
       });
 

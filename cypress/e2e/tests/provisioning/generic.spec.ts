@@ -290,13 +290,14 @@ describe('cluster creation', () => {
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
-      it('reports a repo download failure from rancher without polling again', () => {
+      it('reports a repo download failure that rancher retries do not clear', () => {
         stubK3kInstallRequests(hostClusterId, { statuses: [{ downloaded: false, message: 'error 404: Not Found' }] });
 
         const cruK3k = clickInstallK3k();
 
         cruK3k.errorBanner().should('contain', `Error installing K3K: The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
-        cy.get('@k3kRepo.all').should('have.length', 1);
+        // the first False poll and DOWNLOAD_FAILED_MAX_RETRIES (3) more in InstallK3k.vue
+        cy.get('@k3kRepo.all').should('have.length', 4);
         cy.get('@k3kIndex.all').should('have.length', 0);
       });
 

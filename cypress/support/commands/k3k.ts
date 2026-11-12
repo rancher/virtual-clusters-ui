@@ -10,6 +10,7 @@ const REPO_TYPE = 'catalog.cattle.io.clusterrepos';
 
 // polls run every 1.5s
 const REPO_DOWNLOAD_RETRIES = 40;
+const NAMESPACE_DELETE_RETRIES = 120;
 // the install runs helm with wait and a 600s timeout
 const DEPLOYED_RETRIES = 400;
 const INSTALL_MAX_TRIES = 3;
@@ -21,6 +22,21 @@ const INSTALL_MAX_TRIES = 3;
 function k3kIsInstalled(clusterId: string): Cypress.Chainable<boolean> {
   return apiRequest({ url: `/k8s/clusters/${ clusterId }/v1/counts/count` })
     .then((resp) => !!resp.body?.counts?.[APP_TYPE]?.namespaces?.[K3K_CHART_NAMESPACE]?.count);
+}
+
+/**
+ * Wait for an earlier uninstallK3k to finish.
+ * the install action returns 500 while the k3k namespace or repo is still being deleted
+ */
+function waitForK3kRemoval(prefix: string) {
+  const notDeleting = (resp: Cypress.Response<any>) => resp.status === 404 || !resp.body?.metadata?.deletionTimestamp;
+
+  waitForResource(prefix, 'namespaces', K3K_CHART_NAMESPACE, notDeleting, NAMESPACE_DELETE_RETRIES).then((done) => {
+    expect(done, `${ K3K_CHART_NAMESPACE } namespace not being deleted`).to.eq(true);
+  });
+  waitForResource(prefix, REPO_TYPE, K3K_REPO_NAME, notDeleting, REPO_DOWNLOAD_RETRIES).then((done) => {
+    expect(done, `${ K3K_REPO_NAME } cluster repo not being deleted`).to.eq(true);
+  });
 }
 
 /** A 409 means the repo is left over from an earlier install, which is fine to reuse. */
@@ -87,6 +103,8 @@ function requestInstall(prefix: string, body: object, remaining = INSTALL_MAX_TR
  */
 Cypress.Commands.add('installK3k', (clusterId: string, version?: string) => {
   const prefix = `k8s/clusters/${ clusterId }/v1`;
+
+  waitForK3kRemoval(prefix);
 
   k3kIsInstalled(clusterId).then((installed) => {
     if (installed) {

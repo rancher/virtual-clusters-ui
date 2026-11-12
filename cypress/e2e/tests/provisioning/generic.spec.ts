@@ -3,8 +3,8 @@ import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisionin
 import { K3K_MAX_VERSION, K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
 import CruK3kPo from '../../po/cru-k3k.po';
 import {
-  stubK3kInstalled, stubK3kInstallRequests, removeK3k, createK3kRepo, k3kChartFromIndex, waitForK3kDeployed,
-  K3K_INSTALL_URL, K3K_OLDER_TAGS_KEY, K3K_REPO_URL_WITHOUT_CHARTS, K3K_VERSIONS
+  stubK3kInstalled, stubK3kInstallRequests, stubSecondHostCluster, removeK3k, createK3kRepo, k3kChartFromIndex, waitForK3kDeployed,
+  K3K_INSTALL_URL, K3K_OLDER_TAGS_KEY, K3K_REPO_URL_WITHOUT_CHARTS, K3K_VERSIONS, STUB_HOST_CLUSTER
 } from '../../utils/k3k-install';
 import { HOST_CLUSTER, openCreateForm } from '../../utils/provisioning';
 import {
@@ -270,6 +270,19 @@ describe('cluster creation', () => {
 
         cruK3k.versionsTooHighBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
         cy.get('@k3kInstall.all').should('have.length', 0);
+      });
+
+      it('clears the extension upgrade warning when another host cluster is selected', () => {
+        stubSecondHostCluster(hostClusterId);
+        stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor] } });
+
+        const cruK3k = clickInstallK3k();
+
+        cruK3k.versionsTooHighBanner().should('be.visible');
+        cruK3k.selectHostCluster(STUB_HOST_CLUSTER);
+
+        cruK3k.installK3kButton().self().should('be.visible');
+        cruK3k.versionsTooHighBanner().should('not.exist');
       });
 
       it('reports an index with only prerelease versions at or below the supported range', () => {

@@ -53,22 +53,73 @@ export interface K3kInstallStub {
 
 const clusterPrefix = (clusterId: string) => `k8s/clusters/${ clusterId }/v1`;
 
+function setK3kAppCount(res: { body: any }, installed: boolean) {
+  const counts = res.body?.counts || {};
+  const apps = counts[APP_TYPE] || { summary: { count: 0 }, namespaces: {} };
+  const namespaces = { ...apps.namespaces };
+
+  if (installed) {
+    namespaces[K3K_CHART_NAMESPACE] = { count: 1 };
+  } else {
+    delete namespaces[K3K_CHART_NAMESPACE];
+  }
+
+  res.body = { ...res.body, counts: { ...counts, [APP_TYPE]: { ...apps, namespaces } } };
+}
+
 // any app in the correct namespace counts as k3k being installed (more performant than iterating thru every single app looking for a specific chart)
 export function stubK3kInstalled(clusterId: string, installed: boolean) {
   cy.intercept({ method: 'GET', pathname: `/${ clusterPrefix(clusterId) }/counts/count` }, (req) => {
+    req.continue((res) => setK3kAppCount(res, installed));
+  });
+}
+
+export const STUB_HOST_CLUSTER = 'e2e-stubbed-host';
+const STUB_HOST_CLUSTER_ID = 'c-m-e2estub';
+
+// mock a second cluster in the host cluster dropdown
+// used to test switching between host clusters
+export function stubSecondHostCluster(hostClusterId: string) {
+  cy.intercept({ method: 'GET', pathname: '/v1/management.cattle.io.clusters' }, (req) => {
     req.continue((res) => {
-      const counts = res.body?.counts || {};
-      const apps = counts[APP_TYPE] || { summary: { count: 0 }, namespaces: {} };
-      const namespaces = { ...apps.namespaces };
+      const host = res.body?.data?.find((c: any) => c.id === hostClusterId);
 
-      if (installed) {
-        namespaces[K3K_CHART_NAMESPACE] = { count: 1 };
-      } else {
-        delete namespaces[K3K_CHART_NAMESPACE];
+      if (host) {
+        res.body.data.push({
+          ...host,
+          id:       STUB_HOST_CLUSTER_ID,
+          metadata: {
+            ...host.metadata, name: STUB_HOST_CLUSTER_ID, uid: `${ host.metadata.uid }-stub`
+          },
+          spec: { ...host.spec, displayName: STUB_HOST_CLUSTER },
+        });
       }
-
-      res.body = { ...res.body, counts: { ...counts, [APP_TYPE]: { ...apps, namespaces } } };
     });
+  });
+
+  cy.intercept({ method: 'GET', pathname: '/v1/provisioning.cattle.io.clusters' }, (req) => {
+    req.continue((res) => {
+      const host = res.body?.data?.find((c: any) => c.status?.clusterName === hostClusterId);
+
+      if (host) {
+        res.body.data.push({
+          ...host,
+          id:       `${ host.metadata.namespace }/${ STUB_HOST_CLUSTER }`,
+          metadata: {
+            ...host.metadata, name: STUB_HOST_CLUSTER, uid: `${ host.metadata.uid }-stub`
+          },
+          status: { ...host.status, clusterName: STUB_HOST_CLUSTER_ID },
+        });
+      }
+    });
+  });
+
+  cy.intercept({ url: new RegExp(`/k8s/clusters/${ STUB_HOST_CLUSTER_ID }/`) }, (req) => {
+    req.url = req.url.replace(`/k8s/clusters/${ STUB_HOST_CLUSTER_ID }/`, `/k8s/clusters/${ hostClusterId }/`);
+
+    if (new URL(req.url).pathname.endsWith('/v1/counts/count')) {
+      req.continue((res) => setK3kAppCount(res, false));
+    }
   });
 }
 

@@ -146,6 +146,7 @@ export default {
 
         this.localParentCluster = value;
         this.didInstallK3k = false;
+        this.versionsTooHigh = false;
 
         this.$emit('update:k3kInstalled', fullOption.k3kInstalled);
         // using nextTick here ensures that ClusterPolicy.vue (and any other components that fetch resources in the parent cluster contingent on k3k installation)

@@ -42,8 +42,8 @@ function addK3kRepo(prefix: string) {
 interface IndexChart { name: string, version: string }
 
 /**
- * Index entry to install, as the Install K3k button picks it.
- * @param version exact version; defaults to the newest in the repo index at or below K3K_MAX_VERSION
+ * chart version to install, as the Install K3k button picks it.
+ * @param version exact version; defaults to the newest in the repo index at or below the extension's major.minor
  */
 function k3kChart(prefix: string, version?: string): Cypress.Chainable<IndexChart> {
   return apiRequest({ url: `/${ prefix }/${ REPO_TYPE }/${ K3K_REPO_NAME }` })

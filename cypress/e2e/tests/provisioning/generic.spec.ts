@@ -13,7 +13,7 @@ import {
 } from '../../utils/rancher-api';
 
 const { NO_POLICY } = CruK3kPo;
-// rancher downloads the repo index before the button sends the install request
+// it takes a good chunk of time to download an OCI repo
 const REPO_DOWNLOAD_TIMEOUT = 60000;
 const RESOURCE_SYNC_SECTION = 'Resource Synchronization';
 const TOPOLOGY_SECTION = 'Topology';
@@ -230,12 +230,9 @@ describe('cluster creation', () => {
       return cruK3k;
     }
 
-    /**
-     * Each test stubs the ClusterRepo, index and install responses for the state it needs.
-     * Stubbed versions are relative to K3K_MAX_VERSION, which comes from the extension's package.json.
-     */
+    // these tests all stub the k3k repo resource to simulate different error scenarios
     describe('with stubbed repo responses', () => {
-      // the button polls the repo 11 times, 1s apart, before it gives up
+      // the button polls the repo to check download status every 1s, up to 11 times
       const POLLING_TIMEOUT = 20000;
 
       beforeEach(() => {
@@ -327,10 +324,7 @@ describe('cluster creation', () => {
       });
     });
 
-    /**
-     * Each test removes k3k and sets up the ClusterRepo state it needs, then installs k3k from registry.suse.com.
-     * The extension's package.json version must be at or above the oldest k3k minor in the registry.
-     */
+    // each test here downloads the repo and installs k3k for real
     describe('from the k3k registry', () => {
       beforeEach(() => {
         removeK3k(hostClusterId);
@@ -360,7 +354,7 @@ describe('cluster creation', () => {
         installK3kAndCheck();
       });
 
-      // the button applies the correct spec, so it must wait for rancher to process that spec
+
       it('installs k3k when the k3k repo exists but has not downloaded', () => {
         createK3kRepo(hostClusterId, K3K_REPO_URL_WITHOUT_CHARTS).should('eq', 'False');
 
@@ -379,11 +373,8 @@ describe('cluster creation', () => {
     });
   });
 
-  /**
-   * Runs after the tests above, which need the host cluster without k3k.
-   * k3k is removed again afterwards so a re-run starts from the same state.
-   */
-  describe('with k3k installed in the host cluster', { tags: ['@adminUser'] }, () => {
+
+  describe('with k3k already installed in the host cluster', { tags: ['@adminUser'] }, () => {
     let hostClusterId = '';
     let projectId = '';
     let policyName = '';

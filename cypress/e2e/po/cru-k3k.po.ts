@@ -43,14 +43,13 @@ export default class CruK3kPo extends PagePo {
   }
 
   installSucceeded(): Cypress.Chainable {
-    return this.self().contains('K3K installed');
+    return this.self().find('[data-testid="k3k-install-succeeded"]');
   }
 
   versionsTooHighBanner(): Cypress.Chainable {
     return this.self().find('[data-testid="k3k-versions-too-high-banner"]');
   }
 
-  // CruResource renders each error in its own banner
   errorBanner(options?: Partial<Cypress.Timeoutable>): Cypress.Chainable {
     return this.self().find('#cru-errors [data-testid^="error-banner"]', options);
   }

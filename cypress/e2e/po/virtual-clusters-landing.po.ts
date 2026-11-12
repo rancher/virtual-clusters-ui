@@ -5,10 +5,7 @@ import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po'
 
 export const NAV_LABEL = 'Virtual Clusters';
 
-/**
- * The extension's landing page, registered by the `virtualclusters` explorer
- * product (see pkg/virtual-clusters/routes.js and config/k3k-explorer-product.ts).
- */
+// extenion's landing page: this is automatically redirected to the virtual cluster policy list once k3k is installed
 export default class VirtualClustersLandingPagePo extends PagePo {
   private static createPath(clusterId: string) {
     return `/c/${ clusterId }/virtualclusters`;
@@ -24,7 +21,6 @@ export default class VirtualClustersLandingPagePo extends PagePo {
 
     const productNav = new ProductNavPo();
 
-    // NAV_LABEL is set to 'Virtual Clusters'
     productNav.navToSideMenuGroupByLabelExistence(NAV_LABEL, 'exist');
     productNav.navToSideMenuGroupByLabel(NAV_LABEL);
   }
@@ -33,7 +29,6 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     super(VirtualClustersLandingPagePo.createPath(clusterId));
   }
 
-  // pages/index.vue renders the title in a plain <h2> with no test id
   title(): Cypress.Chainable {
     return this.self().contains('h2', 'Virtual Clusters');
   }
@@ -43,19 +38,22 @@ export default class VirtualClustersLandingPagePo extends PagePo {
   }
 
   installSucceeded(): Cypress.Chainable {
-    return this.self().contains('K3K installed');
+    return this.self().find('[data-testid="k3k-install-succeeded"]');
   }
 
   versionsTooHighBanner(): Cypress.Chainable {
     return this.self().find('[data-testid="k3k-versions-too-high-banner"]');
   }
 
-  // pages/index.vue renders the local, virtual and permission notices here, with no test id
   notice(): Cypress.Chainable {
-    return this.self().find('.description-container');
+    return this.self().find('[data-testid="k3k-landing-notice"]');
+  }
+
+  noticeLink(): Cypress.Chainable {
+    return this.notice().find('[data-testid="k3k-landing-notice-link"]');
   }
 
   quickGuideSteps(): Cypress.Chainable {
-    return this.self().find('.steps > ol > li');
+    return this.self().find('[data-testid="k3k-landing-quick-guide-step"]');
   }
 }

@@ -4,12 +4,7 @@ import { stubK3kInstalled, stubK3kInstallRequests, K3K_OLDER_TAGS_KEY, K3K_VERSI
 import { HOST_CLUSTER } from '../../utils/provisioning';
 import { loginAsAdmin, clusterIdByName, K3K_CHART_NAME, PARENT_CLUSTER_ANNOTATION } from '../../utils/rancher-api';
 
-/**
- * The extension's landing page (pkg/virtual-clusters/pages/index.vue).
- * It shows one of: a local cluster notice, a virtual cluster notice, a permission notice, or the quick guide,
- * and redirects to the policy list when k3k is installed.
- * Each test stubs whether k3k is installed, so the host cluster's real k3k state does not matter.
- */
+// landing page shown in the virtual clusters cluster explorer product, before k3k is installed
 describe('virtual clusters landing page', () => {
   let hostClusterId = '';
 
@@ -33,13 +28,14 @@ describe('virtual clusters landing page', () => {
       const landingPage = new VirtualClustersLandingPagePo('local');
 
       landingPage.notice().should('contain', 'Installing k3k in the local Rancher cluster is not recommended');
-      landingPage.notice().find('a').should('have.attr', 'href').and('include', '/manager/provisioning.cattle.io.cluster');
+      landingPage.noticeLink().should('have.attr', 'href').and('include', '/manager/provisioning.cattle.io.cluster');
       landingPage.installK3kButton().self().should('not.exist');
     });
 
     it('explains that a virtual cluster cannot host virtual clusters and links to the non-virtual clusters', () => {
       stubK3kInstalled(hostClusterId, false);
-      // the page reads the parent cluster annotation from the current cluster's provisioning cluster
+
+      // mocking the parent cluster annotation tells the ui this cluster is a virtual cluster
       cy.intercept({ method: 'GET', url: new RegExp(`/v1/provisioning\\.cattle\\.io\\.clusters/[^/?]+/${ HOST_CLUSTER }(\\?|$)`) }, (req) => {
         req.continue((res) => {
           res.body.metadata.annotations = { ...res.body.metadata.annotations, [PARENT_CLUSTER_ANNOTATION]: 'c-m-parent' };
@@ -50,7 +46,7 @@ describe('virtual clusters landing page', () => {
       const landingPage = new VirtualClustersLandingPagePo(hostClusterId);
 
       landingPage.notice().should('contain', 'Installing virtual clusters within virutal clusters in not currently supported');
-      landingPage.notice().find('a').should('have.attr', 'href').and('include', 'q=!virtual');
+      landingPage.noticeLink().should('have.attr', 'href').and('include', 'q=!virtual');
       landingPage.installK3kButton().self().should('not.exist');
     });
   });
@@ -64,7 +60,7 @@ describe('virtual clusters landing page', () => {
     });
 
     it('tells a user who cannot install k3k that an admin must install it', { tags: ['@adminUser', '@standardUser'] }, () => {
-      // installing k3k needs permission to create namespaces (pkg/virtual-clusters/utils/k3kInstalled.js)
+      // simulate a user who can only GET namespaces
       cy.intercept({ method: 'GET', pathname: `/k8s/clusters/${ hostClusterId }/v1/schemas/namespace` }, (req) => {
         req.continue((res) => {
           res.body.collectionMethods = ['GET'];

@@ -41,6 +41,7 @@ const { major, minor } = semver.coerce(pkgjson.version);
 
 // virtual clusters ui and k3k sync major/minor releases
 // so the ui version can be used to determine max supported k3k version
+
 export const K3K_MAX_VERSION = `${ major }.${ minor }.x`;
 
 /**

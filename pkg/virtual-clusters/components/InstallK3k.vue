@@ -22,6 +22,7 @@ import { K3K_MAX_VERSION, k3kIndexCharts, k3kChartToInstall, k3kNoChartReason } 
 import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
+const DOWNLOAD_FAILED_MAX_RETRIES = 3; // the repo download can temporarily fail and be auto-retried by the backend after 1s, so we poll a few more times
 const RETRY_WAIT = 1000;
 
 const INCLUDE_LOCAL = process.env.dev;
@@ -246,9 +247,11 @@ export default {
 
         await normanCluster.doAction('importYaml', { yaml: repoYaml });
 
-        // wait for rancher to process the repo spec applied above
+        // poll the repo status until it is downloaded
+        // once per second up to 10 retries (11 tries total)
         let downloaded = false;
         let tries = 0;
+        let failedTries = 0;
 
         while (!downloaded) {
           k3kRepo = await this.$store.dispatch('management/request', {
@@ -257,25 +260,32 @@ export default {
           });
           const downloadedCondition = k3kRepo.status?.conditions?.find((s) => s.type === 'OCIDownloaded');
           // the condition describes an earlier spec until observedGeneration catches up
+          // this is a bit edge-casey but will protect against acting on a stale status if the repo spec was JUST updated
           const processed = downloadedCondition && k3kRepo.status?.observedGeneration >= k3kRepo.metadata?.generation;
 
-          if (processed) {
-            if (downloadedCondition.status !== 'True') {
-              // fail at once: rancher retries most download failures only after 24h or a spec change
-              throw new Error(this.t('k3k.errors.repoDownloadFailed', { repo: K3K_REPO_NAME, message: downloadedCondition.message }));
-            }
+          if (processed && downloadedCondition.status === 'True') {
             downloaded = true;
           } else {
-            tries++;
+            if (processed) {
+              // downloadedCondition=== "False" *can* indicate a temporary failure, and the backend might be automatically retrying
+              // in which case we should just wait instead of immediately failing
+              failedTries++;
 
-            if (tries > DOWNLOAD_MAX_RETRIES) {
-              throw new Error(this.t('k3k.errors.repoNotDownloaded', { repo: K3K_REPO_NAME }));
+              if (failedTries > DOWNLOAD_FAILED_MAX_RETRIES) {
+                throw new Error(this.t('k3k.errors.repoDownloadFailed', { repo: K3K_REPO_NAME, message: downloadedCondition.message }));
+              }
+            } else {
+              tries++;
+
+              if (tries > DOWNLOAD_MAX_RETRIES) {
+                throw new Error(this.t('k3k.errors.repoNotDownloaded', { repo: K3K_REPO_NAME }));
+              }
             }
             await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT));
           }
         }
 
-        // rancher writes the index before it marks the repo downloaded, so one read is final
+
         const repoReq = await this.$store.dispatch('management/request', {
           url:    k3kRepo.links?.index,
           method: 'GET',
@@ -422,6 +432,7 @@ export default {
     <div
       v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
       class="centered"
+      data-testid="k3k-install-succeeded"
     >
       <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
     </div>

@@ -117,13 +117,16 @@ export default {
       <div
         v-if="!isPrime"
         v-clean-html="t('k3k.landingPage.prime')"
+        data-testid="k3k-landing-notice"
       />
       <div
         v-else-if="isLocal"
         v-clean-html="t('k3k.landingPage.local', { managerUrl }, true)"
+        data-testid="k3k-landing-notice"
       />
       <div
         v-else-if="isVirtual"
+        data-testid="k3k-landing-notice"
       >
         <span
           v-clean-html="t('k3k.landingPage.virtual.description', {managerUrlFiltered}, true)"
@@ -132,6 +135,7 @@ export default {
       <div
         v-else-if="!canInstallK3k"
         v-clean-html="t('k3k.landingPage.permission', null, true)"
+        data-testid="k3k-landing-notice"
       />
       <RcContentGroup
         v-else
@@ -142,7 +146,7 @@ export default {
         <div class="steps">
           <h4>{{ t('k3k.landingPage.steps.title', null, true) }}</h4>
           <ol>
-            <li>
+            <li data-testid="k3k-landing-quick-guide-step">
               <h4>{{ t('k3k.landingPage.steps.step1.title') }}</h4>
               <div>{{ t('k3k.landingPage.steps.step1.description') }}</div>
               <InstallK3k
@@ -152,11 +156,11 @@ export default {
                 :show-button-only="true"
               />
             </li>
-            <li>
+            <li data-testid="k3k-landing-quick-guide-step">
               <h4>{{ t('k3k.landingPage.steps.step2.title') }}</h4>
               <div>{{ t('k3k.landingPage.steps.step2.description') }}</div>
             </li>
-            <li>
+            <li data-testid="k3k-landing-quick-guide-step">
               <h4>{{ t('k3k.landingPage.steps.step3.title') }}</h4>
               <ol class="provisioning-steps">
                 <li>

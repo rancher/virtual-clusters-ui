@@ -2,13 +2,13 @@ import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/clust
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
 import { EXTRA_LONG_TIMEOUT_OPT } from '@rancher/cypress/support/utils/timeouts';
 
-import ExtensionsPagePo from '../../../../po/extensions-page.po';
-import VirtualClustersLandingPagePo, { NAV_LABEL } from '../../../../po/virtual-clusters-landing.po';
-import VirtualClustersPolicyListPagePo, { POLICY_NAV_LABEL } from '../../../../po/virtual-clusters-policy-list.po';
+import ExtensionsPagePo from '../../po/extensions-page.po';
+import VirtualClustersLandingPagePo, { NAV_LABEL } from '../../po/virtual-clusters-landing.po';
+import VirtualClustersPolicyListPagePo, { POLICY_NAV_LABEL } from '../../po/virtual-clusters-policy-list.po';
 import {
   loginAsAdmin, rancherVersion, clusterIdByName, waitForClusterActive, waitForClusterConnected, deleteResource, createAwsHostCluster,
   uninstallK3k, waitForResourceState, waitForSchema, K3K_CHART_NAME, K3K_NAMESPACE, K3K_POLICY_TYPE
-} from '../../../../utils/rancher-api';
+} from '../../utils/rancher-api';
 
 const EXTENSION_NAME = 'Virtual Clusters';
 // Which build of the extension to test:

@@ -778,7 +778,7 @@ export default {
 
       // component will emit "false" to clear errors
       if (e) {
-        this.errors.push(`${ msg }: ${ e }`);
+        this.errors.push(`${ msg }: ${ e?.message || e }`);
       } else {
         this.errors = this.errors.filter((err) => {
           return typeof err !== 'string' || !err.includes(msg);

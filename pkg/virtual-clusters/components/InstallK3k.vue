@@ -7,6 +7,8 @@ import AsyncButton from '@shell/components/AsyncButton';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
+import { filterHiddenLocalCluster, filterOnlyKubernetesClusters } from '@shell/utils/cluster';
+import pkgjson from '../package.json';
 import {
   K3K_REPO_NAME,
   K3K_REPO_URL,
@@ -22,7 +24,9 @@ import { PARENT_CLUSTER } from '../labels-annotations';
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
 
-const INCLUDE_LOCAL = process.env.dev;
+// TODO nb review
+// local is offered as a host only to dev builds and -dev* extension versions
+const INCLUDE_LOCAL = !!process.env.dev || /-dev[0-9A-Za-z.]*$/.test(pkgjson?.version || '');
 
 export default {
   name: 'K3kHostClusterAndInstallk3k',
@@ -169,7 +173,12 @@ export default {
       this.loadingClusters = true;
       const out = [];
 
-      for (const pCluster of this.clusters) {
+      // TODO nb review
+      // the harvester provider label is set on the management cluster, not the provisioning cluster
+      const kubeMgmtIds = new Set(filterOnlyKubernetesClusters(this.clusters.map((c) => c.mgmt).filter((m) => !!m), this.$store).map((m) => m.id));
+      const hostCandidates = filterHiddenLocalCluster(this.clusters, this.$store).filter((c) => kubeMgmtIds.has(c.mgmt?.id));
+
+      for (const pCluster of hostCandidates) {
         const mgmt = pCluster.mgmt;
 
         // installk3k function will update k3kInstalled and canCreateK3kCluster properties when it successfully installs k3k
@@ -182,7 +191,7 @@ export default {
         out.push({
           isVirtual: !!pCluster.metadata?.annotations?.[PARENT_CLUSTER],
           isLocal:   pCluster.name === 'local',
-          isReady:   mgmt.isReady,
+          isReady:   !!mgmt?.isReady,
           label:     this.getClusterDisplayName(pCluster),
           value:     pCluster,
           k3kInstalled,

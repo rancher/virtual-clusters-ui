@@ -125,6 +125,28 @@ export default class CruK3kPo extends PagePo {
     return this.self().find('[data-testid="k3k-expose-lb-server-port-unsupported"]');
   }
 
+  // TODO nb review
+  // RadioButton renders the radio group name and the option value on its input
+  persistenceTypeInput(type: 'dynamic' | 'ephemeral'): Cypress.Chainable {
+    return this.self().find(`input[name="k3k-persistence-type"][value="${ type }"]`);
+  }
+
+  persistenceTypeOption(type: 'dynamic' | 'ephemeral'): Cypress.Chainable {
+    return this.persistenceTypeInput(type).closest('label.radio-container');
+  }
+
+  storageClassSelect(): LabeledSelectPo {
+    return new LabeledSelectPo('[data-testid="k3k-storage-class-select"]', this.self());
+  }
+
+  storageRequestSize(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-storage-request-size"]');
+  }
+
+  storageNoDefaultBanner(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-storage-no-default-banner"]');
+  }
+
   nodeSelectorTitle(): Cypress.Chainable {
     return this.self().contains('h3', /^\s*Node Selector\s*$/);
   }

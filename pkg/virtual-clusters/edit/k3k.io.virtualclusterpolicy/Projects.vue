@@ -508,6 +508,7 @@ export default {
       <div class="k3k-input-row">
         <LabeledSelect
           v-model:value="selectedProjects"
+          data-testid="k3k-policy-projects"
           :label="t('k3k.policy.projects.label')"
           class="project-select"
           :mode="mode"

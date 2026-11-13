@@ -286,13 +286,16 @@ k3k:
       serverPort:
         placeholder: 'Default: random value between 30000-32767'
   storage:
-    noneOption: Ephemeral
     title: Server Persistence
     storageRequestSize:
       label: Storage Request Size
     storageClass:
       label: Storage Class
-      description: If no storage class is selected, the cluster will be provisioned in ephemeral mode. <br/> <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+      description: The storage class used by the virtual cluster's persistent volume claims. If none is selected, the host cluster's default storage class is used. If Ephemeral is selected, data will be lost when the host nodes restart. <a target="_blank" rel="nofollow noopener noreferrer" href="https://github.com/rancher/K3K/blob/main/docs/advanced-usage.md#no-storage-provider"> Learn more about ephemeral mode <icon class="icon icon-external-link icon-sm"/></a>
+      hostDefault: Host cluster default
+      hostDefaultNamed: Host cluster default ({name})
+      ephemeral: Ephemeral
+      noDefault: The host cluster has no default storage class. Select a storage class, or Ephemeral.
   secretMounts:
     title: Mounting Secrets
     description: Mount secrets as single files inside agent or server pods to make them available for custom <a target="_blank" rel="nofollow noopener noreferrer" href="https://documentation.suse.com/cloudnative/suse-virtual-clusters/latest/en/how-tos-for-user/addons.html">add-ons <icon class="icon icon-external-link icon-sm"/></a>, <a target="_blank" rel="nofollow noopener noreferrer" href="https://scc.suse.com/rancher-docs/rancherprime/latest/en/suse-virtual-cluster/installation-and-upgrades/k3k-air-gap.html#_enforce_registry_in_virtual_clusters_using_registries_yaml" >registry configuration <icon class="icon icon-external-link icon-sm"/></a>, certificates, or other settings.

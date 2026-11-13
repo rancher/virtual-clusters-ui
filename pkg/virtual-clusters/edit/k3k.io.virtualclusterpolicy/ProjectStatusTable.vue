@@ -131,11 +131,13 @@ export default {
     <Banner
       v-if="showErrorBanner"
       color="error"
+      data-testid="k3k-policy-project-status-banner"
       :label="t('k3k.policy.projects.table.errorBannerInline')"
     />
     <table
       class="project-label-status"
       :class="{'in-modal': isInModal}"
+      :data-testid="isInModal ? 'k3k-policy-project-status-modal' : 'k3k-policy-project-status'"
     >
       <thead>
         <tr>
@@ -154,23 +156,27 @@ export default {
         <tr
           v-for="({willSave, saved, errMsg, project, showDeselectIcon, showSuccessIcon}) of statuses"
           :key="project.id"
+          :data-testid="`k3k-policy-project-status-${ project.id }`"
         >
           <td>
             <div>{{ project.nameDisplay }}</div>
             <span
               v-if="errMsg"
               class="project-err-msg"
+              data-testid="k3k-policy-project-error"
             >{{ errMsg }}</span>
           </td>
           <td
             v-if="showDeselectIcon && isInModal"
             class="ns"
+            data-testid="k3k-policy-project-count"
           >
             {{ willSave.length - saved.length }}/{{ willSave.length }}
           </td>
           <td
             v-else
             class="ns"
+            data-testid="k3k-policy-project-count"
           >
             {{ saved.length }}/{{ willSave.length }}
           </td>
@@ -181,27 +187,32 @@ export default {
                 v-if="showDeselectIcon"
                 v-clean-tooltip="doneSavingNamespaces && isInModal ? t('k3k.policy.projects.table.deselectedTooltipDone') : t('k3k.policy.projects.table.deselectedTooltip')"
                 class="icon icon-trash"
+                data-testid="k3k-policy-project-icon-unassign"
                 :class="{'text-error':!isInModal || doneSavingNamespaces, 'text-deemphasized': isInModal && !doneSavingNamespaces}"
               />
               <i
                 v-else-if="errMsg"
                 v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
                 class="icon icon-error text-error"
+                data-testid="k3k-policy-project-icon-error"
               />
               <i
                 v-else-if="showSuccessIcon"
                 v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltipDone')"
                 class="icon icon-checkmark text-success"
+                data-testid="k3k-policy-project-icon-assigned"
               />
               <i
                 v-else-if="isInModal && !doneSavingNamespaces"
                 v-clean-tooltip="t('k3k.policy.projects.table.selectedTooltip')"
                 class="icon icon-checkmark text-deemphasized"
+                data-testid="k3k-policy-project-icon-pending"
               />
               <i
                 v-else-if="!isInModal"
                 v-clean-tooltip="t('k3k.policy.projects.table.errorTooltip')"
                 class="icon icon-refresh text-warning"
+                data-testid="k3k-policy-project-icon-retry"
               />
             </div>
           </td>

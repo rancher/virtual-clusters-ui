@@ -187,6 +187,7 @@ watch(storageClassSelector, (neu, old) => {
     mode="with-header"
     :expandable="true"
     type="secondary"
+    data-testid="k3k-sync-storage-classes"
   >
     <t
       class="text-muted"
@@ -197,6 +198,7 @@ watch(storageClassSelector, (neu, old) => {
       v-model:value="storageClassEnabled"
       :mode="mode"
       :label="t('k3k.policy.synchronization.storageClass.checkbox')"
+      data-testid="k3k-sync-storage-classes-enabled"
     />
     <div v-if="storageClassEnabled">
       <ButtonGroup
@@ -204,6 +206,7 @@ watch(storageClassSelector, (neu, old) => {
         :options="storageClassSelectorOptions"
         :disabled="isView"
         active-class="role-secondary"
+        data-testid="k3k-sync-storage-classes-mode"
       />
       <RcSection
         v-if="useStorageClassSelector"
@@ -212,6 +215,7 @@ watch(storageClassSelector, (neu, old) => {
         :expandable="true"
         class="mt-20 storage-selectors"
         type="secondary"
+        data-testid="k3k-sync-storage-class-selector"
       >
         <div class="k3k-input-row storage-row">
           <RcContentGroup>
@@ -220,6 +224,7 @@ watch(storageClassSelector, (neu, old) => {
             </div>
             <RcKeyValue
               v-model:value="storageClassSelector"
+              data-testid="k3k-sync-storage-class-labels"
               :initial-empty-row="true"
               :mode="mode"
               :key-placeholder="t('k3k.policy.synchronization.storageClass.selectorKeyPlaceholder')"
@@ -236,6 +241,7 @@ watch(storageClassSelector, (neu, old) => {
               :expandable="false"
               type="secondary"
               class="selected-classes"
+              data-testid="k3k-sync-storage-classes-matched"
             >
               <template #title>
                 {{ t('k3k.policy.synchronization.storageClass.selectedClasses') }}
@@ -247,6 +253,7 @@ watch(storageClassSelector, (neu, old) => {
               <i
                 v-if="fetchingMatchingClasses"
                 class="icon icon-spinner icon-spin icon-lg loading-spinner"
+                data-testid="k3k-sync-storage-classes-loading"
               />
               <div
                 v-else
@@ -256,6 +263,7 @@ watch(storageClassSelector, (neu, old) => {
                   v-for="(sc, i) in targetedStorageClasses || []"
                   :key="i"
                   type="inactive"
+                  data-testid="k3k-sync-storage-class-match"
                 >
                   {{ sc.nameDisplay }}
                 </RcTag>

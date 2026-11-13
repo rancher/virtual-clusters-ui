@@ -59,6 +59,7 @@
   },
   "scripts": {
     "dev": "NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",
+    "dev:coverage": "TEST_INSTRUMENT=true NODE_ENV=dev ./node_modules/.bin/vue-cli-service serve",
     "build": "./node_modules/.bin/vue-cli-service build",
     "clean": "./node_modules/@rancher/shell/scripts/clean",
     "build-pkg": "./node_modules/@rancher/shell/scripts/build-pkg.sh",
@@ -68,6 +69,8 @@
     "lint": "./node_modules/.bin/eslint --max-warnings 0 .",
     "cy:open": "./node_modules/.bin/cypress open --config numTestsKeptInMemory=10",
     "cy:run": "./node_modules/.bin/cypress run",
+    "cy:open:coverage": "TEST_INSTRUMENT=true ./node_modules/.bin/cypress open --config numTestsKeptInMemory=10",
+    "cy:run:coverage": "TEST_INSTRUMENT=true ./node_modules/.bin/cypress run",
     "e2e:ci": "./node_modules/.bin/cypress run --browser chrome"
   }
 }

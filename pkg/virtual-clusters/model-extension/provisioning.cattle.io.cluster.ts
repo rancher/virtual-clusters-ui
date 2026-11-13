@@ -4,11 +4,18 @@ import { PROVIDER, PARENT_CLUSTER, PARENT_CLUSTER_DISPLAY, K3K_NAMESPACE } from 
 type ICluster = any;
 
 
+//  
+// the provider annotation is on the provisioning cluster
+// the management cluster model passes itself to provisionerDisplay and machineProviderDisplay
+function provisioningAnnotations(cluster: ICluster): Record<string, string> {
+  return (cluster?.provCluster || cluster)?.metadata?.annotations || {};
+}
+
 export class VClusterModelExtension implements IClusterModelExtension {
   constructor(private context: ModelExtensionContext) {}
 
   useFor(cluster: ICluster) {
-    return cluster?.metadata?.annotations[PROVIDER] === 'k3k';
+    return provisioningAnnotations(cluster)[PROVIDER] === 'k3k';
   }
 
   get detailTabs(): any {
@@ -29,7 +36,7 @@ export class VClusterModelExtension implements IClusterModelExtension {
   }
 
   provisionerDisplay(cluster: ICluster): string {
-    return cluster?.metadata?.annotations[PROVIDER];
+    return provisioningAnnotations(cluster)[PROVIDER];
   }
 
   parentCluster(cluster: ICluster): string {

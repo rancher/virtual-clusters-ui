@@ -1,0 +1,6 @@
+{
+  "include": ["pkg/virtual-clusters/**"],
+  "extension": [".js", ".ts", ".vue"],
+  "reporter": ["html", "text-summary", "json"],
+  "report-dir": "coverage/e2e"
+}

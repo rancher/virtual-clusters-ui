@@ -298,6 +298,7 @@ export default {
     :resource="value"
     :validation-passed="fvFormIsValid"
     component-testid="cluster-explorer-virtual-cluster-policy"
+    data-testid="k3k-policy-form"
     :show-toc="!parentCluster"
     @finish="saveOverride"
     @error="e=>errors=e"
@@ -465,6 +466,7 @@ export default {
             <div class="k3k-input-row mmt-1">
               <LabeledSelect
                 v-model:value="podSecurityAdmissionLevel"
+                data-testid="k3k-policy-pod-security"
                 class="k3k-half"
                 :mode="mode"
                 :options="[noneOption,'privileged', 'baseline', 'restricted']"
@@ -509,6 +511,7 @@ export default {
             </div>
             <Checkbox
               v-model:value="value.spec.disableNetworkPolicy"
+              data-testid="k3k-policy-isolation"
               :mode="mode"
               :label="t('k3k.policy.isolation.checkbox')"
             />

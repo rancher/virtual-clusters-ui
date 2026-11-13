@@ -41,8 +41,8 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     return this.self().find('[data-testid="k3k-install-succeeded"]');
   }
 
-  versionsTooHighBanner(): Cypress.Chainable {
-    return this.self().find('[data-testid="k3k-versions-too-high-banner"]');
+  installErrorBanner(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-install-error-banner"]');
   }
 
   notice(): Cypress.Chainable {

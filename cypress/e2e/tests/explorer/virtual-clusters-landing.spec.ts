@@ -1,3 +1,4 @@
+import { K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
 import VirtualClustersLandingPagePo from '../../po/virtual-clusters-landing.po';
 import VirtualClustersPolicyListPagePo from '../../po/virtual-clusters-policy-list.po';
 import { stubK3kInstalled, stubK3kInstallRequests, K3K_OLDER_TAGS_KEY, K3K_VERSIONS } from '../../utils/k3k-install';
@@ -96,16 +97,27 @@ describe('virtual clusters landing page', () => {
 
       cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_OLDER_TAGS_KEY, version: K3K_VERSIONS.supported });
       landingPage.installSucceeded().should('be.visible');
+      landingPage.installErrorBanner().should('not.exist');
     });
 
-    it('warns that the extension must be upgraded when every version is above the supported range', { tags: ['@adminUser'] }, () => {
+    it('reports that the extension must be upgraded when every version is above the supported range', { tags: ['@adminUser'] }, () => {
       stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor], [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.nextMinor] } });
 
       VirtualClustersLandingPagePo.navTo(hostClusterId);
       landingPage.installK3kButton().click();
 
-      landingPage.versionsTooHighBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
+      landingPage.installErrorBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
       cy.get('@k3kInstall.all').should('have.length', 0);
+    });
+
+    it('reports a repo download failure', { tags: ['@adminUser'] }, () => {
+      stubK3kInstallRequests(hostClusterId, { statuses: [{ downloaded: false, message: 'error 404: Not Found' }] });
+
+      VirtualClustersLandingPagePo.navTo(hostClusterId);
+      landingPage.installK3kButton().click();
+
+      landingPage.installErrorBanner().should('be.visible').and('contain', `The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
+      cy.get('@k3kIndex.all').should('have.length', 0);
     });
   });
 

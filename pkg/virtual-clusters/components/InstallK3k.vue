@@ -4,7 +4,6 @@ import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
-import { Banner } from '@components/Banner';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
@@ -34,8 +33,7 @@ export default {
 
   components: {
     LabeledSelect,
-    AsyncButton,
-    Banner
+    AsyncButton
   },
 
   props: {
@@ -97,7 +95,6 @@ export default {
       localParentCluster:      this.parentCluster,
       allParentClusterOptions: [],
       loadingClusters:         false,
-      versionsTooHigh:         false,
     };
   },
 
@@ -146,7 +143,7 @@ export default {
 
         this.localParentCluster = value;
         this.didInstallK3k = false;
-        this.versionsTooHigh = false;
+        this.$emit('error', false);
 
         this.$emit('update:k3kInstalled', fullOption.k3kInstalled);
         // using nextTick here ensures that ClusterPolicy.vue (and any other components that fetch resources in the parent cluster contingent on k3k installation)
@@ -221,7 +218,6 @@ export default {
     async installK3k(cb) {
       // tell the parent component to remove any installation error messages from the error array
       this.$emit('error', false);
-      this.versionsTooHigh = false;
 
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
@@ -298,13 +294,6 @@ export default {
         if (!k3kChart) {
           const reason = k3kNoChartReason(charts);
 
-          if (reason === 'tooHigh') {
-            this.versionsTooHigh = true;
-            cb(false);
-
-            return;
-          }
-
           throw new Error(this.t(`k3k.errors.${ reason }`, {
             repo: K3K_REPO_NAME, maxVersion: K3K_MAX_VERSION, versions: charts.map((chart) => chart.version).join(', ')
           }));
@@ -363,8 +352,10 @@ export default {
         if (this.didInstallK3k) {
           const currentOpt = this.allParentClusterOptions.find((opt) => opt.value.id === cluster.id);
 
-          currentOpt.k3kInstalled = true;
-          currentOpt.canCreateK3kClusters = true;
+          if (currentOpt) {
+            currentOpt.k3kInstalled = true;
+            currentOpt.canCreateK3kClusters = true;
+          }
           cb(true);
         } else {
           cb(false);
@@ -422,12 +413,6 @@ export default {
         mode="install"
         :action-label="t('k3k.hostCluster.installK3k')"
         @click="installK3k"
-      />
-      <Banner
-        v-if="versionsTooHigh"
-        data-testid="k3k-versions-too-high-banner"
-        color="warning"
-        label-key="k3k.hostCluster.k3kVersionsTooHigh"
       />
     </div>
     <div

@@ -263,26 +263,26 @@ describe('cluster creation', () => {
         });
       });
 
-      it('warns that the extension must be upgraded when every version is above the supported range', () => {
+      it('reports that the extension must be upgraded when every version is above the supported range', () => {
         stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor], [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.nextMinor] } });
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.versionsTooHighBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
+        cruK3k.errorBanner().should('contain', 'Error installing K3K: All available K3K chart versions are beyond the range supported by this extension. Upgrade your Virtual Clusters UI extension to proceed.');
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
-      it('clears the extension upgrade warning when another host cluster is selected', () => {
+      it('clears the install error when another host cluster is selected', () => {
         stubSecondHostCluster(hostClusterId);
         stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor] } });
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.versionsTooHighBanner().should('be.visible');
+        cruK3k.errorBanner().should('be.visible');
         cruK3k.selectHostCluster(STUB_HOST_CLUSTER);
 
         cruK3k.installK3kButton().self().should('be.visible');
-        cruK3k.versionsTooHighBanner().should('not.exist');
+        cruK3k.errorBanner().should('not.exist');
       });
 
       it('reports an index with only prerelease versions at or below the supported range', () => {

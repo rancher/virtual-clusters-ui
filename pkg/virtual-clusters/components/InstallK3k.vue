@@ -24,7 +24,6 @@ import { PARENT_CLUSTER } from '../labels-annotations';
 const DOWNLOAD_MAX_RETRIES = 10;
 const RETRY_WAIT = 1000;
 
-// TODO nb review
 // local is offered as a host only to dev builds and -dev* extension versions
 const INCLUDE_LOCAL = !!process.env.dev || /-dev[0-9A-Za-z.]*$/.test(pkgjson?.version || '');
 
@@ -173,8 +172,6 @@ export default {
       this.loadingClusters = true;
       const out = [];
 
-      // TODO nb review
-      // the harvester provider label is set on the management cluster, not the provisioning cluster
       const kubeMgmtIds = new Set(filterOnlyKubernetesClusters(this.clusters.map((c) => c.mgmt).filter((m) => !!m), this.$store).map((m) => m.id));
       const hostCandidates = filterHiddenLocalCluster(this.clusters, this.$store).filter((c) => kubeMgmtIds.has(c.mgmt?.id));
 

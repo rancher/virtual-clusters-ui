@@ -4,8 +4,7 @@ import { apiRequest, loginAsAdmin } from '../../utils/rancher-api';
 const LOCAL_CLUSTER = 'local';
 const HIDE_LOCAL_SETTING = 'hide-local-cluster';
 
-// TODO nb review
-// mirrors localDevHosts in cypress.config.ts
+
 const DEV_SERVER_HOSTS = ['localhost', '127.0.0.1'];
 
 function setHideLocalCluster(value: string) {
@@ -18,9 +17,7 @@ function setHideLocalCluster(value: string) {
   });
 }
 
-// TODO nb review
 // mirrors INCLUDE_LOCAL in pkg/virtual-clusters/components/InstallK3k.vue
-// the dev server builds the extension with process.env.dev set
 function localClusterIsOffered(): Cypress.Chainable<boolean> {
   return cy.readFile('pkg/virtual-clusters/package.json').then((pkg: { version: string }) => {
     const isDevServer = DEV_SERVER_HOSTS.includes(new URL(Cypress.config('baseUrl') as string).hostname);

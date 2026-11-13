@@ -15,7 +15,6 @@ import { K3K_MODE } from './labels-annotations';
 import { MODES } from './utils/shared';
 
 const createRoleIfNotFound = async(roleTemplate: any, store:any) => {
-  // TODO nb review
   // transient: a cached lookup shares one request key per type, so concurrent lookups supersede each other
   // a superseded lookup returns every role template in the store instead of the matching ones
   const res = await store.dispatch('management/findLabelSelector', {

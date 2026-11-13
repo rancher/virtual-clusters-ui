@@ -28,7 +28,7 @@ export default {
 </script>
 
 <template>
-  <div>
+  <div :data-testid="`k3k-not-allowed-${section}`">
     <h4>{{ t('k3k.policy.notAllowed.title', {mode: t(`k3k.mode.${mode}.shortLabel`)}) }}</h4>
     <t
       class="text-deemphasized"

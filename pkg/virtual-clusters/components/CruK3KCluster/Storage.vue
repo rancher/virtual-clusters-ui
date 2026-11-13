@@ -13,9 +13,7 @@ const PERSISTENCE_TYPES = {
   EPHEMERAL: 'ephemeral'
 };
 
-// TODO nb review
-// select value for an unset storageClassName: k3k then creates the pvc with no class, and the host cluster default applies
-// storage class names are dns-1123 subdomains and cannot contain '_'
+// labeledselect value used to unset a storage class name in the spec, in which case k3k uses the host cluster default
 const HOST_DEFAULT = '_host-default_';
 
 export default {
@@ -61,15 +59,13 @@ export default {
 
   watch: {
     parentCluster: {
-      // TODO nb review
-      // immediate: the host cluster can be set before this component mounts, eg on edit
+
       handler(neu, old) {
         if (!neu?.id || neu.id === old?.id) {
           return;
         }
 
-        // TODO nb review
-        // storage class names belong to one host cluster
+        // clear out the storage class selection when switching host clusters
         if (old?.id) {
           this.$emit('update:storageClassName', undefined);
         }
@@ -181,8 +177,6 @@ export default {
     updatePersistenceType(type) {
       this.$emit('update:persistenceType', type);
 
-      // TODO nb review
-      // k3k reads storageClassName only in dynamic mode
       if (type === PERSISTENCE_TYPES.EPHEMERAL) {
         this.$emit('update:storageClassName', undefined);
       }
@@ -239,17 +233,20 @@ export default {
           :options="storageClassOptions"
           @update:value="updateStorageClass"
         />
-        <UnitInput
-          :increment="1024"
-          :input-exponent="3"
-          output-modifier
-          :value="storageRequestSize || ''"
-          :mode="mode"
+        <div
           class="k3k-half"
           data-testid="k3k-storage-request-size"
-          label-key="k3k.storage.storageRequestSize.label"
-          @update:value="$emit('update:storageRequestSize', $event)"
-        />
+        >
+          <UnitInput
+            :increment="1024"
+            :input-exponent="3"
+            output-modifier
+            :value="storageRequestSize || ''"
+            :mode="mode"
+            label-key="k3k.storage.storageRequestSize.label"
+            @update:value="$emit('update:storageRequestSize', $event)"
+          />
+        </div>
       </div>
     </div>
     <Banner

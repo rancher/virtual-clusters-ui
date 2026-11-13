@@ -7,8 +7,7 @@ const DEFAULT_CLASS = 'e2e-default';
 const OTHER_CLASS = 'e2e-other';
 const HOST_DEFAULT = 'Host cluster default';
 
-// TODO nb review
-// mirrors STORAGE.DEFAULT_STORAGE_CLASS in @shell/config/labels-annotations
+// STORAGE.DEFAULT_STORAGE_CLASS in @shell/config/labels-annotations
 const DEFAULT_CLASS_ANNOTATION = 'storageclass.kubernetes.io/is-default-class';
 
 function storageClass(name: string, isDefault = false) {
@@ -20,7 +19,7 @@ function storageClass(name: string, isDefault = false) {
   };
 }
 
-// TODO nb review
+
 // the host cluster's storage classes are replaced, so the tests do not depend on the host
 function openPersistenceSection(classes: object[]): CruK3kPo {
   cy.intercept(
@@ -46,10 +45,10 @@ describe('server persistence', { tags: ['@adminUser'] }, () => {
     const cruK3k = openPersistenceSection([storageClass(DEFAULT_CLASS, true), storageClass(OTHER_CLASS)]);
     const hostDefaultLabel = `${ HOST_DEFAULT } (${ DEFAULT_CLASS })`;
 
-    cruK3k.persistenceTypeInput('dynamic').should('be.checked');
+    cruK3k.persistenceType().isChecked(CruK3kPo.PERSISTENCE_INDEX.dynamic);
     cruK3k.storageClassSelect().checkOptionSelected(hostDefaultLabel);
-    cruK3k.storageRequestSize().should('be.visible');
-    cruK3k.storageNoDefaultBanner().should('not.exist');
+    cruK3k.storageRequestSize().self().scrollIntoView().should('be.visible');
+    cruK3k.storageNoDefaultBanner().self().should('not.exist');
 
     cruK3k.storageClassSelect().toggle();
     cruK3k.storageClassSelect().getOptionsAsStrings().should('deep.equal', [hostDefaultLabel, DEFAULT_CLASS, OTHER_CLASS]);
@@ -62,14 +61,13 @@ describe('server persistence', { tags: ['@adminUser'] }, () => {
     cruK3k.storageClassSelect().clickOptionWithLabel(OTHER_CLASS);
     cruK3k.storageClassSelect().checkOptionSelected(OTHER_CLASS);
 
-    cruK3k.persistenceTypeOption('ephemeral').click();
-    cruK3k.persistenceTypeInput('ephemeral').should('be.checked');
+    cruK3k.persistenceType().set(CruK3kPo.PERSISTENCE_INDEX.ephemeral);
+    cruK3k.persistenceType().isChecked(CruK3kPo.PERSISTENCE_INDEX.ephemeral);
     cruK3k.storageClassSelect().self().should('not.exist');
-    cruK3k.storageRequestSize().should('not.exist');
+    cruK3k.storageRequestSize().self().should('not.exist');
 
-    // TODO nb review
     // the storage class is cleared in ephemeral mode, so dynamic mode starts from the host default
-    cruK3k.persistenceTypeOption('dynamic').click();
+    cruK3k.persistenceType().set(CruK3kPo.PERSISTENCE_INDEX.dynamic);
     cruK3k.storageClassSelect().checkOptionSelected(`${ HOST_DEFAULT } (${ DEFAULT_CLASS })`);
   });
 
@@ -77,10 +75,10 @@ describe('server persistence', { tags: ['@adminUser'] }, () => {
     const cruK3k = openPersistenceSection([storageClass(OTHER_CLASS)]);
 
     cruK3k.storageClassSelect().checkOptionSelected(HOST_DEFAULT);
-    cruK3k.storageNoDefaultBanner().should('be.visible');
+    cruK3k.storageNoDefaultBanner().self().scrollIntoView().should('be.visible');
 
     cruK3k.storageClassSelect().toggle();
     cruK3k.storageClassSelect().clickOptionWithLabel(OTHER_CLASS);
-    cruK3k.storageNoDefaultBanner().should('not.exist');
+    cruK3k.storageNoDefaultBanner().self().should('not.exist');
   });
 });

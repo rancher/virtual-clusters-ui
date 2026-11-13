@@ -30,7 +30,7 @@ const closeDrawer = close;
     @close="closeDrawer"
   >
     <template #title>
-      {{ title }}
+      <span data-testid="k3k-policy-drawer-title">{{ title }}</span>
     </template>
     <template #body>
       <PolicyEditor

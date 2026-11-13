@@ -15,17 +15,22 @@ import { K3K_MODE } from './labels-annotations';
 import { MODES } from './utils/shared';
 
 const createRoleIfNotFound = async(roleTemplate: any, store:any) => {
-  const rolesMatching = await store.dispatch('management/findLabelSelector', {
+  // TODO nb review
+  // transient: a cached lookup shares one request key per type, so concurrent lookups supersede each other
+  // a superseded lookup returns every role template in the store instead of the matching ones
+  const res = await store.dispatch('management/findLabelSelector', {
     type:     MANAGEMENT.ROLE_TEMPLATE,
-    matching: { labelSelector: { matchLabels: roleTemplate.metadata.labels } }
-  }) || [];
+    matching: { labelSelector: { matchLabels: roleTemplate.metadata.labels } },
+    opt:      { transient: true }
+  });
+  const rolesMatching = res?.data || [];
 
   if (!rolesMatching.length) {
     const newRole = await store.dispatch('management/create', { type: MANAGEMENT.ROLE_TEMPLATE, ...roleTemplate });
     const norman = await newRole.norman;
 
     norman.labels = roleTemplate.metadata.labels;
-    norman.save();
+    await norman.save();
   }
 };
 
@@ -65,9 +70,10 @@ export default function(plugin: IPlugin): void {
         const roleSchema = store.getters['management/byId'](SCHEMA, MANAGEMENT.ROLE_TEMPLATE );
 
         if ((roleSchema?.resourceMethods || []).find((verb: string) => ['PUT', 'blocked-PUT'].includes(verb))) {
-          await store.dispatch('management/findAll', { type: MANAGEMENT.ROLE_TEMPLATE });
-          createRoleIfNotFound(virtualClusterAdminRole, store);
-          createRoleIfNotFound(virtualClusterPolicyAdminRole, store);
+          await Promise.all([
+            createRoleIfNotFound(virtualClusterAdminRole, store),
+            createRoleIfNotFound(virtualClusterPolicyAdminRole, store)
+          ]);
         }
       }
     } catch (e) {

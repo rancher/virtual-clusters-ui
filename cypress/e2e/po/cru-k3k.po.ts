@@ -2,6 +2,9 @@ import PagePo from '@rancher/cypress/e2e/po/pages/page.po';
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 import LabeledSelectPo from '@rancher/cypress/e2e/po/components/labeled-select.po';
 import AsyncButtonPo from '@rancher/cypress/e2e/po/components/async-button.po';
+import BannersPo from '@rancher/cypress/e2e/po/components/banners.po';
+import RadioGroupInputPo from '@rancher/cypress/e2e/po/components/radio-group-input.po';
+import UnitInputPo from '@rancher/cypress/e2e/po/components/unit-input.po';
 
 export default class CruK3kPo extends PagePo {
   constructor() {
@@ -123,6 +126,25 @@ export default class CruK3kPo extends PagePo {
 
   loadBalancerServerPortBanner(): Cypress.Chainable {
     return this.self().find('[data-testid="k3k-expose-lb-server-port-unsupported"]');
+  }
+
+  //  order of PERSISTENCE_TYPES in pkg/virtual-clusters/components/CruK3KCluster/Storage.vue
+  static readonly PERSISTENCE_INDEX = { dynamic: 0, ephemeral: 1 } as const;
+
+  persistenceType(): RadioGroupInputPo {
+    return new RadioGroupInputPo('[data-testid="k3k-persistence-type"]', this.self());
+  }
+
+  storageClassSelect(): LabeledSelectPo {
+    return new LabeledSelectPo('[data-testid="k3k-storage-class-select"]', this.self());
+  }
+
+  storageRequestSize(): UnitInputPo {
+    return new UnitInputPo('[data-testid="k3k-storage-request-size"]', this.self());
+  }
+
+  storageNoDefaultBanner(): BannersPo {
+    return new BannersPo('[data-testid="k3k-storage-no-default-banner"]', this.self());
   }
 
   nodeSelectorTitle(): Cypress.Chainable {

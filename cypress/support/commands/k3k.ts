@@ -2,7 +2,7 @@ import {
   K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_REPO_NAME, K3K_REPO_URL, K3K_VALUES
 } from '../../../pkg/virtual-clusters/utils/k3k-chart';
 import {
-  apiRequest, waitForResource, waitForResourceState, waitForSchema, K3K_POLICY_TYPE
+  apiRequest, k3kIsInstalled, waitForResource, waitForResourceState, waitForSchema, K3K_POLICY_TYPE
 } from '../../e2e/utils/rancher-api';
 
 const APP_TYPE = 'catalog.cattle.io.app';
@@ -13,15 +13,6 @@ const REPO_DOWNLOAD_RETRIES = 40;
 // the install runs helm with wait and a 600s timeout
 const DEPLOYED_RETRIES = 400;
 const INSTALL_MAX_TRIES = 3;
-
-/**
- * Same check as verifyK3kIsInstalled in pkg/virtual-clusters/utils/k3kInstalled.js:
- * any app in k3k-system counts, whatever its name.
- */
-function k3kIsInstalled(clusterId: string): Cypress.Chainable<boolean> {
-  return apiRequest({ url: `/k8s/clusters/${ clusterId }/v1/counts/count` })
-    .then((resp) => !!resp.body?.counts?.[APP_TYPE]?.namespaces?.[K3K_CHART_NAMESPACE]?.count);
-}
 
 /** A 409 means the repo is left over from an earlier install, which is fine to reuse. */
 function addK3kRepo(prefix: string) {

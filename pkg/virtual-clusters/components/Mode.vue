@@ -70,6 +70,7 @@ export default {
         role="radiogroup"
         :aria-label="t('k3k.mode.label')"
         class="radio-group"
+        data-testid="k3k-mode"
       >
         <RadioButton
           v-for="option in modeOptions"

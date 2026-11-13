@@ -23,8 +23,12 @@ export default class VirtualClustersPolicyListPagePo extends PagePo {
 
     const productNav = new ProductNavPo();
 
-    productNav.checkSideMenuEntryByLabel(POLICY_NAV_LABEL, 'exist');
-    productNav.navToSideMenuGroupByLabel(NAV_LABEL);
+    productNav.navToSideMenuGroupByLabelExistence(NAV_LABEL, 'exist').then(($group) => {
+      if (!$group.hasClass('expanded')) {
+        cy.wrap($group).click();
+      }
+    });
+    productNav.navToSideMenuEntryByLabel(POLICY_NAV_LABEL);
   }
 
   constructor(clusterId: string) {

@@ -210,6 +210,15 @@ export const K3K_POLICY_TYPE = 'k3k.io.virtualclusterpolicy';
 export const K3K_CLUSTER_TYPE = 'k3k.io.cluster';
 
 /**
+ * Same check as verifyK3kIsInstalled in pkg/virtual-clusters/utils/k3kInstalled.js:
+ * any app in k3k-system counts, whatever its name.
+ */
+export function k3kIsInstalled(clusterId: string): Cypress.Chainable<boolean> {
+  return apiRequest({ url: `/k8s/clusters/${ clusterId }/v1/counts/count` })
+    .then((resp) => !!resp.body?.counts?.['catalog.cattle.io.app']?.namespaces?.[K3K_NAMESPACE]?.count);
+}
+
+/**
  * Best effort, like deleteResource. The namespace goes last because deleting it first
  * would strand the app's release secret and leave the count non-zero.
  */
@@ -276,7 +285,7 @@ export function createNamespace(clusterId: string, name: string, projectId: stri
  * id form (`c-m-xxx/p-xxx`), and only offers the policy when one of those projects
  * holds a namespace labelled with the policy name.
  */
-export function createVirtualClusterPolicy(clusterId: string, name: string, projectId: string) {
+export function createVirtualClusterPolicy(clusterId: string, name: string, projectId: string, spec: Record<string, any> = { allowedMode: 'shared' }) {
   return apiRequest({
     method: 'POST',
     url:    `/k8s/clusters/${ clusterId }/v1/${ K3K_POLICY_TYPE }`,
@@ -288,10 +297,29 @@ export function createVirtualClusterPolicy(clusterId: string, name: string, proj
         name,
         annotations: { [POLICY_PROJECTS_ANNOTATION]: projectId.replace(':', '/') }
       },
-      spec: { allowedMode: 'shared' },
+      spec,
     },
   }).then((resp) => {
     expect(resp.status, `create policy ${ name }`).to.eq(201);
+  });
+}
+
+export const STORAGE_CLASS_TYPE = 'storage.k8s.io.storageclass';
+
+
+export function createStorageClass(clusterId: string, name: string, labels: Record<string, string>) {
+  return apiRequest({
+    method: 'POST',
+    url:    `/k8s/clusters/${ clusterId }/v1/${ STORAGE_CLASS_TYPE }es`,
+    body:   {
+      type:              STORAGE_CLASS_TYPE,
+      metadata:          { name, labels },
+      provisioner:       'e2e.virtual-clusters/none',
+      reclaimPolicy:     'Delete',
+      volumeBindingMode: 'WaitForFirstConsumer',
+    },
+  }).then((resp) => {
+    expect(resp.status, `create storage class ${ name }`).to.eq(201);
   });
 }
 

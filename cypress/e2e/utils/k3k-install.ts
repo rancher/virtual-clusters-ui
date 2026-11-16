@@ -1,7 +1,7 @@
 
 // Helpers for testing the "Install K3k" button (pkg/virtual-clusters/components/InstallK3k.vue).
 import {
-  K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_MAX_VERSION, K3K_REPO_NAME, K3K_REPO_URL, k3kIndexCharts, k3kChartToInstall
+  K3K_CHART_NAME, K3K_CHART_NAMESPACE, K3K_INCLUDE_PRERELEASE, K3K_MAX_VERSION, K3K_REPO_NAME, K3K_REPO_URL, k3kIndexCharts, k3kChartToInstall
 } from '../../../pkg/virtual-clusters/utils/k3k-chart';
 import { apiRequest, uninstallK3k, waitForResource, waitForResourceState } from './rancher-api';
 
@@ -33,6 +33,10 @@ export const K3K_VERSIONS = {
   nextMinor:      `${ MAJOR }.${ MINOR + 1 }.0`,
   nextMajor:      `${ MAJOR + 1 }.0.0`,
 };
+
+// the version the button picks when the index holds prerelease, supported and olderSupported
+// a prerelease extension build also picks k3k prereleases, and prerelease (.2-rc1) sorts above supported (.1)
+export const K3K_NEWEST_IN_RANGE = K3K_INCLUDE_PRERELEASE ? K3K_VERSIONS.prerelease : K3K_VERSIONS.supported;
 
 export interface IndexChart { name: string, version: string }
 
@@ -130,7 +134,7 @@ export function stubK3kInstallRequests(clusterId: string, { statuses = [{}], ind
 
   cy.intercept({
     method: 'POST', pathname: `/v3/clusters/${ clusterId }`, query: { action: 'importYaml' }
-  }, { statusCode: 200, body: {} });
+  }, { statusCode: 200, body: {} }).as('k3kImportYaml');
 
   // fetching the index and installing k3k are both done thru the clusterrepo endpoint; anchoring here lets us differentiate between those 2
   cy.intercept({ method: 'GET', url: new RegExp(`/${ clusterPrefix(clusterId) }/catalog\\.cattle\\.io\\.clusterrepos?/${ K3K_REPO_NAME }$`, 'i') }, (req) => {

@@ -41,10 +41,9 @@ const { major, minor } = semver.coerce(pkgjson.version);
 
 // virtual clusters ui and k3k sync major/minor releases
 // so the ui version can be used to determine max supported k3k version
-
 export const K3K_MAX_VERSION = `${ major }.${ minor }.x`;
 
-// a prerelease extension build may install a k3k prerelease TODO nb review
+// a prerelease extension build may install a k3k prerelease
 export const K3K_INCLUDE_PRERELEASE = !!semver.prerelease(pkgjson.version);
 
 /**
@@ -56,10 +55,10 @@ export const K3K_INCLUDE_PRERELEASE = !!semver.prerelease(pkgjson.version);
 export const k3kIndexCharts = (index) => Object.values(index?.entries || {}).flat();
 
 /**
- * Pick the chart to install
+ * Pick the k3k chart to install
  * @param {object[]} charts entries from k3kIndexCharts
- * @param {string} [version] (optional, only used in e2e) exact version to pick: defaults to the highest version at or below K3K_MAX_VERSION TODO nb review
- * prereleases are candidates only when K3K_INCLUDE_PRERELEASE is true TODO nb review
+ * @param {string} [version] (optional, only used in e2e) exact version to pick: defaults to the highest version at or below K3K_MAX_VERSION
+ * prereleases are candidates only when K3K_INCLUDE_PRERELEASE is true
  * @returns object | null - the index entry: its `name` is the chartName for the install action; null if no entry matches
  */
 export const k3kChartToInstall = (charts, version) => {
@@ -70,10 +69,7 @@ export const k3kChartToInstall = (charts, version) => {
 };
 
 /**
- * Why k3kChartToInstall(charts) returned null
- * every value is a key under k3k.errors TODO nb review
- * 'k3kVersionsTooHigh': every valid version is above K3K_MAX_VERSION, ie the extension is too old for the repo TODO nb review
- * semver.gtr is not used: it counts a prerelease of a supported minor (eg 1.3.1-rc1) as above the range
+ * Construct an error message when retrieving the k3k chart fails
  * @param {object[]} charts entries from k3kIndexCharts
  * @returns 'noK3kCharts' | 'noValidK3kVersions' | 'k3kVersionsTooHigh' | 'onlyPrereleaseK3kVersions'
  */

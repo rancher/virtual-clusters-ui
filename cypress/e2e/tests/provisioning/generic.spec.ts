@@ -1,10 +1,10 @@
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 
-import { K3K_MAX_VERSION, K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
+import { K3K_INCLUDE_PRERELEASE, K3K_MAX_VERSION, K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
 import CruK3kPo from '../../po/cru-k3k.po';
 import {
   stubK3kInstalled, stubK3kInstallRequests, stubSecondHostCluster, removeK3k, createK3kRepo, k3kChartFromIndex, waitForK3kDeployed,
-  K3K_INSTALL_URL, K3K_OLDER_TAGS_KEY, K3K_REPO_URL_WITHOUT_CHARTS, K3K_VERSIONS, STUB_HOST_CLUSTER
+  K3K_INSTALL_URL, K3K_NEWEST_IN_RANGE, K3K_OLDER_TAGS_KEY, K3K_REPO_URL_WITHOUT_CHARTS, K3K_VERSIONS, STUB_HOST_CLUSTER
 } from '../../utils/k3k-install';
 import { HOST_CLUSTER, openCreateForm } from '../../utils/provisioning';
 import {
@@ -239,12 +239,12 @@ describe('cluster creation', () => {
         stubK3kInstalled(hostClusterId, false);
       });
 
-      it('installs the newest stable version at or below the extension major.minor', () => {
+      it('installs the newest version at or below the extension major.minor, with prereleases only for a prerelease extension', () => {
         stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMinor, K3K_VERSIONS.prerelease, K3K_VERSIONS.supported, K3K_VERSIONS.olderSupported] } });
 
         const cruK3k = clickInstallK3k();
 
-        cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_CHART_NAME, version: K3K_VERSIONS.supported });
+        cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_CHART_NAME, version: K3K_NEWEST_IN_RANGE });
         cruK3k.installSucceeded().should('be.visible');
       });
 
@@ -268,7 +268,7 @@ describe('cluster creation', () => {
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner().should('contain', 'Error installing K3K: All available K3K chart versions are beyond the range supported by this extension. Upgrade your Virtual Clusters UI extension to proceed.');
+        cruK3k.installErrorBanner().self().should('contain', 'Error installing K3K: All available K3K chart versions are beyond the range supported by this extension. Upgrade your Virtual Clusters UI extension to proceed.');
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
@@ -278,19 +278,20 @@ describe('cluster creation', () => {
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner().should('be.visible');
+        cruK3k.installErrorBanner().self().should('be.visible');
         cruK3k.selectHostCluster(STUB_HOST_CLUSTER);
 
         cruK3k.installK3kButton().self().should('be.visible');
-        cruK3k.errorBanner().should('not.exist');
+        cruK3k.installErrorBanner().checkNotExists();
       });
 
-      it('reports an index with only prerelease versions at or below the supported range', () => {
+      // skip this test if the current extension version would include k3k prereleases
+      (K3K_INCLUDE_PRERELEASE ? it.skip : it)('reports an index with only prerelease versions at or below the supported range', () => {
         stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMinor], [K3K_OLDER_TAGS_KEY]: [K3K_VERSIONS.prerelease] } });
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner().should('contain', `has only prerelease K3K versions at or below ${ K3K_MAX_VERSION }`);
+        cruK3k.installErrorBanner().self().should('contain', `has only prerelease K3K versions at or below ${ K3K_MAX_VERSION }`);
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
@@ -299,18 +300,20 @@ describe('cluster creation', () => {
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner().should('contain', 'index has no valid semver versions. Index versions: latest');
+        cruK3k.installErrorBanner().self().should('contain', 'index has no valid semver versions. Index versions: latest');
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
-      it('reports a repo download failure that rancher retries do not clear', () => {
+      it('refreshes a failed repo once, then reports a download failure that the refresh does not clear', () => {
         stubK3kInstallRequests(hostClusterId, { statuses: [{ downloaded: false, message: 'error 404: Not Found' }] });
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner().should('contain', `Error installing K3K: The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
-        // the first False poll and DOWNLOAD_FAILED_MAX_RETRIES (3) more in InstallK3k.vue
-        cy.get('@k3kRepo.all').should('have.length', 4);
+        cruK3k.installErrorBanner().self().should('contain', `Error installing K3K: The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
+        // the first False poll sets spec.forceUpdate through a second importYaml
+        cy.get('@k3kImportYaml.all').should('have.length', 2).its('1.request.body.yaml').should('include', 'forceUpdate');
+        // after the refresh: the first False poll and DOWNLOAD_FAILED_MAX_RETRIES (3) more in InstallK3k.vue
+        cy.get('@k3kRepo.all').should('have.length', 5);
         cy.get('@k3kIndex.all').should('have.length', 0);
       });
 
@@ -332,7 +335,7 @@ describe('cluster creation', () => {
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.errorBanner({ timeout: POLLING_TIMEOUT }).should('contain', `The ${ K3K_REPO_NAME } repository did not finish downloading.`);
+        cruK3k.installErrorBanner().self({ timeout: POLLING_TIMEOUT }).should('contain', `The ${ K3K_REPO_NAME } repository did not finish downloading.`);
         cy.get('@k3kRepo.all').should('have.length', 11);
         cy.get('@k3kIndex.all').should('have.length', 0);
       });

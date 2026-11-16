@@ -1,5 +1,6 @@
 import PagePo from '@rancher/cypress/e2e/po/pages/page.po';
 import AsyncButtonPo from '@rancher/cypress/e2e/po/components/async-button.po';
+import BannersPo from '@rancher/cypress/e2e/po/components/banners.po';
 import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/cluster-dashboard.po';
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
 
@@ -41,8 +42,8 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     return this.self().find('[data-testid="k3k-install-succeeded"]');
   }
 
-  installErrorBanner(): Cypress.Chainable {
-    return this.self().find('[data-testid="k3k-install-error-banner"]');
+  installErrorBanner(): BannersPo {
+    return new BannersPo('[data-testid="k3k-install-error-banner"]', this.self());
   }
 
   notice(): Cypress.Chainable {

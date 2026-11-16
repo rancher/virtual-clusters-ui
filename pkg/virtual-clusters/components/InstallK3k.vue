@@ -251,6 +251,7 @@ export default {
         let downloaded = false;
         let tries = 0;
         let failedTries = 0;
+        let refreshed = false;
 
         while (!downloaded) {
           k3kRepo = await this.$store.dispatch('management/request', {
@@ -265,7 +266,15 @@ export default {
           if (processed && downloadedCondition.status === 'True') {
             downloaded = true;
           } else {
-            if (processed) {
+            if (processed && !refreshed) {
+              // rancher retries most failed oci downloads only after the repo refresh interval
+              // a spec change makes it download again immediately
+              // same strategy as refresh() in shell/models/catalog.cattle.io.clusterrepo.js
+              refreshed = true;
+              const forceUpdate = (new Date()).toISOString().replace(/\.\d+Z$/, 'Z');
+
+              await normanCluster.doAction('importYaml', { yaml: saferDump({ ...repo, spec: { ...repo.spec, forceUpdate } }) });
+            } else if (processed) {
               // downloadedCondition=== "False" *can* indicate a temporary failure, and the backend might be automatically retrying
               // in which case we should just wait instead of immediately failing
               failedTries++;

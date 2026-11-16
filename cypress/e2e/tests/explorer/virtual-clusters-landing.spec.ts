@@ -1,7 +1,9 @@
 import { K3K_REPO_NAME } from '../../../../pkg/virtual-clusters/utils/k3k-chart';
 import VirtualClustersLandingPagePo from '../../po/virtual-clusters-landing.po';
 import VirtualClustersPolicyListPagePo from '../../po/virtual-clusters-policy-list.po';
-import { stubK3kInstalled, stubK3kInstallRequests, K3K_OLDER_TAGS_KEY, K3K_VERSIONS } from '../../utils/k3k-install';
+import {
+  stubK3kInstalled, stubK3kInstallRequests, K3K_NEWEST_IN_RANGE, K3K_OLDER_TAGS_KEY, K3K_VERSIONS
+} from '../../utils/k3k-install';
 import { HOST_CLUSTER } from '../../utils/provisioning';
 import { loginAsAdmin, clusterIdByName, K3K_CHART_NAME, PARENT_CLUSTER_ANNOTATION } from '../../utils/rancher-api';
 
@@ -84,7 +86,7 @@ describe('virtual clusters landing page', () => {
       landingPage.quickGuideSteps().first().find('[data-testid="install-k3k-button"]').should('be.visible');
     });
 
-    it('installs the newest stable version at or below the extension major.minor and confirms the install', { tags: ['@adminUser'] }, () => {
+    it('installs the newest version at or below the extension major.minor, with prereleases only for a prerelease extension, and confirms the install', { tags: ['@adminUser'] }, () => {
       stubK3kInstallRequests(hostClusterId, {
         index: {
           [K3K_CHART_NAME]:     [K3K_VERSIONS.nextMinor],
@@ -95,9 +97,9 @@ describe('virtual clusters landing page', () => {
       VirtualClustersLandingPagePo.navTo(hostClusterId);
       landingPage.installK3kButton().click();
 
-      cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_OLDER_TAGS_KEY, version: K3K_VERSIONS.supported });
+      cy.wait('@k3kInstall').its('request.body.charts.0').should('include', { chartName: K3K_OLDER_TAGS_KEY, version: K3K_NEWEST_IN_RANGE });
       landingPage.installSucceeded().should('be.visible');
-      landingPage.installErrorBanner().should('not.exist');
+      landingPage.installErrorBanner().checkNotExists();
     });
 
     it('reports that the extension must be upgraded when every version is above the supported range', { tags: ['@adminUser'] }, () => {
@@ -106,7 +108,7 @@ describe('virtual clusters landing page', () => {
       VirtualClustersLandingPagePo.navTo(hostClusterId);
       landingPage.installK3kButton().click();
 
-      landingPage.installErrorBanner().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
+      landingPage.installErrorBanner().self().should('be.visible').and('contain', 'Upgrade your Virtual Clusters UI extension to proceed');
       cy.get('@k3kInstall.all').should('have.length', 0);
     });
 
@@ -116,7 +118,7 @@ describe('virtual clusters landing page', () => {
       VirtualClustersLandingPagePo.navTo(hostClusterId);
       landingPage.installK3kButton().click();
 
-      landingPage.installErrorBanner().should('be.visible').and('contain', `The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
+      landingPage.installErrorBanner().self().should('be.visible').and('contain', `The ${ K3K_REPO_NAME } repository failed to download: error 404: Not Found`);
       cy.get('@k3kIndex.all').should('have.length', 0);
     });
   });

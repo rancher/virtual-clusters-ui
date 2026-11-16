@@ -6,7 +6,6 @@ import InstallK3k from '../components/InstallK3k.vue';
 import { K3K_CHART_NAMESPACE, K3K_CHART_NAME, verifyK3kIsInstalled, verifyUserCanInstallK3k } from '../utils/k3kInstalled';
 import Loading from '@shell/components/Loading';
 import { RcContentGroup } from '@components/Layout';
-import { Banner } from '@components/Banner';
 import { isRancherPrime } from '@shell/config/version';
 import { NAME as MGMT_NAME } from '@shell/config/product/manager';
 import { PARENT_CLUSTER } from '../labels-annotations';
@@ -18,7 +17,6 @@ export default {
     InstallK3k,
     Loading,
     RcContentGroup,
-    Banner
   },
 
   async fetch() {
@@ -73,7 +71,6 @@ export default {
       targetNamespace:    K3K_CHART_NAMESPACE,
       currentProvCluster: null,
       k3kInstalled:       false, // fetch will redirect away from this page if k3k is already installed. This variable tracks if k3k has been installed using the button on this page
-      installError:       null,
       managerUrl:         this.$router.resolve({
         name:   'c-cluster-product-resource',
         params: {
@@ -91,12 +88,6 @@ export default {
       }).href,
     };
   },
-
-  methods: {
-    handleInstallationError(e) {
-      this.installError = e ? (e?.message || e) : null;
-    }
-  }
 };
 </script>
 
@@ -162,13 +153,6 @@ export default {
                 v-model:k3k-installed="k3kInstalled"
                 :parent-cluster="currentProvCluster"
                 :show-button-only="true"
-                @error="handleInstallationError"
-              />
-              <Banner
-                v-if="installError"
-                data-testid="k3k-install-error-banner"
-                color="error"
-                :label="installError"
               />
             </li>
             <li data-testid="k3k-landing-quick-guide-step">

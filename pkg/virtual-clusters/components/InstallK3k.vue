@@ -4,6 +4,7 @@ import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
+import { Banner } from '@components/Banner';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
@@ -29,11 +30,12 @@ const INCLUDE_LOCAL = process.env.dev;
 export default {
   name: 'K3kHostClusterAndInstallk3k',
 
-  emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
+  emits: ['update:parentCluster', 'update:k3kInstalled'],
 
   components: {
     LabeledSelect,
-    AsyncButton
+    AsyncButton,
+    Banner
   },
 
   props: {
@@ -95,6 +97,7 @@ export default {
       localParentCluster:      this.parentCluster,
       allParentClusterOptions: [],
       loadingClusters:         false,
+      installError:            null,
     };
   },
 
@@ -143,7 +146,7 @@ export default {
 
         this.localParentCluster = value;
         this.didInstallK3k = false;
-        this.$emit('error', false);
+        this.installError = null;
 
         this.$emit('update:k3kInstalled', fullOption.k3kInstalled);
         // using nextTick here ensures that ClusterPolicy.vue (and any other components that fetch resources in the parent cluster contingent on k3k installation)
@@ -216,8 +219,7 @@ export default {
     },
 
     async installK3k(cb) {
-      // tell the parent component to remove any installation error messages from the error array
-      this.$emit('error', false);
+      this.installError = null;
 
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
@@ -361,7 +363,7 @@ export default {
           cb(false);
         }
       } catch (e) {
-        this.$emit('error', e);
+        this.installError = `${ this.t('k3k.errors.installingK3k') }: ${ e?.message || e }`;
 
         cb(false);
       }
@@ -375,6 +377,15 @@ export default {
     class="k3k-input-row"
     :class="{ 'k3k-half': !showingInstallationContent }"
   >
+    <Banner
+      v-if="installError"
+      class="install-error"
+      data-testid="k3k-install-error-banner"
+      color="error"
+      :label="installError"
+      :closable="true"
+      @close="installError = null"
+    />
     <div
       v-if="!showButtonOnly"
       class="k3k-half"
@@ -424,3 +435,19 @@ export default {
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+
+.k3k-input-row {
+  flex-wrap: wrap;
+
+  &>.centered {
+    flex-basis: 0;
+  }
+
+  &>.install-error {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}
+</style>

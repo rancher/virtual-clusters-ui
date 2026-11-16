@@ -272,13 +272,13 @@ describe('cluster creation', () => {
         cy.get('@k3kInstall.all').should('have.length', 0);
       });
 
-      it('clears the install error when another host cluster is selected', () => {
+      it('clears k3k installation errors when a different host cluster is selected', () => {
         stubSecondHostCluster(hostClusterId);
         stubK3kInstallRequests(hostClusterId, { index: { [K3K_CHART_NAME]: [K3K_VERSIONS.nextMajor] } });
 
         const cruK3k = clickInstallK3k();
 
-        cruK3k.installErrorBanner().self().should('be.visible');
+        cruK3k.installErrorBanner().self().scrollIntoView().should('be.visible');
         cruK3k.selectHostCluster(STUB_HOST_CLUSTER);
 
         cruK3k.installK3kButton().self().should('be.visible');

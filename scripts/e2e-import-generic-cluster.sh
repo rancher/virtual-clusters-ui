@@ -38,12 +38,12 @@ k3d kubeconfig get "$CLUSTER_NAME" > "$K3D_KUBECONFIG"
 # kubectl apply fails if /openapi/v2 times out (EOF / context deadline exceeded).
 echo -e "${YELLOW}Waiting for the k3d apiserver..........${RESET}"
 APISERVER_READY=""
-for i in $(seq 1 60); do
+for i in $(seq 1 120); do
   if KUBECONFIG="$K3D_KUBECONFIG" kubectl get --raw=/readyz --request-timeout=5s > /dev/null 2>&1; then
     APISERVER_READY=1
     break
   fi
-  echo "  apiserver not ready yet... ($i/60)"
+  echo "  apiserver not ready yet... ($i/120)"
   sleep 5
 done
 

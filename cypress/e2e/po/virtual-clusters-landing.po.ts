@@ -1,14 +1,12 @@
 import PagePo from '@rancher/cypress/e2e/po/pages/page.po';
 import AsyncButtonPo from '@rancher/cypress/e2e/po/components/async-button.po';
+import BannersPo from '@rancher/cypress/e2e/po/components/banners.po';
 import ClusterDashboardPagePo from '@rancher/cypress/e2e/po/pages/explorer/cluster-dashboard.po';
 import ProductNavPo from '@rancher/cypress/e2e/po/side-bars/product-side-nav.po';
 
 export const NAV_LABEL = 'Virtual Clusters';
 
-/**
- * The extension's landing page, registered by the `virtualclusters` explorer
- * product (see pkg/virtual-clusters/routes.js and config/k3k-explorer-product.ts).
- */
+// extenion's landing page: this is automatically redirected to the virtual cluster policy list once k3k is installed
 export default class VirtualClustersLandingPagePo extends PagePo {
   private static createPath(clusterId: string) {
     return `/c/${ clusterId }/virtualclusters`;
@@ -24,7 +22,6 @@ export default class VirtualClustersLandingPagePo extends PagePo {
 
     const productNav = new ProductNavPo();
 
-    // NAV_LABEL is set to 'Virtual Clusters'
     productNav.navToSideMenuGroupByLabelExistence(NAV_LABEL, 'exist');
     productNav.navToSideMenuGroupByLabel(NAV_LABEL);
   }
@@ -33,7 +30,6 @@ export default class VirtualClustersLandingPagePo extends PagePo {
     super(VirtualClustersLandingPagePo.createPath(clusterId));
   }
 
-  // pages/index.vue renders the title in a plain <h2> with no test id
   title(): Cypress.Chainable {
     return this.self().contains('h2', 'Virtual Clusters');
   }
@@ -43,6 +39,22 @@ export default class VirtualClustersLandingPagePo extends PagePo {
   }
 
   installSucceeded(): Cypress.Chainable {
-    return this.self().contains('K3K installed');
+    return this.self().find('[data-testid="k3k-install-succeeded"]');
+  }
+
+  installErrorBanner(): BannersPo {
+    return new BannersPo('[data-testid="k3k-install-error-banner"]', this.self());
+  }
+
+  notice(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-landing-notice"]');
+  }
+
+  noticeLink(): Cypress.Chainable {
+    return this.notice().find('[data-testid="k3k-landing-notice-link"]');
+  }
+
+  quickGuideSteps(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-landing-quick-guide-step"]');
   }
 }

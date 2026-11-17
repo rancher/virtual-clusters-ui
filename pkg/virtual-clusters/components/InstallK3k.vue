@@ -4,6 +4,7 @@ import { _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { saferDump } from '@shell/utils/create-yaml';
 import AsyncButton from '@shell/components/AsyncButton';
+import { Banner } from '@components/Banner';
 import { sortBy } from '@shell/utils/sort';
 import { mapGetters } from 'vuex';
 import isEmpty from 'lodash/isEmpty';
@@ -17,9 +18,11 @@ import {
   verifyUserCanInstallK3k,
   verifyUserCanCreateK3kClusters
 } from '../utils/k3kInstalled';
+import { K3K_MAX_VERSION, k3kIndexCharts, k3kChartToInstall, k3kNoChartReason } from '../utils/k3k-chart';
 import { PARENT_CLUSTER } from '../labels-annotations';
 
 const DOWNLOAD_MAX_RETRIES = 10;
+const DOWNLOAD_FAILED_MAX_RETRIES = 3; // the repo download can temporarily fail and be auto-retried by the backend after 1s, so we poll a few more times
 const RETRY_WAIT = 1000;
 
 const INCLUDE_LOCAL = process.env.dev;
@@ -27,11 +30,12 @@ const INCLUDE_LOCAL = process.env.dev;
 export default {
   name: 'K3kHostClusterAndInstallk3k',
 
-  emits: ['update:parentCluster', 'update:k3kInstalled', 'error'],
+  emits: ['update:parentCluster', 'update:k3kInstalled'],
 
   components: {
     LabeledSelect,
-    AsyncButton
+    AsyncButton,
+    Banner
   },
 
   props: {
@@ -93,6 +97,7 @@ export default {
       localParentCluster:      this.parentCluster,
       allParentClusterOptions: [],
       loadingClusters:         false,
+      installError:            null,
     };
   },
 
@@ -141,6 +146,7 @@ export default {
 
         this.localParentCluster = value;
         this.didInstallK3k = false;
+        this.installError = null;
 
         this.$emit('update:k3kInstalled', fullOption.k3kInstalled);
         // using nextTick here ensures that ClusterPolicy.vue (and any other components that fetch resources in the parent cluster contingent on k3k installation)
@@ -213,8 +219,7 @@ export default {
     },
 
     async installK3k(cb) {
-      // tell the parent component to remove any installation error messages from the error array
-      this.$emit('error', false);
+      this.installError = null;
 
       const repo = {
         apiVersion: 'catalog.cattle.io/v1',
@@ -241,48 +246,72 @@ export default {
 
         await normanCluster.doAction('importYaml', { yaml: repoYaml });
 
-        // wait for the repo to be downloaded
-        let fetched = false;
+        // poll the repo status until it is downloaded
+        // once per second up to 10 retries (11 tries total)
+        let downloaded = false;
         let tries = 0;
+        let failedTries = 0;
+        let refreshed = false;
 
-        let latestK3kChartVersion = '';
-
-        while (!fetched) {
+        while (!downloaded) {
           k3kRepo = await this.$store.dispatch('management/request', {
             url:    k3kRepoUrl,
             method: 'GET',
           });
           const downloadedCondition = k3kRepo.status?.conditions?.find((s) => s.type === 'OCIDownloaded');
+          // the condition describes an earlier spec until observedGeneration catches up
+          // this is a bit edge-casey but will protect against acting on a stale status if the repo spec was JUST updated
+          const processed = downloadedCondition && k3kRepo.status?.observedGeneration >= k3kRepo.metadata?.generation;
 
-          const downloaded = downloadedCondition?.status === 'True';
+          if (processed && downloadedCondition.status === 'True') {
+            downloaded = true;
+          } else {
+            if (processed && !refreshed) {
+              // rancher retries most failed oci downloads only after the repo refresh interval
+              // a spec change makes it download again immediately
+              // same strategy as refresh() in shell/models/catalog.cattle.io.clusterrepo.js
+              refreshed = true;
+              const forceUpdate = (new Date()).toISOString().replace(/\.\d+Z$/, 'Z');
 
-          if (downloaded) {
-            // get the latest version of the chart
-            const indexUrl = k3kRepo?.links?.index;
-            const repoReq = await this.$store.dispatch('management/request', {
-              url:    `${ indexUrl }`,
-              method: 'GET',
-            });
+              await normanCluster.doAction('importYaml', { yaml: saferDump({ ...repo, spec: { ...repo.spec, forceUpdate } }) });
+            } else if (processed) {
+              // downloadedCondition=== "False" *can* indicate a temporary failure, and the backend might be automatically retrying
+              // in which case we should just wait instead of immediately failing
+              failedTries++;
 
-            if (repoReq?.entries?.[K3K_CHART_NAME] && repoReq?.entries?.[K3K_CHART_NAME].length) {
-              latestK3kChartVersion = (repoReq?.entries?.[K3K_CHART_NAME] || [])[0]?.version;
-              // eslint-disable-next-line no-console
-              console.log('Installing k3k version...', latestK3kChartVersion);
-              fetched = true;
+              if (failedTries > DOWNLOAD_FAILED_MAX_RETRIES) {
+                throw new Error(this.t('k3k.errors.repoDownloadFailed', { repo: K3K_REPO_NAME, message: downloadedCondition.message }));
+              }
             } else {
-              fetched = false;
-            }
-          }
+              tries++;
 
-          if (!fetched) {
-            tries++;
-
-            if (tries > DOWNLOAD_MAX_RETRIES) {
-              throw new Error('Failed to add Helm Chart Repository');
+              if (tries > DOWNLOAD_MAX_RETRIES) {
+                throw new Error(this.t('k3k.errors.repoNotDownloaded', { repo: K3K_REPO_NAME }));
+              }
             }
             await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT));
           }
         }
+
+
+        const repoReq = await this.$store.dispatch('management/request', {
+          url:    k3kRepo.links?.index,
+          method: 'GET',
+        });
+        const charts = k3kIndexCharts(repoReq);
+        // find the latest k3k chart that does not exceed the extension's major/minor version
+        const k3kChart = k3kChartToInstall(charts);
+
+        if (!k3kChart) {
+          const reason = k3kNoChartReason(charts);
+
+          throw new Error(this.t(`k3k.errors.${ reason }`, {
+            repo: K3K_REPO_NAME, maxVersion: K3K_MAX_VERSION, versions: charts.map((chart) => chart.version).join(', ')
+          }));
+        }
+
+        // eslint-disable-next-line no-console
+        console.log('Installing k3k version...', k3kChart.version);
 
         // install k3k chart
         const installRequest = {
@@ -292,9 +321,9 @@ export default {
                 'catalog.cattle.io/ui-source-repo':      K3K_REPO_NAME,
                 'catalog.cattle.io/ui-source-repo-type': 'cluster'
               },
-              chartName:   K3K_CHART_NAME,
+              chartName:   k3kChart.name,
               releaseName: K3K_CHART_NAME,
-              version:     latestK3kChartVersion || '1.0.0',
+              version:     k3kChart.version,
               values:      K3K_VALUES
             }
           ],
@@ -334,14 +363,16 @@ export default {
         if (this.didInstallK3k) {
           const currentOpt = this.allParentClusterOptions.find((opt) => opt.value.id === cluster.id);
 
-          currentOpt.k3kInstalled = true;
-          currentOpt.canCreateK3kClusters = true;
+          if (currentOpt) {
+            currentOpt.k3kInstalled = true;
+            currentOpt.canCreateK3kClusters = true;
+          }
           cb(true);
         } else {
           cb(false);
         }
       } catch (e) {
-        this.$emit('error', e);
+        this.installError = `${ this.t('k3k.errors.installingK3k') }: ${ e?.message || e }`;
 
         cb(false);
       }
@@ -351,55 +382,81 @@ export default {
 </script>
 
 <template>
-  <div
-    class="k3k-input-row"
-    :class="{ 'k3k-half': !showingInstallationContent }"
-  >
+  <div class="install-k3k">
+    <Banner
+      v-if="installError"
+      class="install-error"
+      data-testid="k3k-install-error-banner"
+      color="error"
+      role="alert"
+      :label="installError"
+      :closable="true"
+      @close="installError = null"
+    />
     <div
-      v-if="!showButtonOnly"
-      class="k3k-half"
+      class="k3k-input-row"
+      :class="{ 'k3k-half': !showingInstallationContent }"
     >
-      <t
-        raw
-        k="k3k.hostCluster.description"
-        class="text-deemphasized"
-      />
-      <LabeledSelect
-        v-model:value="selectedParentOption"
-        class="mmt-1"
-        data-testid="k3k-host-cluster-select"
-        label-key="k3k.hostCluster.label"
-        :mode="mode"
-        :disabled="!isCreate"
-        :options="parentClusterOptions"
-        :loading="loadingClusters"
-        :rules="rules.hostCluster"
-        required
-      />
-    </div>
-    <div
-      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
-      class="centered text-label"
-    >
-      <t
+      <div
         v-if="!showButtonOnly"
-        raw
-        k="k3k.hostCluster.notInstalled"
-      />
-      <AsyncButton
-        type="button"
-        data-testid="install-k3k-button"
-        class="btn-sm role-tertiary mt-5"
-        mode="install"
-        :action-label="t('k3k.hostCluster.installK3k')"
-        @click="installK3k"
-      />
-    </div>
-    <div
-      v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
-      class="centered"
-    >
-      <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
+        class="k3k-half"
+      >
+        <t
+          raw
+          k="k3k.hostCluster.description"
+          class="text-deemphasized"
+        />
+        <LabeledSelect
+          v-model:value="selectedParentOption"
+          class="mmt-1"
+          data-testid="k3k-host-cluster-select"
+          label-key="k3k.hostCluster.label"
+          :mode="mode"
+          :disabled="!isCreate"
+          :options="parentClusterOptions"
+          :loading="loadingClusters"
+          :rules="rules.hostCluster"
+          required
+        />
+      </div>
+      <div
+        v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
+        class="centered text-label"
+      >
+        <t
+          v-if="!showButtonOnly"
+          raw
+          k="k3k.hostCluster.notInstalled"
+        />
+        <AsyncButton
+          type="button"
+          data-testid="install-k3k-button"
+          class="btn-sm role-tertiary mt-5"
+          mode="install"
+          :action-label="t('k3k.hostCluster.installK3k')"
+          @click="installK3k"
+        />
+      </div>
+      <div
+        v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
+        class="centered"
+        data-testid="k3k-install-succeeded"
+      >
+        <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
+      </div>
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.install-k3k {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  align-self: stretch;
+
+  &>.install-error {
+    margin: 0;
+  }
+}
+</style>

@@ -3,7 +3,7 @@ declare namespace Cypress {
     /**
      * Install k3k into a host cluster through the Rancher API, unless k3k-system already has an app
      * @param clusterId management id of the host cluster (c-m-xxxxxxxx)
-     * @param version chart version; defaults to the newest in the repo
+     * @param version chart version; defaults to the newest in the repo at or below the extension's major.minor
      */
     installK3k(clusterId: string, version?: string): Chainable<void>;
   }

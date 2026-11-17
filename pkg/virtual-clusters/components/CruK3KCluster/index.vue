@@ -773,19 +773,6 @@ export default {
       }
     },
 
-    handleInstallationError(e) {
-      const msg = this.t('k3k.errors.installingK3k');
-
-      // component will emit "false" to clear errors
-      if (e) {
-        this.errors.push(`${ msg }: ${ e }`);
-      } else {
-        this.errors = this.errors.filter((err) => {
-          return typeof err !== 'string' || !err.includes(msg);
-        });
-      }
-    },
-
     resetSync() {
       this.k3kCluster.spec.sync = resetModeSpecificSync(this.k3kCluster.spec.sync);
     },
@@ -857,7 +844,6 @@ export default {
           :mode="mode"
           :clusters="provClusters"
           :rules="{hostCluster: fvGetAndReportPathRules('parentCluster.id')}"
-          @error="handleInstallationError"
         />
 
         <ClusterPolicy

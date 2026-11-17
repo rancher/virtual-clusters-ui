@@ -2,6 +2,7 @@ import PagePo from '@rancher/cypress/e2e/po/pages/page.po';
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 import LabeledSelectPo from '@rancher/cypress/e2e/po/components/labeled-select.po';
 import AsyncButtonPo from '@rancher/cypress/e2e/po/components/async-button.po';
+import BannersPo from '@rancher/cypress/e2e/po/components/banners.po';
 
 export default class CruK3kPo extends PagePo {
   constructor() {
@@ -40,6 +41,14 @@ export default class CruK3kPo extends PagePo {
 
   installK3kButton(): AsyncButtonPo {
     return new AsyncButtonPo('[data-testid="install-k3k-button"]', this.self());
+  }
+
+  installSucceeded(): Cypress.Chainable {
+    return this.self().find('[data-testid="k3k-install-succeeded"]');
+  }
+
+  installErrorBanner(): BannersPo {
+    return new BannersPo('[data-testid="k3k-install-error-banner"]', this.self());
   }
 
   policySelect(): LabeledSelectPo {

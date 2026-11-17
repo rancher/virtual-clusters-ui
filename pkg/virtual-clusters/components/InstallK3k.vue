@@ -382,80 +382,80 @@ export default {
 </script>
 
 <template>
-  <div
-    class="k3k-input-row"
-    :class="{ 'k3k-half': !showingInstallationContent }"
-  >
+  <div class="install-k3k">
     <Banner
       v-if="installError"
       class="install-error"
       data-testid="k3k-install-error-banner"
       color="error"
+      role="alert"
       :label="installError"
       :closable="true"
       @close="installError = null"
     />
     <div
-      v-if="!showButtonOnly"
-      class="k3k-half"
+      class="k3k-input-row"
+      :class="{ 'k3k-half': !showingInstallationContent }"
     >
-      <t
-        raw
-        k="k3k.hostCluster.description"
-        class="text-deemphasized"
-      />
-      <LabeledSelect
-        v-model:value="selectedParentOption"
-        class="mmt-1"
-        data-testid="k3k-host-cluster-select"
-        label-key="k3k.hostCluster.label"
-        :mode="mode"
-        :disabled="!isCreate"
-        :options="parentClusterOptions"
-        :loading="loadingClusters"
-        :rules="rules.hostCluster"
-        required
-      />
-    </div>
-    <div
-      v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
-      class="centered text-label"
-    >
-      <t
+      <div
         v-if="!showButtonOnly"
-        raw
-        k="k3k.hostCluster.notInstalled"
-      />
-      <AsyncButton
-        type="button"
-        data-testid="install-k3k-button"
-        class="btn-sm role-tertiary mt-5"
-        mode="install"
-        :action-label="t('k3k.hostCluster.installK3k')"
-        @click="installK3k"
-      />
-    </div>
-    <div
-      v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
-      class="centered"
-      data-testid="k3k-install-succeeded"
-    >
-      <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
+        class="k3k-half"
+      >
+        <t
+          raw
+          k="k3k.hostCluster.description"
+          class="text-deemphasized"
+        />
+        <LabeledSelect
+          v-model:value="selectedParentOption"
+          class="mmt-1"
+          data-testid="k3k-host-cluster-select"
+          label-key="k3k.hostCluster.label"
+          :mode="mode"
+          :disabled="!isCreate"
+          :options="parentClusterOptions"
+          :loading="loadingClusters"
+          :rules="rules.hostCluster"
+          required
+        />
+      </div>
+      <div
+        v-if="parentCluster && !isEmpty(parentCluster) && !k3kInstalled && isCreate"
+        class="centered text-label"
+      >
+        <t
+          v-if="!showButtonOnly"
+          raw
+          k="k3k.hostCluster.notInstalled"
+        />
+        <AsyncButton
+          type="button"
+          data-testid="install-k3k-button"
+          class="btn-sm role-tertiary mt-5"
+          mode="install"
+          :action-label="t('k3k.hostCluster.installK3k')"
+          @click="installK3k"
+        />
+      </div>
+      <div
+        v-else-if="parentCluster && !isEmpty(parentCluster) && didInstallK3k"
+        class="centered"
+        data-testid="k3k-install-succeeded"
+      >
+        <span> <i class="icon icon-checkmark text-success mr-5" />{{ t('k3k.hostCluster.didInstall') }}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-
-.k3k-input-row {
-  flex-wrap: wrap;
-
-  &>.centered {
-    flex-basis: 0;
-  }
+.install-k3k {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  align-self: stretch;
 
   &>.install-error {
-    flex-basis: 100%;
     margin: 0;
   }
 }

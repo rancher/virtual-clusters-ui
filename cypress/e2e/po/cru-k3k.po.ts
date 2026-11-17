@@ -2,6 +2,10 @@ import PagePo from '@rancher/cypress/e2e/po/pages/page.po';
 import ClusterManagerCreatePagePo from '@rancher/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 import LabeledSelectPo from '@rancher/cypress/e2e/po/components/labeled-select.po';
 import AsyncButtonPo from '@rancher/cypress/e2e/po/components/async-button.po';
+import BannersPo from '@rancher/cypress/e2e/po/components/banners.po';
+import LabeledInputPo from '@rancher/cypress/e2e/po/components/labeled-input.po';
+import NameNsDescription from '@rancher/cypress/e2e/po/components/name-ns-description.po';
+import UnitInputPo from '@rancher/cypress/e2e/po/components/unit-input.po';
 
 export default class CruK3kPo extends PagePo {
   constructor() {
@@ -13,6 +17,8 @@ export default class CruK3kPo extends PagePo {
 
   // k3k.policy.noneOption
   static readonly NO_POLICY = 'No policy';
+
+  static readonly CREATE_NAMESPACE = 'Create a new Namespace';
 
   static goToCreate(clusterId = '_'): CruK3kPo {
     ClusterManagerCreatePagePo.goTo(clusterId, `type=${ CruK3kPo.SUB_TYPE }`);
@@ -81,6 +87,30 @@ export default class CruK3kPo extends PagePo {
     return new LabeledSelectPo('[data-testid="k3k-target-namespace"]', this.self());
   }
 
+  // LabeledSelectWithCreate replaces the select with this input once its create option is chosen
+  newTargetNamespaceInput(): LabeledInputPo {
+    return new LabeledInputPo(this.self().find('[data-testid="k3k-target-namespace"] .create-input input'));
+  }
+
+  createTargetNamespace(name: string): Cypress.Chainable {
+    this.targetNamespaceSelect().toggle();
+    this.targetNamespaceSelect().clickOptionWithLabel(CruK3kPo.CREATE_NAMESPACE);
+
+    return this.newTargetNamespaceInput().set(name);
+  }
+
+  nameNsDescription(): NameNsDescription {
+    return new NameNsDescription(this.self());
+  }
+
+  save(): AsyncButtonPo {
+    return new AsyncButtonPo('[data-testid="cluster-manager-virtual-cluster-save"]', this.self());
+  }
+
+  errorBanner(): BannersPo {
+    return new BannersPo('[data-testid="error-banner0"]', this.self());
+  }
+
   modeOption(mode: 'shared' | 'virtual' | 'hcp'): Cypress.Chainable {
     return this.self().find(`input[name="k3k-cluster-mode"][value="${ mode }"]`).closest('label.radio-container');
   }
@@ -123,6 +153,18 @@ export default class CruK3kPo extends PagePo {
 
   loadBalancerServerPortBanner(): Cypress.Chainable {
     return this.self().find('[data-testid="k3k-expose-lb-server-port-unsupported"]');
+  }
+
+  storageClassSelect(): LabeledSelectPo {
+    return new LabeledSelectPo('[data-testid="k3k-storage-class-select"]', this.self());
+  }
+
+  storageRequestSize(): UnitInputPo {
+    return new UnitInputPo('[data-testid="k3k-storage-request-size"]', this.self());
+  }
+
+  storageNoDefaultBanner(): BannersPo {
+    return new BannersPo('[data-testid="k3k-storage-no-default-banner"]', this.self());
   }
 
   nodeSelectorTitle(): Cypress.Chainable {

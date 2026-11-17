@@ -73,5 +73,7 @@ Thumbs.db
 dist-pkg
 
 cypress/screenshots/
+cypress/videos/
 cypress/reports/
+cypress/videos/
 browser-logs/

@@ -8,9 +8,16 @@ import { STORAGE } from '@shell/config/labels-annotations';
 import UnitInput from '@shell/components/form/UnitInput';
 
 const PERSISTENCE_TYPES = {
-  EPHEMERAL: 'ephemeral',
-  DYNAMIC:   'dynamic'
+  DYNAMIC:   'dynamic',
+  EPHEMERAL: 'ephemeral'
 };
+
+// labeledselect value used to unset a storage class name in the spec, in which case k3k uses the host cluster default
+const HOST_DEFAULT = '_host-default_';
+
+//
+// labeledselect value for ephemeral persistence, which uses no storage class
+const EPHEMERAL = '_ephemeral_';
 
 export default {
   name: 'K3KStorage',
@@ -53,26 +60,19 @@ export default {
   },
 
   watch: {
-    parentCluster(neu) {
-      if (neu) {
-        this.$emit('update:storageClassName', undefined);
-        this.fetchStorageClasses();
-      }
-    },
+    parentCluster: {
 
-    defaultStorageClass(neu) {
-      if (neu && !this.storageClassName) {
-        this.$emit('update:storageClassName', neu.metadata.name);
-      }
-    },
-
-    storageClassName: {
-      handler(neu) {
-        if (!neu) {
-          this.$emit('update:persistenceType', PERSISTENCE_TYPES.EPHEMERAL );
-        } else {
-          this.$emit('update:persistenceType', PERSISTENCE_TYPES.DYNAMIC );
+      handler(neu, old) {
+        if (!neu?.id || neu.id === old?.id) {
+          return;
         }
+
+        // clear out the storage class selection when switching host clusters
+        if (old?.id) {
+          this.$emit('update:storageClassName', undefined);
+        }
+
+        this.fetchStorageClasses();
       },
       immediate: true
     }
@@ -82,6 +82,7 @@ export default {
     return {
       storageClassErrors:    [],
       loadingStorageClasses: false,
+      storageClassesLoaded:  false,
       storageClasses:        []
     };
   },
@@ -89,36 +90,60 @@ export default {
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
 
-    storageClassOptions() {
-      const out = [this.t('k3k.storage.noneOption')];
-
-      this.storageClasses.forEach((c) => {
-        out.push(c.metadata.name);
-      });
-
-      return out;
+    isDynamic() {
+      return this.persistenceType === PERSISTENCE_TYPES.DYNAMIC;
     },
 
     defaultStorageClass() {
       return this.storageClasses.find((sc) => sc?.metadata?.annotations?.[STORAGE.DEFAULT_STORAGE_CLASS] === 'true');
+    },
+
+    storageClassOptions() {
+      const hostDefaultLabel = this.defaultStorageClass ? this.t('k3k.storage.storageClass.hostDefaultNamed', { name: this.defaultStorageClass.metadata.name }) : this.t('k3k.storage.storageClass.hostDefault');
+
+      return [
+        { label: hostDefaultLabel, value: HOST_DEFAULT },
+        { label: this.t('k3k.storage.storageClass.ephemeral'), value: EPHEMERAL },
+        ...this.storageClasses.map((sc) => ({ label: sc.metadata.name, value: sc.metadata.name }))
+      ];
+    },
+
+    selectedStorageClass() {
+      if (!this.isDynamic) {
+        return EPHEMERAL;
+      }
+
+      return this.storageClassName || HOST_DEFAULT;
+    },
+
+    showNoDefaultWarning() {
+      return this.isDynamic && !this.storageClassName && this.storageClassesLoaded && !this.defaultStorageClass;
     }
   },
 
   methods: {
     async fetchStorageClasses() {
-      this.loadingStorageClasses = true;
-      this.storageClassErrors = [];
+      const hostId = this.parentCluster.id;
       const clusterName = this.parentCluster.displayName || this.parentCluster.name;
 
-      await this.parentCluster.waitForMgmt();
-
-      const mgmtCluster = this.parentCluster.mgmt;
+      this.loadingStorageClasses = true;
+      this.storageClassesLoaded = false;
+      this.storageClassErrors = [];
+      this.storageClasses = [];
 
       try {
+        await this.parentCluster.waitForMgmt();
+
+        const mgmtCluster = this.parentCluster.mgmt;
+
         const scSchema = await this.$store.dispatch('management/request', {
           url:    `/k8s/clusters/${ mgmtCluster.id }/v1/schemas/storage.k8s.io.storageclass`,
           method: 'GET',
         });
+
+        if (this.parentCluster?.id !== hostId) {
+          return;
+        }
 
         if (!scSchema) {
           this.storageClassErrors.push(this.t('k3k.errors.loadingStorageClasses', { cluster: clusterName }) + this.t('k3k.errors.storageClassSchema'));
@@ -131,19 +156,35 @@ export default {
           method: 'GET',
         });
 
-        this.storageClasses = res.data;
+        if (this.parentCluster?.id !== hostId) {
+          return;
+        }
+
+        this.storageClasses = res?.data || [];
+        this.storageClassesLoaded = true;
       } catch (err) {
-        this.storageClassErrors.push(this.t('k3k.errors.loadingStorageClasses', { cluster: clusterName }) + err.data || err);
+        if (this.parentCluster?.id === hostId) {
+          this.storageClassErrors.push(this.t('k3k.errors.loadingStorageClasses', { cluster: clusterName }) + (err?.data || err));
+        }
+      } finally {
+        if (this.parentCluster?.id === hostId) {
+          this.loadingStorageClasses = false;
+        }
       }
-      this.loadingStorageClasses = false;
     },
 
     updateStorageClass(e) {
-      if (e === this.t('k3k.storage.noneOption')) {
+      //
+      // k3k reads storageClassName only in dynamic mode
+      if (e === EPHEMERAL) {
+        this.$emit('update:persistenceType', PERSISTENCE_TYPES.EPHEMERAL);
         this.$emit('update:storageClassName', undefined);
-      } else {
-        this.$emit('update:storageClassName', e);
+
+        return;
       }
+
+      this.$emit('update:persistenceType', PERSISTENCE_TYPES.DYNAMIC);
+      this.$emit('update:storageClassName', e === HOST_DEFAULT ? undefined : e);
     }
   }
 
@@ -166,26 +207,36 @@ export default {
       <div class="k3k-input-row mmt-1">
         <LabeledSelect
           class="k3k-half"
-          :disabled="storageClassOptions.length === 1"
-          :value="storageClassName || t('k3k.storage.noneOption')"
+          data-testid="k3k-storage-class-select"
+          :value="selectedStorageClass"
           :loading="loadingStorageClasses"
           :mode="mode"
           label-key="k3k.storage.storageClass.label"
           :options="storageClassOptions"
           @update:value="updateStorageClass"
         />
-        <UnitInput
-          v-if="storageClassName"
-          :increment="1024"
-          :input-exponent="3"
-          output-modifier
-          :value="storageRequestSize || ''"
-          :mode="mode"
+        <div
+          v-if="isDynamic"
           class="k3k-half"
-          label-key="k3k.storage.storageRequestSize.label"
-          @update:value="$emit('update:storageRequestSize', $event)"
-        />
+          data-testid="k3k-storage-request-size"
+        >
+          <UnitInput
+            :increment="1024"
+            :input-exponent="3"
+            output-modifier
+            :value="storageRequestSize || ''"
+            :mode="mode"
+            label-key="k3k.storage.storageRequestSize.label"
+            @update:value="$emit('update:storageRequestSize', $event)"
+          />
+        </div>
       </div>
     </div>
+    <Banner
+      v-if="showNoDefaultWarning"
+      color="warning"
+      data-testid="k3k-storage-no-default-banner"
+      :label="t('k3k.storage.storageClass.noDefault')"
+    />
   </RcContentGroup>
 </template>

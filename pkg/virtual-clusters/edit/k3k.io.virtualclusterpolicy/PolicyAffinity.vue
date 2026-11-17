@@ -106,7 +106,7 @@ const updateAgentPodAffinity = (value: { affinity: AffinityValue }) => {
       :title="t('k3k.policy.affinity.agentNodeScheduling')"
     >
       <template v-if="agentSchedulingAllowed">
-        <RcContentGroup>
+        <RcContentGroup data-testid="k3k-policy-agent-scheduling">
           <p class="text-deemphasized">
             {{ t('k3k.policy.affinity.agentDescription') }}
           </p>

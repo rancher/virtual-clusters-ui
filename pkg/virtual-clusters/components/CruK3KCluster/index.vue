@@ -903,7 +903,6 @@ export default {
             v-model:persistence-type="k3kCluster.spec.persistence.type"
             v-model:storage-request-size="k3kCluster.spec.persistence.storageRequestSize"
             :parent-cluster="parentCluster"
-            :prov-clusters="provClusters"
             :mode="mode"
           />
         </RcSection>

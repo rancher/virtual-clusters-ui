@@ -28,12 +28,12 @@
     "eslint-plugin-vue": "10.10.0",
     "globals": "17.7.0",
     "neostandard": "0.13.0",
-    "typescript-eslint": "8.70.0",
+    "typescript-eslint": "8.72.2",
     "@types/node": "25.3.3"
   },
   "resolutions": {
     "**/webpack": "5",
-    "typescript-eslint": "8.70.0",
+    "typescript-eslint": "8.72.2",
     "@cypress/request": "4.0.1",
     "@tootallnate/once": "^2.0.1",
     "basic-ftp": "6.2.2",

@@ -3637,10 +3637,10 @@
     estraverse "^5.3.0"
     picomatch "^4.0.2"
 
-"@tootallnate/once@2", "@tootallnate/once@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/@tootallnate/once/-/once-2.0.1.tgz#35adc6222e3662fa2222ce123b961476a746b9ea"
-  integrity sha512-HqmEUIGRJ5fSXchkVgR5F7qn48bDBzv0kWj/Kfu5e6uci4UlEeng4331LnBkWffb++Ei3FOVLxo8JJWMFBDMeQ==
+"@tootallnate/once@2", "@tootallnate/once@^3.0.0":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-3.0.1.tgz#d580decb59cb41a15856387a86800838102daf44"
+  integrity sha512-VyMVKRrpHTT8PnotUeV8L/mDaMwD5DaAKCFLP73zAqAtvF0FCqky+Ki7BYbFCYQmqFyTe9316Ed5zS70QUR9eg==
 
 "@tootallnate/quickjs-emscripten@^0.23.0":
   version "0.23.0"

@@ -35,7 +35,7 @@
   "resolutions": {
     "**/webpack": "5",
     "typescript-eslint": "8.72.2",
-    "@yarnpkg/core": "4.9.1",
+    "@yarnpkg/core": "4.9.2",
     "@tootallnate/once": "2.0.1",
     "basic-ftp": "6.2.4",
     "cookie": "0.7.2",
